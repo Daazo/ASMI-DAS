@@ -62,14 +62,14 @@ bot.start_time = time.time()
 async def get_server_data(guild_id):
     """Get server configuration from database"""
     guild_id = str(guild_id)
-    if db:
+    if db is not None:
         return await db.servers.find_one({'guild_id': guild_id}) or {}
     return {}
 
 async def update_server_data(guild_id, data):
     """Update server configuration in database"""
     guild_id = str(guild_id)
-    if db:
+    if db is not None:
         await db.servers.update_one(
             {'guild_id': guild_id},
             {'$set': data},
@@ -130,7 +130,7 @@ async def has_permission(interaction, permission_level):
 # XP System Functions
 async def add_xp(user_id, guild_id, amount):
     """Add XP to user"""
-    if not db:
+    if db is None:
         return
     
     user_data = await db.users.find_one({'user_id': str(user_id), 'guild_id': str(guild_id)})
@@ -299,6 +299,151 @@ async def on_message(message):
     
     await bot.process_commands(message)
 
+# Command error handler for automatic help
+@bot.event
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    """Handle slash command errors and provide help"""
+    if isinstance(error, app_commands.MissingPermissions):
+        embed = discord.Embed(
+            title="❌ **Missing Permissions**",
+            description="You don't have the required permissions to use this command!",
+            color=0xe74c3c
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    elif isinstance(error, app_commands.CommandOnCooldown):
+        embed = discord.Embed(
+            title="⏳ **Command on Cooldown**",
+            description=f"Please wait {error.retry_after:.2f} seconds before using this command again!",
+            color=0xf39c12
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    else:
+        # Get command help information
+        command_name = interaction.command.name if interaction.command else "unknown"
+        await send_command_help(interaction, command_name)
+
+async def send_command_help(interaction: discord.Interaction, command_name: str):
+    """Send detailed help for specific command"""
+    command_help = {
+        "kick": {
+            "title": "👢 **KICK Command Help**",
+            "description": "**Usage:** `/kick @user [reason]`\n\n**What it does:** Removes a user from the server\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/kick @BadUser Breaking rules`",
+            "color": 0xe74c3c
+        },
+        "ban": {
+            "title": "🔨 **BAN Command Help**",
+            "description": "**Usage:** `/ban @user [reason]`\n\n**What it does:** Permanently bans a user from the server\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/ban @Spammer Repeated spam messages`",
+            "color": 0xe74c3c
+        },
+        "mute": {
+            "title": "🔇 **MUTE Command Help**",
+            "description": "**Usage:** `/mute @user`\n\n**What it does:** Mutes a user in voice channel\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/mute @NoisyUser`",
+            "color": 0xf39c12
+        },
+        "unmute": {
+            "title": "🔊 **UNMUTE Command Help**",
+            "description": "**Usage:** `/unmute @user`\n\n**What it does:** Unmutes a user in voice channel\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/unmute @User`",
+            "color": 0x43b581
+        },
+        "say": {
+            "title": "💬 **SAY Command Help**",
+            "description": "**Usage:** `/say message:\"text\" [channel:#channel]`\n\n**What it does:** Makes the bot say something\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/say message:\"Hello everyone!\" channel:#general`",
+            "color": 0x9b59b6
+        },
+        "embed": {
+            "title": "📋 **EMBED Command Help**",
+            "description": "**Usage:** `/embed title:\"Title\" description:\"Text\" [color:blue]`\n\n**What it does:** Sends a rich embedded message\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/embed title:\"Rules\" description:\"Be nice to everyone!\" color:green`",
+            "color": 0x3498db
+        },
+        "announce": {
+            "title": "📢 **ANNOUNCE Command Help**",
+            "description": "**Usage:** `/announce channel:#channel message:\"text\" [mention:@role]`\n\n**What it does:** Sends official server announcements\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/announce channel:#announcements message:\"Server update!\" mention:@everyone`",
+            "color": 0xf39c12
+        },
+        "poll": {
+            "title": "📊 **POLL Command Help**",
+            "description": "**Usage:** `/poll question:\"Question?\" option1:\"Yes\" option2:\"No\" [option3] [option4]`\n\n**What it does:** Creates interactive polls with reactions\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/poll question:\"Pizza party?\" option1:\"Yes!\" option2:\"No\"`",
+            "color": 0x43b581
+        },
+        "setup": {
+            "title": "⚙️ **SETUP Command Help**",
+            "description": "**Usage:** `/setup <action> [value] [channel] [role]`\n\n**Actions:**\n• `main_moderator` - Set main mod role\n• `junior_moderator` - Set junior mod role\n• `welcome` - Configure welcome messages\n• `prefix` - Set custom prefix\n• `logs` - Set log channels\n• `xp` - Set XP announcement channel\n\n**Permission:** 🔴 Main Moderator (main_moderator: Server Owner only)\n\n**Example:** `/setup welcome channel:#welcome value:\"Welcome {user}!\"`",
+            "color": 0xf39c12
+        },
+        "nuke": {
+            "title": "💥 **NUKE Command Help**",
+            "description": "**Usage:** `/nuke`\n\n**What it does:** Deletes ALL messages in current channel (irreversible!)\n**Permission:** 🔴 Main Moderator only\n\n**⚠️ WARNING:** This action cannot be undone!\n\n**Example:** `/nuke`",
+            "color": 0xe74c3c
+        },
+        "movevc": {
+            "title": "🔀 **MOVEVC Command Help**",
+            "description": "**Usage:** `/movevc @user #voice-channel`\n\n**What it does:** Moves user from one voice channel to another\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/movevc @User #General`",
+            "color": 0x3498db
+        },
+        "vckick": {
+            "title": "👢 **VCKICK Command Help**",
+            "description": "**Usage:** `/vckick @user`\n\n**What it does:** Kicks user from their current voice channel\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/vckick @NoisyUser`",
+            "color": 0xf39c12
+        },
+        "vclock": {
+            "title": "🔒 **VCLOCK Command Help**",
+            "description": "**Usage:** `/vclock`\n\n**What it does:** Locks your current voice channel (prevents new joins)\n**Permission:** 🔵 Junior Moderator+\n\n**Note:** You must be in a voice channel\n\n**Example:** `/vclock`",
+            "color": 0xe74c3c
+        },
+        "vcunlock": {
+            "title": "🔓 **VCUNLOCK Command Help**",
+            "description": "**Usage:** `/vcunlock`\n\n**What it does:** Unlocks your current voice channel\n**Permission:** 🔵 Junior Moderator+\n\n**Note:** You must be in a voice channel\n\n**Example:** `/vcunlock`",
+            "color": 0x43b581
+        },
+        "vclimit": {
+            "title": "🔢 **VCLIMIT Command Help**",
+            "description": "**Usage:** `/vclimit <number>`\n\n**What it does:** Sets user limit for your current voice channel\n**Permission:** 🔵 Junior Moderator+\n**Range:** 0-99 (0 = unlimited)\n\n**Note:** You must be in a voice channel\n\n**Example:** `/vclimit 10`",
+            "color": 0x3498db
+        },
+        "rank": {
+            "title": "📊 **RANK Command Help**",
+            "description": "**Usage:** `/rank [user:@user]`\n\n**What it does:** Shows XP rank card with level, XP, and server ranking\n**Permission:** 🟢 Everyone\n\n**Example:** `/rank` or `/rank user:@Someone`",
+            "color": 0x43b581
+        },
+        "leaderboard": {
+            "title": "🏆 **LEADERBOARD Command Help**",
+            "description": "**Usage:** `/leaderboard`\n\n**What it does:** Displays top 10 users by XP with rankings\n**Permission:** 🟢 Everyone\n\n**Example:** `/leaderboard`",
+            "color": 0xf39c12
+        }
+    }
+    
+    if command_name.lower() in command_help:
+        help_info = command_help[command_name.lower()]
+        embed = discord.Embed(
+            title=help_info["title"],
+            description=help_info["description"],
+            color=help_info["color"]
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
+        
+        try:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except:
+            try:
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            except:
+                pass
+    else:
+        embed = discord.Embed(
+            title="❓ **Command Help**",
+            description=f"Use `/help` to see all available commands!\n\n**Tip:** Type `/help` and click the category buttons for detailed command information.",
+            color=0x3498db
+        )
+        try:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except:
+            try:
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            except:
+                pass
+
 @bot.event
 async def on_member_join(member):
     """Send welcome message and DM"""
@@ -357,10 +502,11 @@ async def on_member_remove(member):
 async def help_command_callback(interaction):
     """Callback for help button"""
     embed = discord.Embed(
-        title="🤖 ᴠᴀᴀᴢʜᴀ Help Menu",
-        description="**Namaskaram! Need help?**\n\n**ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ undu. Chill aanu!**\n\nSelect a category below to view all commands.\nUse `/setup` commands to configure the bot per server.\n\n🔐 Role Restricted Commands:\n- 🟢 Everyone\n- 🔵 Junior Moderator\n- 🔴 Main Moderator",
+        title="🤖 **ᴠᴀᴀᴢʜᴀ** Help Center",
+        description=f"**✨ Namaskaram! Need help? ✨**\n\n**🌴 ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ undu. Chill aanu! 🌴**\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📋 **Select a category below to explore all commands**\n🛠 **Use `/setup` commands to configure bot per server**\n💬 **Type any command for instant usage help!**\n\n🔐 **Permission Levels:**\n🟢 **Everyone** - All server members\n🔵 **Junior Moderator** - Limited moderation access  \n🔴 **Main Moderator** - Full access (Server Owner level)\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         color=0x3498db
     )
+    embed.set_footer(text=f"🌴 {BOT_TAGLINE}", icon_url=bot.user.display_avatar.url)
     
     view = HelpView()
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
@@ -370,43 +516,184 @@ class HelpView(discord.ui.View):
     def __init__(self):
         super().__init__()
     
-    @discord.ui.button(label="🧩 General", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="🧩 General", style=discord.ButtonStyle.primary, emoji="🧩")
     async def general_help(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title="🧩 General Commands", color=0x3498db)
-        embed.add_field(name="🟢 /help", value="Show this help menu", inline=False)
-        embed.add_field(name="🟢 /userinfo", value="Show user information", inline=False)
-        embed.add_field(name="🟢 /serverinfo", value="Show server information", inline=False)
-        embed.add_field(name="🔵 /ping", value="Check bot latency", inline=False)
-        embed.add_field(name="🔵 /uptime", value="Show bot uptime", inline=False)
+        embed = discord.Embed(
+            title="🧩 **General Commands**",
+            description="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0x3498db
+        )
+        embed.add_field(
+            name="🟢 `/help`", 
+            value="**Usage:** `/help`\n**Description:** Show comprehensive help menu with all commands", 
+            inline=False
+        )
+        embed.add_field(
+            name="🟢 `/userinfo`", 
+            value="**Usage:** `/userinfo [user]`\n**Description:** Display detailed user information, join date, roles, etc.", 
+            inline=False
+        )
+        embed.add_field(
+            name="🟢 `/serverinfo`", 
+            value="**Usage:** `/serverinfo`\n**Description:** Show server details like owner, member count, creation date", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/ping`", 
+            value="**Usage:** `/ping`\n**Description:** Check bot latency and connection status", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/uptime`", 
+            value="**Usage:** `/uptime`\n**Description:** Display how long the bot has been running", 
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
         await interaction.response.edit_message(embed=embed, view=self)
     
-    @discord.ui.button(label="🛡 Moderation", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="🛡 Moderation", style=discord.ButtonStyle.danger, emoji="🛡")
     async def moderation_help(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title="🛡 Moderation Commands", color=0xe74c3c)
-        embed.add_field(name="🔴 /kick", value="Kick a user from server", inline=False)
-        embed.add_field(name="🔴 /ban", value="Ban a user from server", inline=False)
-        embed.add_field(name="🔴 /nuke", value="Delete all messages in channel", inline=False)
-        embed.add_field(name="🔵 /mute", value="Mute user in voice channel", inline=False)
-        embed.add_field(name="🔵 /unmute", value="Unmute user in voice channel", inline=False)
+        embed = discord.Embed(
+            title="🛡 **Moderation Commands**",
+            description="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0xe74c3c
+        )
+        embed.add_field(
+            name="🔴 `/kick`", 
+            value="**Usage:** `/kick @user [reason]`\n**Description:** Remove a user from the server with optional reason", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/ban`", 
+            value="**Usage:** `/ban @user [reason]`\n**Description:** Permanently ban a user from the server", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/nuke`", 
+            value="**Usage:** `/nuke`\n**Description:** Delete ALL messages in current channel (irreversible!)", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/mute`", 
+            value="**Usage:** `/mute @user`\n**Description:** Mute user in voice channel", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/unmute`", 
+            value="**Usage:** `/unmute @user`\n**Description:** Unmute user in voice channel", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 Voice Commands", 
+            value="**`/movevc @user #channel`** - Move user to voice channel\n**`/vckick @user`** - Kick user from voice\n**`/vclock`** - Lock current voice channel\n**`/vcunlock`** - Unlock voice channel\n**`/vclimit <number>`** - Set voice channel limit", 
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
         await interaction.response.edit_message(embed=embed, view=self)
     
-    @discord.ui.button(label="🛠 Setup", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="🛠 Setup", style=discord.ButtonStyle.secondary, emoji="🛠")
     async def setup_help(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title="🛠 Setup Commands", color=0xf39c12)
-        embed.add_field(name="🔴 /setup main_moderator", value="Set main moderator role", inline=False)
-        embed.add_field(name="🔴 /setup junior_moderator", value="Set junior moderator role", inline=False)
-        embed.add_field(name="🔴 /setup welcome", value="Configure welcome messages", inline=False)
-        embed.add_field(name="🔴 /setup logs", value="Configure logging channels", inline=False)
+        embed = discord.Embed(
+            title="🛠 **Setup Commands**",
+            description="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0xf39c12
+        )
+        embed.add_field(
+            name="🔴 `/setup main_moderator`", 
+            value="**Usage:** `/setup main_moderator role:@role`\n**Description:** Set main moderator role (Server Owner only)", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/setup junior_moderator`", 
+            value="**Usage:** `/setup junior_moderator role:@role`\n**Description:** Set junior moderator role", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/setup welcome`", 
+            value="**Usage:** `/setup welcome channel:#channel value:\"message\"`\n**Description:** Configure welcome messages and channel", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/setup prefix`", 
+            value="**Usage:** `/setup prefix value:!`\n**Description:** Set custom command prefix for server", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/setup logs`", 
+            value="**Usage:** `/setup logs value:moderation channel:#logs`\n**Description:** Configure logging channels (all, moderation, xp, etc.)", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/setup xp`", 
+            value="**Usage:** `/setup xp channel:#xp-logs`\n**Description:** Set XP level-up announcement channel", 
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
         await interaction.response.edit_message(embed=embed, view=self)
     
-    @discord.ui.button(label="📣 Communication", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="📣 Communication", style=discord.ButtonStyle.secondary, emoji="📣")
     async def communication_help(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title="📣 Communication Commands", color=0x9b59b6)
-        embed.add_field(name="🔵 /say", value="Make bot say something", inline=False)
-        embed.add_field(name="🔵 /embed", value="Send rich embed message", inline=False)
-        embed.add_field(name="🔴 /announce", value="Send announcement", inline=False)
-        embed.add_field(name="🔵 /poll", value="Create a poll", inline=False)
-        embed.add_field(name="🔵 /reminder", value="Set a reminder", inline=False)
+        embed = discord.Embed(
+            title="📣 **Communication Commands**",
+            description="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0x9b59b6
+        )
+        embed.add_field(
+            name="🔵 `/say`", 
+            value="**Usage:** `/say message:\"text\" [channel:#channel]`\n**Description:** Make bot send a message", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/embed`", 
+            value="**Usage:** `/embed title:\"Title\" description:\"Text\" [color:blue]`\n**Description:** Send rich embedded message with custom styling", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/announce`", 
+            value="**Usage:** `/announce channel:#channel message:\"text\" [mention:@role]`\n**Description:** Send official server announcements", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/poll`", 
+            value="**Usage:** `/poll question:\"Question?\" option1:\"Yes\" option2:\"No\"`\n**Description:** Create interactive polls with reactions", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔵 `/reminder`", 
+            value="**Usage:** `/reminder message:\"text\" time:1h30m`\n**Description:** Set personal reminders (format: 1h30m, 45s, 2d)", 
+            inline=False
+        )
+        embed.add_field(
+            name="🔴 `/dm`", 
+            value="**Usage:** `/dm user:@user message:\"text\"`\n**Description:** Send DM to user from server", 
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
+        await interaction.response.edit_message(embed=embed, view=self)
+    
+    @discord.ui.button(label="📊 XP System", style=discord.ButtonStyle.success, emoji="📊")
+    async def xp_help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="📊 **XP & Leveling System**",
+            description="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0x43b581
+        )
+        embed.add_field(
+            name="🟢 `/rank`", 
+            value="**Usage:** `/rank [user:@user]`\n**Description:** Show XP rank card with level, XP, and server ranking", 
+            inline=False
+        )
+        embed.add_field(
+            name="🟢 `/leaderboard`", 
+            value="**Usage:** `/leaderboard`\n**Description:** Display top 10 users by XP with rankings", 
+            inline=False
+        )
+        embed.add_field(
+            name="💡 **How XP Works**", 
+            value="• Gain 5-15 XP per message (60s cooldown)\n• Level up formula: `√(XP/100) + 1`\n• Level announcements in configured channel\n• Beautiful rank cards with avatars", 
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔵 = Junior Moderator • 🔴 = Main Moderator")
         await interaction.response.edit_message(embed=embed, view=self)
 
 # Slash Commands
@@ -466,6 +753,18 @@ async def serverinfo(interaction: discord.Interaction):
     embed.add_field(name="🆔 Server ID", value=guild.id, inline=True)
     
     await interaction.response.send_message(embed=embed)
+
+# Import command modules
+from setup_commands import *
+from moderation_commands import *
+from communication_commands import *
+from xp_commands import *
+
+# Try to import voice commands
+try:
+    from voice_commands import *
+except ImportError:
+    print("Voice commands module not found, skipping...")
 
 # Run the bot
 if __name__ == "__main__":
