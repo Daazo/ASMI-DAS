@@ -1,0 +1,667 @@
+i want to make a discord bot  with embed and buttons 
+
+Bot Name: ᴠᴀᴀᴢʜᴀ
+
+Tag line: "𝓨𝓸𝓾𝓻 𝓯𝓻𝓲𝓮𝓷𝓭𝓵𝔂 𝓼𝓮𝓻𝓿𝓮𝓻 𝓪𝓼𝓼𝓲𝓼𝓽𝓪𝓷𝓽 𝓯𝓻𝓸𝓶 𝓖𝓸𝓭’𝓼 𝓞𝔀𝓷 𝓒𝓸𝓾𝓷𝓽𝓻𝔂 🌴"
+
+Use occasional Malayalam phrases use in /help and any other places accordingly 
+
+"**Namaskaram! Need help?**"
+
+"**ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ undu. Chill aanu!**"
+
+* use buttons every where it need if i forget to mention
+
+this bot will be used in many servers so make like that Use MONGO_URI as your bot’s long-term memory.
+
+I will update MONGO_URI in screct code with MONGO_URI for bot memory 
+
+Without it, bot will forget:
+
+Moderator roles
+
+XP and levels
+
+Ticket states
+
+Welcome/log channels
+
+Reaction role settings
+
+Anything server-specific
+
+
+With it, bot remembers everything, for every server, even after:
+
+Restart
+
+Crash
+
+Deployment
+
+Hosting change
+
+MAIN FEATURES
+
+1. discord bot display "watching X servers" as its status (presence)
+
+2. Now add 2 bot roles like main bot moderator & junior bot modaretor and command to set up this modaretors eg:- /setup main moderator (role id)
+
+Only the server owner can setup main moderator 
+
+Junior moderator can be setuped by main moderator or server owner
+
+Main moderator can access all functions & junior moderator can only access limited function that is not danger to a server I will mention which features can junior moderator can use if I forgot do according to the logic
+
+3. General Features (Core Bot Functionality)
+
+/help command that shows all commands neatly with button for different categories
+
+/userinfo to show join date, roles, badges, etc.
+
+/serverinfo to display server name, owner, member count, etc.
+
+/ping to check bot latency
+
+/uptime to see how long the bot has been running
+
+Custom prefix setup per server ( only server owner can set it by /setup prefix (prefix) like that)
+
+/help , /userinfo , /serverinfo can be used by every one and /ping , /uptime by junior & main moderator
+
+4. Moderation Features
+
+/kick, /ban, with reason it can be used by only main moderator 
+
+Voice moderation:- /mute @user to mute a user, /unmute @user , /movevc @user "voice channel link" to move a user from one voice channel to another, /vc kick @user kick user from voice channel , /vc lock lock current voice channel , /vc unlock , /vc limit 0-99 set voice channel member limit
+
+
+Auto moderation: block links, bad words, spam can be (set up by command) and also add command to disable this feature in some channels, it can used by main moderator only
+
+Bulk message delete (/nuke) delete all messages in that channel only used by main moderator 
+
+Anti-raid system (auto lockdown, captcha verification)
+
+Welcome message send welcome message when a user join a server in selected channel with discription ( /setup welcome "channel id"  "message discription" long message is supported) setup by main moderator only 
+
+Reaction Roles ( /setup reactionroles "message discription" "emoji" "role id" "channel id" ) the bot will send the message to the given channel id and when a user react to that message with the emoji that given during the command set up then the user get the desired role , setup by main moderator only
+
+Bot will automatically send every one DM message when user join a server ( 👋 Hii, I'm *{bot_name}* – your helpful assistant!
+
+Welcome to *{server_name}* 🎊  
+We're thrilled to have you here!
+
+Get comfy, explore the channels, and feel free to say hi 👀  
+If you ever need help, just mention me or use a command!
+
+Let’s make this server even more awesome together 💫
+
+And with that a button with  bot invite link to other server) , like that when a user leaves a server bot also send DM message to them (Hey {user_name}, we noticed you left *{server_name}* 😔
+
+Just wanted to say thank you for being a part of our community.  
+We hope you had a good time there, and we’ll always have a spot saved if you return 💙
+
+Take care and stay awesome! ✨
+— {bot_name}
+
+And with that a button with  bot invite link to other server )  , the DM message id embedded and edit and make the message unique
+
+5. Communication & Announcement Features
+
+a. /say
+
+> Bot repeats plain text as a message.
+
+
+
+Usage:
+
+/say message: "Hello everyone!"
+
+Behavior:
+
+Bot replies: Hello everyone!
+
+Optionally, you can add a channel option:
+
+/say message: "Welcome!" channel: #general
+
+
+
+---
+
+b. /embed
+
+> Sends a rich embeddedmessage with color, title, footer, etc.
+
+
+
+Usage:
+
+/embed title: "Server Rules" description: "1. Be respectful\n2. No spam" color: blue
+
+Optional Fields:
+
+title (string)
+
+description (multiline)
+
+footer (string)
+
+thumbnail (URL)
+
+image (URL)
+
+color (hex or named)
+
+
+
+---
+
+c. /announce
+
+> Sends a big announcement styled message to a selected channel (can tag @everyone or a role).
+
+
+
+Usage:
+
+/announce channel: #updates message: "Maintenance at 10PM" mention: @everyone
+
+Features:
+
+Can mention @everyone or a specific role
+
+Can be styled using embed or bold text
+
+Used by Main Moderators only (for safety)
+
+
+
+---
+
+d. /poll
+
+> Create a reaction-based or button-based poll.
+
+
+
+Usage:
+
+/poll question: "Should we add a new music bot?" option1: "Yes" option2: "No"
+
+Support for up to 10 options
+
+Auto-add reactions/buttons
+
+Sends to current or selected channel
+
+
+
+---
+
+e. /reminder
+
+> Sets a reminder that DM’s the user after a set time.
+
+
+
+Usage:
+
+/reminder message: "Attend the meeting" time: "1h30m"
+
+
+---
+
+f. /dm
+
+> Send a direct message to a user via bot (Main Moderators only).
+
+
+
+Usage:
+
+/dm user: @John message: "Your ticket has been closed."
+
+
+---
+
+Role Restrictions Example
+
+Command	Main Moderator	Junior Moderator
+
+/say	✅	✅
+/embed	✅	✅
+/announce	✅	❌
+/poll	✅	✅
+/dm	✅	❌
+/reminder	✅	✅ (for self)
+
+6.  XP & Leveling System (Advanced)
+
+Track user activity and reward them with XP and levels.
+
+
+---
+
+📈 Features Overview
+
+✅ Gain XP:
+
+Earn XP by sending messages (1 message = random 5–15 XP)
+
+XP gain only applies once per minute per user (to avoid spam)
+
+
+🆙 Level Up:
+
+When a user reaches enough XP, they level up
+
+On level-up:
+
+An image is auto-generated with:
+
+Their Discord avatar
+
+Current level number
+
+Optional XP bar / badge
+
+
+Bot sends this image in the XP channel if set
+
+ Leaderboard Command
+
+/leaderboard
+
+Shows top 10 users by XP
+
+Displays: Username, XP, and Level
+
+
+
+---
+
+📌 Rank Command
+
+/rank
+
+Shows your current XP, level, and how much XP left for next level
+
+Sends an XP Card Image with:
+
+Avatar
+
+Username
+
+Level number
+
+Progress bar
+
+Rank position (optional)
+
+
+
+
+---
+
+⚙ Setup Commands
+
+/setup xp <channel_id>
+
+Sets the channel where level-up images and XP updates are sent
+
+Can be different per server
+
+Only main moderator can set up 
+
+Stores channel per guild.id in database
+
+
+
+---
+
+🛡 Anti-Spam Cooldowns
+
+XP gain cooldown per user = 60 seconds
+
+Avoids people spamming for fast XP
+
+Optionally disable XP in specific channels like #spam
+
+7. Ticket System & Support Tools
+
+A professional support system using buttons + forms, visible only to the user and moderators.
+
+
+---
+
+✅ Core Features
+
+Feature	Description
+
+Ticket creation via button	/setup ticketopen sets up a button that users can click to open a ticket
+Tickets go to category	All new tickets are created under a set category channel
+Moderator visibility	Tickets visible only to user + Junior/Main Moderators
+Ticket closing system	/setup ticketclose defines where closed tickets are moved
+Reopen only by Main Mods	Only Main Moderator can reopen a closed ticket
+Cooldown to prevent spam	Users must wait (e.g., 10 minutes) before opening another ticket
+Custom ticket form	Ask for name, issue, urgency before creating ticket
+
+
+
+---
+
+⚙ Setup Commands
+
+🟢 /setup ticketopen
+
+/setup ticketopen <category_id> <channel_id> <description>
+
+✅ Example:
+
+/setup ticketopen 123456789012345678 987654321098765432 "🎫 Click below to open a support ticket!"
+
+What it does:
+
+Sends a message with a button to channel_id
+
+On click:
+
+Opens a private channel under category_id
+
+Only visible to:
+
+Ticket creator
+
+Junior Moderator role (if set)
+
+Main Moderator role (if set)
+
+
+Asks for:
+
+Name
+
+Issue description
+
+Urgency (dropdown: Low, Medium, High)
+
+
+
+Applies a cooldown (e.g., one ticket per 10 minutes)
+
+
+
+---
+
+🔴 /setup ticketclose
+
+/setup ticketclose <category_id>
+
+✅ Example:
+
+/setup ticketclose 112233445566778899
+
+What it does:
+
+Sets the destination category for closed tickets
+
+On ticket close, the channel is moved to this category
+
+Removes user's permission to view it
+
+Adds “Closed” label to channel name
+
+Only Main Moderators can reopen closed tickets
+
+
+
+---
+
+🔄 /ticket close or Button
+
+Closes a ticket and moves it to the closed category.
+
+
+---
+
+🔓 /ticket reopen (Main Moderator Only)
+
+Allows reopening a closed ticket:
+
+Restores user’s access
+
+Moves channel back to the original open category
+
+Renames channel back to original name
+
+
+
+---
+
+📄 Ticket Creation Flow (with Form)
+
+a. User clicks “Open Ticket” button.
+
+
+b. Bot pops modal asking:
+
+Full Name
+
+Describe your issue
+
+Urgency (dropdown)
+
+
+
+c. Bot creates a private channel like ticket-username1234 in the setup category.
+
+
+d. Posts:
+
+🎟 New Ticket from @username
+👤 Name: John Doe
+📝 Issue: My account is locked
+⚠ Urgency: High
+
+
+e. Buttons:
+
+✅ Close Ticket
+
+🔁 Reopen Ticket (Main Mods only)
+
+8. Bot replay
+
+ @Bot Mention Reply Message
+
+When someone @mentions the bot without a command:
+
+Bot Replies:
+
+👋 Heya! I’m your assistant bot 🤖
+
+Need help? Try using /help to explore my features.  
+Moderators can use setup commands too!
+
+Let’s make this server awesome together 💫
+
+Add buttons
+
+📜 Commands /help
+
+9. Global & Feature Logs System
+
+Your bot should track and log every major action (moderation, setup, XP, tickets, etc.) in:
+
+📁 Combined Logs
+
+All logs go to a central combined log channel (set via command)
+
+
+📂 Feature-Specific Logs
+
+Separate channels can be set for each type:
+
+Moderation Logs (kick, ban, mute, vc actions)
+
+XP Logs (level up, XP gain)
+
+Ticket Logs (create/close/reopen)
+
+Setup Logs (when settings are configured)
+
+Communication Logs (when /say, /announce, etc. is used)
+
+
+
+
+---
+
+⚙ Logging Setup Commands
+
+These commands let server owners/main moderators set where logs go:
+
+/setup logs all <channel_id>
+→ Sends all combined logs here
+
+/setup logs moderation <channel_id>
+→ Logs for /ban, /kick, /mute, etc.
+
+/setup logs xp <channel_id>
+→ XP gain and level-up logs
+
+/setup logs tickets <channel_id>
+→ Ticket open/close/reopen logs
+
+/setup logs setup <channel_id>
+→ Logs whenever a setting is configured
+
+/setup logs communication <channel_id>
+→ Logs for /say, /announce, /poll, etc.
+
+✅ Only Main Moderator or Server Owner can run these.
+
+
+---
+
+📝 Example Log Messages
+
+Moderation Log:
+
+🛡 [MODERATION]
+Action: /ban
+Moderator: @ModJohn
+Target: @User
+Reason: Spamming links
+Time: Aug 6, 2025
+
+XP Log:
+
+🏆 [LEVEL UP]
+User: @Rioo
+Level: 7
+XP: 640/700
+
+Ticket Log:
+
+🎫 [TICKET OPENED]
+User: @PlayerX
+Ticket ID: ticket-playerx1234
+Urgency: High
+Opened At: 2:15 PM
+
+Setup Log:
+
+⚙ [SETUP CONFIGURED]
+Command: /setup welcome
+By: @ServerOwner
+Channel: #welcome
+Message: "Hello and welcome!"
+
+Communication Log:
+
+📢 [ANNOUNCEMENT SENT]
+By: @AdminSam
+Channel: #updates
+Message: "Server will restart at 10PM"
+Mention: @everyone
+
+10. /help Command Design
+
+When a user runs /help, the bot will respond with:
+
+📜 Initial Embed:
+
+🤖 *Bot Help Menu*
+
+Select a category below to view all commands.  
+Use /setup commands to configure the bot per server.
+
+🔐 Role Restricted Commands are marked accordingly:
+- 🟢 Everyone
+- 🔵 Junior Moderator
+- 🔴 Main Moderator
+
+
+---
+
+📁 Buttons / Categories (Row 1)
+
+Button Label	Description
+
+🧩 General	/userinfo, /serverinfo, /ping, etc.
+🛡 Moderation	/ban, /kick, /vc mute, etc.
+🛠 Setup	All /setup commands
+📣 Communication	/say, /embed, /poll, etc.
+🧑‍🎓 XP & Level	/rank, /leaderboard, XP settings
+🎟 Tickets	Ticket open/close commands
+⚙ Utility	/reminder, /dm, /prefix, etc.
+
+11. Bot Dev Mention Detection
+
+📌 Behavior:
+
+If anyone mentions the bot owner's user ID in any server:
+
+The bot will send an embedded message
+
+Saying something like:
+
+> 😎 That's my Dev!
+This awesome bot was crafted by <@owner_id>
+Treat him well – without him, I wouldn’t even exist! 🤖💙
+
+
+
+
+
+---
+
+🔐 Bot Owner ID Setup
+
+Add your owner ID to environment variables as a secret:
+
+12. show owner information
+
+owner name: Daazo|Rio
+owner id: update in secrect
+add a description too
+
+13. Make All Features Work on Every Server (Scalable Bot Design)
+
+USE MANGO_URI 
+
+Works perfectly in any number of servers
+
+Uses per-server settings (roles, channels, preferences)
+
+Keeps data separated for each guild
+
+Avoids conflicts or shared settings between servers
+
+
+
+Make the bot well optimised I hope you do it well
+
