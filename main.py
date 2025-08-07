@@ -43,7 +43,7 @@ async def get_prefix(bot, message):
     if guild_id in server_cache and 'prefix' in server_cache[guild_id]:
         return server_cache[guild_id]['prefix']
     
-    if db:
+    if db is not None:
         server_data = await db.servers.find_one({'guild_id': guild_id})
         if server_data and 'prefix' in server_data:
             if guild_id not in server_cache:

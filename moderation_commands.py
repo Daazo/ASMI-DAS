@@ -13,7 +13,7 @@ async def kick(interaction: discord.Interaction, user: discord.Member, reason: s
         return
     
     if user.top_role >= interaction.user.top_role and interaction.user.id != interaction.guild.owner_id:
-        await interaction.response.send_message("❌ You cannot kick this user due to role hierarchy!", ephemeral=True)
+        await interaction.response.send_message("❌ You cannot kick someone with equal or higher role!", ephemeral=True)
         return
     
     try:
@@ -26,7 +26,18 @@ async def kick(interaction: discord.Interaction, user: discord.Member, reason: s
         )
         await interaction.response.send_message(embed=embed)
         
-        await log_action(interaction.guild.id, "moderation", f"🛡 [KICK] {user} kicked by {interaction.user} | Reason: {reason}")
+        await log_action(interaction.guild.id, "moderation", f"🛡 [KICK] {user} kicked by {interaction.user} - Reason: {reason}")
+        
+        # Try to DM user
+        try:
+            dm_embed = discord.Embed(
+                title=f"You were kicked from {interaction.guild.name}",
+                description=f"**Reason:** {reason}\n**Moderator:** {interaction.user.display_name}",
+                color=0xf39c12
+            )
+            await user.send(embed=dm_embed)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to kick this user!", ephemeral=True)
@@ -41,10 +52,21 @@ async def ban(interaction: discord.Interaction, user: discord.Member, reason: st
         return
     
     if user.top_role >= interaction.user.top_role and interaction.user.id != interaction.guild.owner_id:
-        await interaction.response.send_message("❌ You cannot ban this user due to role hierarchy!", ephemeral=True)
+        await interaction.response.send_message("❌ You cannot ban someone with equal or higher role!", ephemeral=True)
         return
     
     try:
+        # Try to DM user before ban
+        try:
+            dm_embed = discord.Embed(
+                title=f"You were banned from {interaction.guild.name}",
+                description=f"**Reason:** {reason}\n**Moderator:** {interaction.user.display_name}",
+                color=0xe74c3c
+            )
+            await user.send(embed=dm_embed)
+        except:
+            pass
+        
         await user.ban(reason=reason)
         
         embed = discord.Embed(
@@ -54,12 +76,73 @@ async def ban(interaction: discord.Interaction, user: discord.Member, reason: st
         )
         await interaction.response.send_message(embed=embed)
         
-        await log_action(interaction.guild.id, "moderation", f"🛡 [BAN] {user} banned by {interaction.user} | Reason: {reason}")
+        await log_action(interaction.guild.id, "moderation", f"🛡 [BAN] {user} banned by {interaction.user} - Reason: {reason}")
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to ban this user!", ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="nuke", description="Delete all messages in current channel")
+async def nuke(interaction: discord.Interaction):
+    if not await has_permission(interaction, "main_moderator"):
+        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
+        return
+    
+    # Confirmation view
+    class NukeConfirmView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=30)
+        
+        @discord.ui.button(label="✅ Confirm Nuke", style=discord.ButtonStyle.danger)
+        async def confirm(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+            if button_interaction.user != interaction.user:
+                await button_interaction.response.send_message("❌ Only the command user can confirm!", ephemeral=True)
+                return
+            
+            channel = interaction.channel
+            channel_name = channel.name
+            
+            try:
+                # Clone channel
+                new_channel = await channel.clone(reason=f"Nuked by {interaction.user}")
+                await channel.delete(reason=f"Nuked by {interaction.user}")
+                
+                embed = discord.Embed(
+                    title="💥 Channel Nuked",
+                    description=f"**Channel:** #{channel_name}\n**Moderator:** {interaction.user.mention}\n\nAll messages have been deleted!",
+                    color=0xe74c3c
+                )
+                await new_channel.send(embed=embed)
+                
+                await log_action(interaction.guild.id, "moderation", f"🛡 [NUKE] #{channel_name} nuked by {interaction.user}")
+            
+            except discord.Forbidden:
+                await button_interaction.response.send_message("❌ I don't have permission to delete/create channels!", ephemeral=True)
+            except Exception as e:
+                await button_interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
+        
+        @discord.ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
+        async def cancel(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+            if button_interaction.user != interaction.user:
+                await button_interaction.response.send_message("❌ Only the command user can cancel!", ephemeral=True)
+                return
+            
+            embed = discord.Embed(
+                title="❌ Nuke Cancelled",
+                description="Channel nuke has been cancelled.",
+                color=0x43b581
+            )
+            await button_interaction.response.edit_message(embed=embed, view=None)
+    
+    embed = discord.Embed(
+        title="⚠️ DANGER: Nuke Channel",
+        description=f"**This will DELETE ALL messages in {interaction.channel.mention}!**\n\nThis action is **IRREVERSIBLE**!\nAre you sure you want to proceed?",
+        color=0xe74c3c
+    )
+    
+    view = NukeConfirmView()
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 @bot.tree.command(name="mute", description="Mute a user in voice channel")
 @app_commands.describe(user="User to mute")
@@ -116,65 +199,3 @@ async def unmute(interaction: discord.Interaction, user: discord.Member):
         await interaction.response.send_message("❌ I don't have permission to unmute this user!", ephemeral=True)
     except Exception as e:
         await interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
-
-@bot.tree.command(name="nuke", description="Delete all messages in current channel")
-async def nuke(interaction: discord.Interaction):
-    if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
-        return
-    
-    # Confirmation embed
-    embed = discord.Embed(
-        title="⚠️ Channel Nuke Confirmation",
-        description=f"Are you sure you want to delete **ALL** messages in {interaction.channel.mention}?\n\n**This action cannot be undone!**",
-        color=0xe74c3c
-    )
-    
-    view = discord.ui.View(timeout=30)
-    
-    async def confirm_callback(confirm_interaction):
-        if confirm_interaction.user != interaction.user:
-            await confirm_interaction.response.send_message("❌ Only the command user can confirm!", ephemeral=True)
-            return
-        
-        await confirm_interaction.response.defer()
-        
-        # Clone the channel to "delete" all messages
-        channel = interaction.channel
-        position = channel.position
-        
-        new_channel = await channel.clone(reason=f"Channel nuked by {interaction.user}")
-        await new_channel.edit(position=position)
-        await channel.delete(reason=f"Channel nuked by {interaction.user}")
-        
-        embed = discord.Embed(
-            title="💥 Channel Nuked!",
-            description=f"All messages have been deleted by {interaction.user.mention}",
-            color=0xe74c3c
-        )
-        await new_channel.send(embed=embed)
-        
-        await log_action(interaction.guild.id, "moderation", f"🛡 [NUKE] Channel {channel.name} nuked by {interaction.user}")
-    
-    async def cancel_callback(cancel_interaction):
-        if cancel_interaction.user != interaction.user:
-            await cancel_interaction.response.send_message("❌ Only the command user can cancel!", ephemeral=True)
-            return
-        
-        embed = discord.Embed(
-            title="✅ Nuke Cancelled",
-            description="Channel nuke has been cancelled.",
-            color=0x43b581
-        )
-        await cancel_interaction.response.edit_message(embed=embed, view=None)
-    
-    confirm_button = discord.ui.Button(label="✅ Confirm", style=discord.ButtonStyle.danger)
-    cancel_button = discord.ui.Button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
-    
-    confirm_button.callback = confirm_callback
-    cancel_button.callback = cancel_callback
-    
-    view.add_item(confirm_button)
-    view.add_item(cancel_button)
-    
-    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
