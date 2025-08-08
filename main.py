@@ -596,7 +596,7 @@ async def help_command_callback(interaction):
     """Callback for help button"""
     embed = discord.Embed(
         title="🌴 **VAAZHA-BOT Command Center** 🌴",
-        description=f"**Machanne! 🤙🏼**\n\nNeed some help? I'm Vaazha-Bot, ready to assist!\n\nSelect a category from the buttons below to explore my commands. For details on any specific command, just type `/` followed by the command name (e.g., `/userinfo`).\n\n**✨ Recent Updates & Poli Fixes ✨**\n\n• ✅ **Mention Replies Fixed:** Mentioning me (@VAAZHA-BOT) or my owner (@Daazo) now works perfectly!\n• 🧹 **Slash Commands Only:** We now exclusively use `/` (slash) commands across the bot.\n• 🤖 **Smoother Automod:** The automod system is now integrated more efficiently!\n\n**🚦 Aarkokke Enthokke Cheyyam? (Permission Levels)**\n\n🟢 **Everyone** - Can use all general, XP, and ticket commands\n🟡 **Junior Moderator (Cheriya Muthalali)** - Limited moderation access\n🔴 **Main Moderator (Valiya Muthalali)** - Full access to moderation and setup\n👑 **Server Owner** - God-level. Ellam cheyyam! (Can do everything!)",
+        description=f"**Machanne! 🤙🏼**\n\nNeed some help? I'm Vaazha-Bot, ready to assist!\n\nSelect a category from the buttons below to explore my commands. For details on any specific command, just type `/` followed by the command name (e.g., `/userinfo`).\n\n**🚦 Aarkokke Enthokke Cheyyam? (Permission Levels)**\n\n🟢 **Everyone** - Can use all general, XP, and ticket commands\n🟡 **Junior Moderator (Cheriya Muthalali)** - Limited moderation access\n🔴 **Main Moderator (Valiya Muthalali)** - Full access to moderation and setup\n👑 **Server Owner** - God-level. Ellam cheyyam! (Can do everything!)",
         color=0x43b581
     )
     embed.set_footer(text="Your friendly server assistant from God's Own Country 🌴 Made with ❤️ by Daazo", icon_url=bot.user.display_avatar.url)
@@ -886,6 +886,37 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.set_footer(text="🌴 VAAZHA-BOT - Your friendly Kerala assistant, ready to help! Chill aanu! 😎")
+        embed.set_thumbnail(url=bot.user.display_avatar.url)
+        await interaction.response.edit_message(embed=embed, view=self)
+    
+    @discord.ui.button(label="Recent Updates", style=discord.ButtonStyle.success, emoji="🌴", row=2)
+    async def recent_updates_help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="🌴 **Recent Updates & Poli Fixes** ✨",
+            description="*Hey everyone! I've been fine-tuned by my creator, Daazo chettan, to work even better. Here's what's new:*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0x43b581
+        )
+        embed.add_field(
+            name="✅ **Mention Replies Fixed**", 
+            value="Mentioning me (@VAAZHA-BOT) or my owner (@Daazo) now works perfectly, without any issues from the automod system!", 
+            inline=False
+        )
+        embed.add_field(
+            name="🧹 **Slash Commands Only**", 
+            value="To make things simpler, the old prefix system has been removed! We now exclusively use `/` (slash) commands across the bot.", 
+            inline=False
+        )
+        embed.add_field(
+            name="🤖 **Smoother Automod**", 
+            value="The automod system is now integrated more efficiently to keep the server safe without interfering with my other functions.", 
+            inline=False
+        )
+        embed.add_field(
+            name="🚀 **What's Coming Next**", 
+            value="More improvements and features are being planned! Stay tuned for updates from Daazo chettan.", 
+            inline=False
+        )
+        embed.set_footer(text="🌴 Made with ❤️ by Daazo from God's Own Country • Last updated today!", icon_url=bot.user.display_avatar.url)
         embed.set_thumbnail(url=bot.user.display_avatar.url)
         await interaction.response.edit_message(embed=embed, view=self)
 
