@@ -244,8 +244,8 @@ async def on_message(message):
             owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
             
             embed = discord.Embed(
-                title="👋 Hello, I'm Vaazha Bot",
-                description=f"Hello 👋, I'm Vaazha Bot – your server's assistant.\n🌴 Enthenkilum help venel, type /help.\nNeed assistance? Contact: {owner_mention}",
+                title="👋🏼 Hello, I'm Vaazha Bot",
+                description=f"🍁Vaazha Bot anne – your server's assistant.\n🌴 Enthenkilum help venel, type /help.\nNeed assistance? Contact: {owner_mention}",
                 color=0x43b581
             )
             embed.set_thumbnail(url=bot.user.display_avatar.url)
@@ -268,8 +268,8 @@ async def on_message(message):
                         "daazo" in message.content.lower()):
             owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
             embed = discord.Embed(
-                title="📢 Official Notice",
-                description=f"📢 Official Notice: {owner_mention} aanu Vaazha Bot inte 👑 Owner.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.\n⚡ Powered by Vaazha Bot 🚀",
+                title="📢 DEVELOPER MENTION",
+                description=f"✨DAAZO ne vilicho: {owner_mention} aanu Vaazha Bot inte Developer🚀.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.",
                 color=0x3498db
             )
             embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
@@ -334,8 +334,8 @@ async def on_message(message):
                     "daazo" in message.content.lower()):
         owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
         embed = discord.Embed(
-            title="📢 Official Notice",
-            description=f"📢 Official Notice: {owner_mention} aanu Vaazha Bot inte 👑 Owner.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.\n⚡ Powered by Vaazha Bot 🚀",
+            title="📢 DEVELOPER MENTION",
+                description=f"✨DAAZO ne vilicho: {owner_mention} aanu Vaazha Bot inte Developer🚀.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.",
             color=0x3498db
         )
         embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
@@ -351,8 +351,8 @@ async def on_message(message):
         owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
         
         embed = discord.Embed(
-            title="👋 Hello, I'm Vaazha Bot",
-            description=f"Hello 👋, I'm Vaazha Bot – your server's assistant.\n🌴 Enthenkilum help venel, type /help.\nNeed assistance? Contact: {owner_mention}",
+            title="👋🏼 Hello, I'm Vaazha Bot",
+                description=f"🍁Vaazha Bot anne – your server's assistant.\n🌴 Enthenkilum help venel, type /help.\nNeed assistance? Contact: {owner_mention}",
             color=0x43b581
         )
         embed.set_thumbnail(url=bot.user.display_avatar.url)
