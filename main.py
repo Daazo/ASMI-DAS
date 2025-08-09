@@ -259,7 +259,13 @@ async def on_message(message):
             view.add_item(help_button)
             view.add_item(invite_button)
             
-            await message.channel.send(embed=embed, view=view)
+            sent_message = await message.channel.send(embed=embed, view=view)
+            # Auto delete after 1 minute
+            await asyncio.sleep(60)
+            try:
+                await sent_message.delete()
+            except:
+                pass
             return
         
         # Check for owner mention in DMs
@@ -275,7 +281,13 @@ async def on_message(message):
             )
             embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
             embed.set_thumbnail(url=bot.user.display_avatar.url)
-            await message.channel.send(embed=embed)
+            sent_message = await message.channel.send(embed=embed)
+            # Auto delete after 1 minute
+            await asyncio.sleep(60)
+            try:
+                await sent_message.delete()
+            except:
+                pass
             return
         
         return  # Don't process other DM messages
@@ -341,7 +353,13 @@ async def on_message(message):
         )
         embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
         embed.set_thumbnail(url=bot.user.display_avatar.url)
-        await message.channel.send(embed=embed)
+        sent_message = await message.channel.send(embed=embed)
+        # Auto delete after 1 minute
+        await asyncio.sleep(60)
+        try:
+            await sent_message.delete()
+        except:
+            pass
         return
     
     # Check for bot mention - PRIORITY CHECK  
@@ -364,7 +382,13 @@ async def on_message(message):
         help_button.callback = lambda i: help_command_callback(i)
         view.add_item(help_button)
         
-        await message.channel.send(embed=embed, view=view)
+        sent_message = await message.channel.send(embed=embed, view=view)
+        # Auto delete after 1 minute
+        await asyncio.sleep(60)
+        try:
+            await sent_message.delete()
+        except:
+            pass
         return
     
     # XP System - Give XP for ALL messages in guilds

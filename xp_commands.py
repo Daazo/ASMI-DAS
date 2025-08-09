@@ -6,6 +6,22 @@ from main import bot, db, create_rank_image, calculate_level, xp_for_level
 @bot.tree.command(name="rank", description="Show your XP rank")
 @app_commands.describe(user="User to check rank for (optional)")
 async def rank(interaction: discord.Interaction, user: discord.Member = None):
+    # Check if XP commands channel is set and restrict usage
+    from main import get_server_data
+    server_data = await get_server_data(interaction.guild.id)
+    xp_commands_channel_id = server_data.get('xp_commands_channel')
+    
+    if xp_commands_channel_id and str(interaction.channel.id) != xp_commands_channel_id:
+        xp_channel = bot.get_channel(int(xp_commands_channel_id))
+        embed = discord.Embed(
+            title="❌ Wrong Channel",
+            description=f"XP commands can only be used in {xp_channel.mention}!",
+            color=0xe74c3c
+        )
+        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+
     target_user = user or interaction.user
 
     if db is None:
@@ -40,6 +56,7 @@ async def rank(interaction: discord.Interaction, user: discord.Member = None):
     embed.add_field(name="Level", value=level, inline=True)
     embed.add_field(name="XP", value=f"{xp}/{xp_for_level(level + 1)}", inline=True)
     embed.add_field(name="Rank", value=f"#{rank}" if rank else "Unknown", inline=True)
+    embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
 
     if rank_image:
         file = discord.File(rank_image, filename="rank.png")
@@ -50,6 +67,22 @@ async def rank(interaction: discord.Interaction, user: discord.Member = None):
 
 @bot.tree.command(name="leaderboard", description="Show server XP leaderboard")
 async def leaderboard(interaction: discord.Interaction):
+    # Check if XP commands channel is set and restrict usage
+    from main import get_server_data
+    server_data = await get_server_data(interaction.guild.id)
+    xp_commands_channel_id = server_data.get('xp_commands_channel')
+    
+    if xp_commands_channel_id and str(interaction.channel.id) != xp_commands_channel_id:
+        xp_channel = bot.get_channel(int(xp_commands_channel_id))
+        embed = discord.Embed(
+            title="❌ Wrong Channel",
+            description=f"XP commands can only be used in {xp_channel.mention}!",
+            color=0xe74c3c
+        )
+        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+
     if db is None:
         await interaction.response.send_message("❌ Database not connected!", ephemeral=True)
         return
@@ -85,4 +118,5 @@ async def leaderboard(interaction: discord.Interaction):
             continue
 
     embed.description = leaderboard_text or "No users found"
+    embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
     await interaction.response.send_message(embed=embed)
