@@ -735,41 +735,41 @@ class HelpView(discord.ui.View):
     @discord.ui.button(label="Karma System", style=discord.ButtonStyle.primary, emoji="✨", row=1)
     async def karma_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="✨ **Karma System**",
-            description="*Appreciate community members and earn karma points for positive contributions!*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            title="✨ **Karma System** (Replaced XP System)",
+            description="*Appreciate community members and earn karma points for positive contributions! This completely replaces the old XP/ranking system.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             color=0xf39c12
         )
         embed.add_field(
             name="🟢 `/givekarma @user [reason]`", 
-            value="**Usage:** `/givekarma @member reason:\"helping with code\"`\n**Description:** Give 1-2 karma points to someone for their contribution\n**Cooldown:** 5 minutes between giving karma to same user", 
+            value="**Usage:** `/givekarma user:@member reason:\"helping with code\"`\n**Description:** Give 1-2 karma points to someone for their contribution\n**Cooldown:** 5 minutes between giving karma to same user\n**Example:** `/givekarma @John reason:\"Great help with coding!\"`", 
             inline=False
         )
         embed.add_field(
             name="🟢 `/karma [user]` & `/mykarma`", 
-            value="**Usage:** `/karma [@member]` or `/mykarma`\n**Description:** Check karma points, server rank, and progress to next milestone\n**Features:** Beautiful progress bars and rankings", 
+            value="**Usage:** `/karma user:@member` or `/mykarma`\n**Description:** Check karma points, server rank, and progress to next milestone\n**Features:** Beautiful progress bars, rankings, and milestone tracking", 
             inline=False
         )
         embed.add_field(
             name="🟢 `/karmaboard`", 
-            value="**Usage:** `/karmaboard`\n**Description:** Show top 10 karma earners with medals and rankings\n**Features:** Community leaderboard highlighting positive contributors", 
+            value="**Usage:** `/karmaboard`\n**Description:** Show top 10 karma earners with medals and rankings\n**Features:** Community leaderboard highlighting positive contributors with 🥇🥈🥉", 
             inline=False
         )
         embed.add_field(
-            name="⭐ **Reaction Karma**", 
-            value="**React with:** 👍 ⭐ ❤️ to give +1 karma automatically\n**Auto-karma:** Reacting to messages gives karma to the author\n**Same cooldown:** 5 minutes between reactions to same user", 
+            name="⭐ **Reaction Karma** (Auto-Karma)", 
+            value="**React with:** 👍 ⭐ ❤️ to automatically give +1 karma\n**How it works:** Reacting to messages gives karma to the author\n**Same cooldown:** 5 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma", 
             inline=False
         )
         embed.add_field(
-            name="🎉 **Milestones & Rewards**", 
-            value="**Every 5 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next milestone", 
+            name="🎉 **Milestones & Level-Ups**", 
+            value="**Every 5 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next 5-karma milestone\n**Channel announcements:** Set with `/setkarmachannel`", 
             inline=False
         )
         embed.add_field(
-            name="🔧 **Setup Commands**", 
-            value="**🔴 `/setkarmachannel #channel`** - Set karma announcement channel\n**🔴 `/resetkarma scope user/server`** - Reset karma data", 
+            name="🔧 **Admin Setup Commands**", 
+            value="**🔴 `/setkarmachannel channel:#channel`** - Set karma announcement channel\n**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma\n**🔴 `/resetkarma scope:server`** - Reset all server karma data", 
             inline=False
         )
-        embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • Anti-abuse: No self-karma, 5min cooldowns")
+        embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • ⚠️ Old XP system completely removed!")
         await interaction.response.edit_message(embed=embed, view=self)
     
     @discord.ui.button(label="Tickets & Support", style=discord.ButtonStyle.secondary, emoji="🎫", row=1)
@@ -1114,11 +1114,7 @@ try:
 except ImportError:
     print("Voice commands module not found, skipping...")
 
-# Try to import music system
-try:
-    from music_system import *
-except ImportError:
-    print("Music system module not found, skipping...")
+# Music system removed due to compatibility issues
 
 # Run the bot with error handling
 if __name__ == "__main__":
