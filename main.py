@@ -139,39 +139,57 @@ async def on_ready():
     )
     print("✅ Bot status updated")
     
-    # Force command sync to ensure new commands are registered
+    # AGGRESSIVE COMMAND SYNC - Clear cache and force global sync
     try:
-        print("🔄 FORCE SYNCING SLASH COMMANDS...")
+        print("🔄 AGGRESSIVE COMMAND SYNC STARTING...")
         
-        # Clear and re-sync commands
+        # Wait a moment for all modules to fully load
+        await asyncio.sleep(2)
+        
+        # Clear all commands first
         bot.tree.clear_commands(guild=None)
-        synced = await bot.tree.sync()
+        print("🗑️ Cleared all existing commands")
         
-        print(f"✅ SUCCESSFULLY SYNCED {len(synced)} COMMAND(S)")
+        # Force global sync - this can take up to 1 hour to propagate
+        synced = await bot.tree.sync()
+        print(f"✅ GLOBAL SYNC COMPLETE: {len(synced)} commands registered")
+        
+        # Also try guild-specific sync for faster testing (if in development)
+        if len(bot.guilds) <= 5:  # Only for small bot deployments
+            for guild in bot.guilds:
+                try:
+                    guild_synced = await bot.tree.sync(guild=guild)
+                    print(f"✅ Guild sync for {guild.name}: {len(guild_synced)} commands")
+                except Exception as e:
+                    print(f"❌ Guild sync failed for {guild.name}: {e}")
         
         # List all synced commands for debugging
         command_names = [cmd.name for cmd in synced]
-        print(f"📋 ALL SYNCED COMMANDS:")
+        print(f"\n📋 ALL REGISTERED COMMANDS ({len(command_names)}):")
         for i, cmd in enumerate(sorted(command_names)):
-            print(f"   {i+1:2d}. {cmd}")
+            print(f"   {i+1:2d}. /{cmd}")
         
         # Check specifically for new commands
-        new_commands = ['adoptpet', 'petinfo', 'feedpet', 'playpet', 'dailypet', 'giverole', 'removerole', 'timedroles', 'profile', 'profilesetup']
-        print(f"\n🔍 CHECKING NEW COMMANDS:")
+        critical_commands = ['adoptpet', 'petinfo', 'feedpet', 'playpet', 'dailypet', 'giverole', 'removerole', 'timedroles', 'profile', 'profilesetup', 'autorole']
+        print(f"\n🔍 CHECKING CRITICAL NEW COMMANDS:")
         
-        for cmd in new_commands:
+        missing_commands = []
+        for cmd in critical_commands:
             if cmd in command_names:
-                print(f"   ✅ {cmd} - REGISTERED")
+                print(f"   ✅ /{cmd} - REGISTERED")
             else:
-                print(f"   ❌ {cmd} - MISSING!")
+                print(f"   ❌ /{cmd} - MISSING!")
+                missing_commands.append(cmd)
         
-        success_count = sum(1 for cmd in new_commands if cmd in command_names)
-        print(f"\n🎯 NEW COMMANDS STATUS: {success_count}/{len(new_commands)} registered")
+        success_count = len(critical_commands) - len(missing_commands)
+        print(f"\n🎯 COMMAND REGISTRATION STATUS: {success_count}/{len(critical_commands)} critical commands registered")
         
-        if success_count == len(new_commands):
-            print("🎉 ALL NEW COMMANDS SUCCESSFULLY REGISTERED!")
+        if len(missing_commands) == 0:
+            print("🎉 ALL CRITICAL COMMANDS SUCCESSFULLY REGISTERED!")
+            print("📱 Commands should appear in Discord within 1 hour (global) or immediately (if guild-synced)")
         else:
-            print("⚠️ SOME NEW COMMANDS ARE MISSING - Check imports!")
+            print(f"⚠️ MISSING COMMANDS: {', '.join(missing_commands)}")
+            print("🔧 Check module imports and restart bot if needed")
                 
     except Exception as e:
         print(f"❌ CRITICAL: Command sync failed: {e}")
@@ -1204,32 +1222,54 @@ try:
 except Exception as e:
     print(f"❌ Timeout system failed: {e}")
 
-# NEW FEATURES
+# NEW CRITICAL FEATURES - Load these first
 try:
     from timed_roles import *
     print("✅ Timed roles system loaded (commands: giverole, removerole, timedroles)")
 except Exception as e:
     print(f"❌ CRITICAL: Timed roles failed to load: {e}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from pet_system import *
     print("✅ Pet system loaded (commands: adoptpet, petinfo, feedpet, playpet, dailypet)")
 except Exception as e:
     print(f"❌ CRITICAL: Pet system failed to load: {e}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from profile_cards import *
     print("✅ Profile cards system loaded (commands: profile, profilesetup)")
 except Exception as e:
     print(f"❌ CRITICAL: Profile cards failed to load: {e}")
+    import traceback
+    traceback.print_exc()
 
 try:
     from autorole import *
-    print("✅ Auto role system loaded")
+    print("✅ Auto role system loaded (commands: autorole)")
 except Exception as e:
-    print(f"❌ Auto role system failed: {e}")
+    print(f"❌ Auto role system failed to load: {e}")
+    import traceback
+    traceback.print_exc()
 
 print("🚀 ALL MODULES LOADED SUCCESSFULLY!")
+print("🔍 Commands loaded. If they don't appear, Discord may need up to 1 hour for global sync.")
+
+# Verify commands are actually registered
+try:
+    all_commands = [cmd.name for cmd in bot.tree.get_commands()]
+    print(f"📝 Total commands ready for sync: {len(all_commands)}")
+    if 'adoptpet' in all_commands:
+        print("✅ Pet commands confirmed in bot tree")
+    if 'giverole' in all_commands:
+        print("✅ Timed role commands confirmed in bot tree")
+    if 'profile' in all_commands:
+        print("✅ Profile commands confirmed in bot tree")
+except Exception as e:
+    print(f"❌ Command verification failed: {e}")
 
 # Try to import voice commands
 try:
