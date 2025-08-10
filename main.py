@@ -484,13 +484,7 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
 
 @bot.event
 async def on_member_join(member):
-    """Send welcome message, DM, assign auto role, and handle verification"""
-    # Import verification function
-    from verification_system import send_verification_quiz
-    
-    # Send verification quiz if enabled
-    await send_verification_quiz(member)
-    
+    """Send welcome message, DM, and assign auto role"""
     server_data = await get_server_data(member.guild.id)
     
     # Auto role assignment
@@ -686,18 +680,8 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
-            name="🔴 `/setup karma_channel channel`", 
-            value="**Usage:** `/setup karma_channel channel:#karma-announcements`\n**Description:** Set channel for karma milestone celebrations", 
-            inline=False
-        )
-        embed.add_field(
-            name="🟢 **Birthday System Commands**", 
-            value="**`/setbirthday day:15 month:6`** - Set your birthday\n**`/mybirthday`** - Check your saved birthday\n**🔴 `/birthdaychannel #channel`** - Set birthday announcement channel\n**`/removebirthday`** - Remove your birthday from system", 
-            inline=False
-        )
-        embed.add_field(
-            name="🔴 **Security & Management**", 
-            value="**`/setupverification enabled:True role:@Verified`** - Setup join verification quiz\n**`/giverole @user @role 7d`** - Give temporary roles with auto-removal\n**`/removetimerole @user @role`** - Remove timed role early", 
+            name="🔴 `/setup xp channel`", 
+            value="**Usage:** `/setup xp channel:#xp-announcements`\n**Description:** Set channel for XP level-up announcements", 
             inline=False
         )
         embed.add_field(
@@ -761,8 +745,8 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
-            name="🟢 `/karma [user]` & `/mykarma` & `/profile [user]`", 
-            value="**Usage:** `/karma user:@member` or `/mykarma` or `/profile @user`\n**Description:** Check karma points, server rank, and beautiful profile cards\n**Features:** Visual profile cards, progress bars, rankings, and milestone tracking", 
+            name="🟢 `/karma [user]` & `/mykarma`", 
+            value="**Usage:** `/karma user:@member` or `/mykarma`\n**Description:** Check karma points, server rank, and progress to next milestone\n**Features:** Beautiful progress bars, rankings, and milestone tracking", 
             inline=False
         )
         embed.add_field(
@@ -772,17 +756,17 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="⭐ **Reaction Karma** (Auto-Karma)", 
-            value="**Positive/Negative:** Use custom emojis set by server admins!\n**How it works:** Reacting to messages gives/removes karma automatically\n**Cooldown:** 3 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma", 
+            value="**Positive:** 👍 ⭐ ❤️ 🔥 💯 ✨ = +1 karma\n**Negative:** 👎 💀 😴 🤮 🗿 = -1 karma\n**How it works:** Reacting to messages gives/removes karma automatically\n**Cooldown:** 3 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma", 
             inline=False
         )
         embed.add_field(
             name="🎉 **Milestones & Level-Ups**", 
-            value="**Every 50 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next 50-karma milestone\n**Channel announcements:** Set with `/setkarmachannel`", 
+            value="**Every 5 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next 5-karma milestone\n**Channel announcements:** Set with `/setkarmachannel`", 
             inline=False
         )
         embed.add_field(
             name="🔧 **Admin Setup Commands**", 
-            value="**🔴 `/setkarmachannel channel:#channel`** - Set karma announcement channel\n**🔴 `/setkarmaemojis positive:\"👍 ⭐\" negative:\"👎\"`** - Set custom karma emojis\n**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma", 
+            value="**🔴 `/setkarmachannel channel:#channel`** - Set karma announcement channel\n**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma\n**🔴 `/resetkarma scope:server`** - Reset all server karma data", 
             inline=False
         )
         embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • ⚠️ Old XP system completely removed!")
@@ -837,12 +821,12 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="📊 **Comprehensive Logging System**", 
-            value="**All Logs:** Combined logging channel for everything\n**Moderation:** Kicks, bans, mutes, voice actions\n**Karma System:** Karma milestones and changes\n**Tickets:** Creation, closing, reopening events\n**Setup:** All configuration changes\n**Communication:** Announcements, polls, messages", 
+            value="**All Logs:** Combined logging channel for everything\n**Moderation:** Kicks, bans, mutes, voice actions\n**XP System:** Level ups and ranking changes\n**Tickets:** Creation, closing, reopening events\n**Setup:** All configuration changes\n**Communication:** Announcements, polls, messages", 
             inline=False
         )
         embed.add_field(
             name="🌐 **Multi-Server Intelligence**", 
-            value="✅ **MongoDB integration** - Persistent data storage\n✅ **Per-server configuration** - Roles, channels, settings\n✅ **Separated karma tracking** - Each server independent\n✅ **Individual automod settings** - Customize per server\n✅ **Database-backed** - Never lose your data", 
+            value="✅ **MongoDB integration** - Persistent data storage\n✅ **Per-server configuration** - Roles, channels, settings\n✅ **Separated XP tracking** - Each server independent\n✅ **Individual automod settings** - Customize per server\n✅ **Database-backed** - Never lose your data", 
             inline=False
         )
         embed.add_field(
@@ -899,18 +883,18 @@ class HelpView(discord.ui.View):
             color=0x43b581
         )
         embed.add_field(
-            name="🆕 **Birthday System Added** (Latest!)", 
-            value="**NEW:** Set birthdays with `/setbirthday` and get daily announcements!\n**AUTOMATIC:** Daily birthday checks and celebrations\n**REWARDS:** +10 karma bonus on your birthday!", 
+            name="🆕 **Enhanced Reaction Karma System** (Latest!)", 
+            value="**NEW:** Added negative reactions (👎 💀 😴 🤮 🗿) that remove karma!\n**UPDATED:** Reduced cooldown from 5 minutes to 3 minutes\n**IMPROVED:** More positive reactions added (🔥 💯 ✨)", 
             inline=False
         )
         embed.add_field(
-            name="🆕 **Custom Karma Emojis** (Latest!)", 
-            value="**CUSTOMIZABLE:** Server owners can set which emojis give/remove karma\n**FLEXIBLE:** Use any emoji for karma reactions\n**PERSONALIZED:** Each server can have unique karma emojis", 
+            name="🆕 **Regular Members Can Now Give Karma** (Latest!)", 
+            value="**CHANGED:** All members can now give karma using `/givekarma`!\n**FAIR:** 3-minute cooldown for everyone (1 minute for main mods)\n**DEMOCRATIC:** Community-driven karma system for all!", 
             inline=False
         )
         embed.add_field(
-            name="🆕 **Profile Cards & Verification System** (Latest!)", 
-            value="**VISUAL:** Beautiful profile cards with avatars and karma stats\n**SECURITY:** Join verification quiz system to prevent bot raids\n**TEMPORARY ROLES:** Timed role assignments with auto-removal", 
+            name="🆕 **Welcome System Enhanced** (Latest!)", 
+            value="**FIXED:** Welcome images/GIFs now display properly in announcements\n**PROFESSIONAL:** Beautiful welcome embeds with member count\n**PERSONAL:** Welcome DMs sent to new members with bot info", 
             inline=False
         )
         embed.add_field(
@@ -929,8 +913,7 @@ async def help_command(interaction: discord.Interaction):
 
 @bot.tree.command(name="ping", description="🏓 Check bot latency and connection status")
 async def ping(interaction: discord.Interaction):
-    # Allow ping command for everyone in DMs, require junior mod in servers
-    if interaction.guild and not await has_permission(interaction, "junior_moderator"):
+    if not await has_permission(interaction, "junior_moderator"):
         await interaction.response.send_message("❌ You need Junior Moderator permissions to use this command!", ephemeral=True)
         return
     
@@ -959,8 +942,7 @@ async def ping(interaction: discord.Interaction):
 
 @bot.tree.command(name="uptime", description="⏰ Show how long the bot has been running")
 async def uptime(interaction: discord.Interaction):
-    # Allow uptime command for everyone in DMs, require junior mod in servers
-    if interaction.guild and not await has_permission(interaction, "junior_moderator"):
+    if not await has_permission(interaction, "junior_moderator"):
         await interaction.response.send_message("❌ You need Junior Moderator permissions to use this command!", ephemeral=True)
         return
     
@@ -1125,11 +1107,6 @@ from reaction_roles import *
 from ticket_system import *
 from automod import *
 from autorole import *
-from birthday_system import *
-from custom_karma import *
-from verification_system import *
-from profile_system import *
-from timed_roles import *
 
 # Try to import voice commands
 try:
