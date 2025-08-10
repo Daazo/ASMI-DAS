@@ -45,16 +45,6 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, amo
     is_main_mod = await has_permission(interaction, "main_moderator")
     is_junior_mod = await has_permission(interaction, "junior_moderator")
     
-    # Junior moderators cannot give karma
-    if not is_owner and not is_main_mod and is_junior_mod:
-        embed = discord.Embed(
-            title="❌ Insufficient Permissions",
-            description="Junior Moderators cannot give karma! Only regular members, Main Moderators, and Server Owner can give karma.",
-            color=0xe74c3c
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
-    
     # Determine karma amount based on role
     if is_owner:
         # Server owner can give unlimited karma (if amount not specified, give 1-2)
@@ -72,13 +62,13 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, amo
             return
         karma_points = amount if amount in [1, 2] else random.randint(1, 2)
     else:
-        # Regular members can give 1-2 karma only
+        # Regular members (including junior mods) can give 1-2 karma only
         if amount is not None and amount not in [1, 2]:
             await interaction.response.send_message("❌ You can only give 1-2 karma points!", ephemeral=True)
             return
         karma_points = amount if amount in [1, 2] else random.randint(1, 2)
     
-    # Check cooldown (1 minute for main mods, 5 minutes for others)
+    # Check cooldown (1 minute for main mods, 3 minutes for others)
     current_time = time.time()
     giver_id = interaction.user.id
     receiver_id = user.id
@@ -87,7 +77,7 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, amo
         karma_cooldowns[giver_id] = {}
     
     last_given = karma_cooldowns[giver_id].get(receiver_id, 0)
-    cooldown_time = 60 if is_main_mod else 300  # 1 minute for main mods, 5 minutes for others
+    cooldown_time = 60 if is_main_mod else 180  # 1 minute for main mods, 3 minutes for others
     
     # Server owner has no cooldown
     if not is_owner and current_time - last_given < cooldown_time:
@@ -129,7 +119,7 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, amo
     
     # Create response embed
     reason_text = f" for **{reason}**" if reason else ""
-    role_text = "👑 Server Owner" if is_owner else "🔴 Main Moderator" if is_main_mod else "🟢 Member"
+    role_text = "👑 Server Owner" if is_owner else "🔴 Main Moderator" if is_main_mod else "🟡 Junior Moderator" if is_junior_mod else "🟢 Member"
     
     embed = discord.Embed(
         title="✨ Karma Given!",
@@ -374,16 +364,25 @@ async def on_reaction_add(reaction, user):
     if user.bot or user.id == reaction.message.author.id:
         return
     
-    # Only process karma emojis
-    karma_emojis = ['👍', '⭐', '❤️']
-    if str(reaction.emoji) not in karma_emojis:
-        return
+    # Process both positive and negative karma emojis
+    positive_emojis = ['👍', '⭐', '❤️', '🔥', '💯', '✨']
+    negative_emojis = ['👎', '💀', '😴', '🤮', '🗿']
+    
+    emoji_str = str(reaction.emoji)
+    karma_change = 0
+    
+    if emoji_str in positive_emojis:
+        karma_change = 1
+    elif emoji_str in negative_emojis:
+        karma_change = -1
+    else:
+        return  # Not a karma emoji
     
     # Don't give karma in DMs
     if not reaction.message.guild:
         return
     
-    # Check cooldown
+    # Check cooldown (3 minutes)
     current_time = time.time()
     giver_id = user.id
     receiver_id = reaction.message.author.id
@@ -392,7 +391,7 @@ async def on_reaction_add(reaction, user):
         karma_cooldowns[giver_id] = {}
     
     last_given = karma_cooldowns[giver_id].get(receiver_id, 0)
-    cooldown_time = 300  # 5 minutes
+    cooldown_time = 180  # 3 minutes
     
     if current_time - last_given < cooldown_time:
         return
@@ -400,7 +399,7 @@ async def on_reaction_add(reaction, user):
     # Update cooldown
     karma_cooldowns[giver_id][receiver_id] = current_time
     
-    # Add karma
+    # Update karma
     if db is None:
         return
     
@@ -409,7 +408,7 @@ async def on_reaction_add(reaction, user):
         user_data = {'user_id': str(receiver_id), 'guild_id': str(reaction.message.guild.id), 'karma': 0}
     
     old_karma = user_data.get('karma', 0)
-    new_karma = old_karma + 1
+    new_karma = max(0, old_karma + karma_change)  # Don't allow negative karma
     user_data['karma'] = new_karma
     
     await db.karma.update_one(
@@ -418,9 +417,10 @@ async def on_reaction_add(reaction, user):
         upsert=True
     )
     
-    # Check for level up - FIXED: Check if milestone reached
-    old_milestone = (old_karma // 5) * 5
-    new_milestone = (new_karma // 5) * 5
-    
-    if new_milestone > old_milestone and new_karma >= 5:
-        await send_karma_levelup(reaction.message.guild, reaction.message.author, new_karma)
+    # Check for level up only on positive karma
+    if karma_change > 0:
+        old_milestone = (old_karma // 5) * 5
+        new_milestone = (new_karma // 5) * 5
+        
+        if new_milestone > old_milestone and new_karma >= 5:
+            await send_karma_levelup(reaction.message.guild, reaction.message.author, new_karma)

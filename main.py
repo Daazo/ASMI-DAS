@@ -741,7 +741,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="🟢 `/givekarma @user [reason]`", 
-            value="**Usage:** `/givekarma user:@member reason:\"helping with code\"`\n**Description:** Give 1-2 karma points to someone for their contribution\n**Cooldown:** 5 minutes between giving karma to same user\n**Example:** `/givekarma @John reason:\"Great help with coding!\"`", 
+            value="**Usage:** `/givekarma user:@member reason:\"helping with code\"`\n**Description:** Give 1-2 karma points to someone for their contribution\n**Cooldown:** 3 minutes between giving karma to same user\n**Example:** `/givekarma @John reason:\"Great help with coding!\"`", 
             inline=False
         )
         embed.add_field(
@@ -756,7 +756,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="⭐ **Reaction Karma** (Auto-Karma)", 
-            value="**React with:** 👍 ⭐ ❤️ to automatically give +1 karma\n**How it works:** Reacting to messages gives karma to the author\n**Same cooldown:** 5 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma", 
+            value="**Positive:** 👍 ⭐ ❤️ 🔥 💯 ✨ = +1 karma\n**Negative:** 👎 💀 😴 🤮 🗿 = -1 karma\n**How it works:** Reacting to messages gives/removes karma automatically\n**Cooldown:** 3 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma", 
             inline=False
         )
         embed.add_field(
@@ -883,23 +883,23 @@ class HelpView(discord.ui.View):
             color=0x43b581
         )
         embed.add_field(
-            name="✅ **Mention Replies Fixed**", 
-            value="Mentioning me (@VAAZHA-BOT) or my owner (@Daazo) now works perfectly, without any issues from the automod system!", 
+            name="🆕 **Enhanced Reaction Karma System** (Latest!)", 
+            value="**NEW:** Added negative reactions (👎 💀 😴 🤮 🗿) that remove karma!\n**UPDATED:** Reduced cooldown from 5 minutes to 3 minutes\n**IMPROVED:** More positive reactions added (🔥 💯 ✨)", 
             inline=False
         )
         embed.add_field(
-            name="🧹 **Slash Commands Only**", 
-            value="To make things simpler, the old prefix system has been removed! We now exclusively use `/` (slash) commands across the bot.", 
+            name="🆕 **Regular Members Can Now Give Karma** (Latest!)", 
+            value="**CHANGED:** All members can now give karma using `/givekarma`!\n**FAIR:** 3-minute cooldown for everyone (1 minute for main mods)\n**DEMOCRATIC:** Community-driven karma system for all!", 
             inline=False
         )
         embed.add_field(
-            name="🤖 **Smoother Automod**", 
-            value="The automod system is now integrated more efficiently to keep the server safe without interfering with my other functions.", 
+            name="🆕 **Welcome System Enhanced** (Latest!)", 
+            value="**FIXED:** Welcome images/GIFs now display properly in announcements\n**PROFESSIONAL:** Beautiful welcome embeds with member count\n**PERSONAL:** Welcome DMs sent to new members with bot info", 
             inline=False
         )
         embed.add_field(
-            name="🚀 **What's Coming Next**", 
-            value="More improvements and features are being planned! Stay tuned for updates from Daazo chettan.", 
+            name="✅ **Previous Updates**", 
+            value="🔧 **Mention Replies Fixed** - Bot and owner mentions work perfectly\n🧹 **Slash Commands Only** - Cleaner command system\n🤖 **Smoother Automod** - Better integration without conflicts", 
             inline=False
         )
         embed.set_footer(text="🌴 Made with ❤️ by Daazo from God's Own Country • Last updated today!", icon_url=bot.user.display_avatar.url)

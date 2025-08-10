@@ -72,23 +72,40 @@ async def setup(
         await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Junior moderator role set to {role.name} by {interaction.user}")
 
     elif action == "welcome":
-        if not channel or not value:
-            await interaction.response.send_message("❌ Please specify both channel and welcome message!", ephemeral=True)
+        if not channel:
+            await interaction.response.send_message("❌ Please specify a welcome channel!", ephemeral=True)
             return
 
-        await update_server_data(interaction.guild.id, {
+        # Store welcome settings
+        welcome_data = {
             'welcome_channel': str(channel.id),
-            'welcome_message': value
-        })
+            'welcome_message': value or f"Welcome {{user}} to {{server}}!",
+        }
 
-        embed = discord.Embed(
-            title="✅ Welcome Settings Updated",
-            description=f"**Channel:** {channel.mention}\n**Message:** {value}\n**Set by:** {interaction.user.mention}",
+        # If image URL is provided, store it
+        if value and ("http" in value.lower() and any(ext in value.lower() for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp'])):
+            # Extract message and image
+            parts = value.split('|')
+            if len(parts) == 2:
+                welcome_data['welcome_message'] = parts[0].strip()
+                welcome_data['welcome_image'] = parts[1].strip()
+            else:
+                welcome_data['welcome_image'] = value
+
+        await update_server_data(interaction.guild.id, welcome_data)
+
+        # Test welcome functionality
+        test_embed = discord.Embed(
+            title="✅ Welcome System Test",
+            description=f"**Channel:** {channel.mention}\n**Message:** {welcome_data['welcome_message']}\n" + 
+                       (f"**Image/GIF:** ✅ Working properly" if welcome_data.get('welcome_image') else "**Image/GIF:** None set"),
             color=0x43b581
         )
-        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
-        await interaction.response.send_message(embed=embed)
-        await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Welcome channel set to {channel.name} by {interaction.user}")
+        if welcome_data.get('welcome_image'):
+            test_embed.set_image(url=welcome_data['welcome_image'])
+
+        test_embed.set_footer(text="ᴠᴀᴀᴢʜᴀ - Welcome system is ready!")
+        await interaction.response.send_message(embed=test_embed)
 
     elif action == "welcome_image":
         if not value:
