@@ -130,43 +130,51 @@ async def on_ready():
     print(f'🌴 {bot.user} has landed in Kerala! 🌴')
     print(f"🌐 Connected to {len(bot.guilds)} servers")
     
+    # Set bot status
     await bot.change_presence(
         activity=discord.Activity(
             type=discord.ActivityType.watching,
             name=f"{len(bot.guilds)} servers"
         )
     )
+    print("✅ Bot status updated")
     
     # Force command sync to ensure new commands are registered
     try:
-        print("🔄 Syncing slash commands...")
+        print("🔄 FORCE SYNCING SLASH COMMANDS...")
+        
+        # Clear and re-sync commands
+        bot.tree.clear_commands(guild=None)
         synced = await bot.tree.sync()
-        print(f"✅ Successfully synced {len(synced)} command(s)")
+        
+        print(f"✅ SUCCESSFULLY SYNCED {len(synced)} COMMAND(S)")
         
         # List all synced commands for debugging
         command_names = [cmd.name for cmd in synced]
-        print(f"📋 All synced commands: {', '.join(sorted(command_names))}")
+        print(f"📋 ALL SYNCED COMMANDS:")
+        for i, cmd in enumerate(sorted(command_names)):
+            print(f"   {i+1:2d}. {cmd}")
         
-        # Check if new commands are included
+        # Check specifically for new commands
         new_commands = ['adoptpet', 'petinfo', 'feedpet', 'playpet', 'dailypet', 'giverole', 'removerole', 'timedroles', 'profile', 'profilesetup']
-        missing_commands = []
-        present_commands = []
+        print(f"\n🔍 CHECKING NEW COMMANDS:")
         
         for cmd in new_commands:
             if cmd in command_names:
-                present_commands.append(cmd)
+                print(f"   ✅ {cmd} - REGISTERED")
             else:
-                missing_commands.append(cmd)
+                print(f"   ❌ {cmd} - MISSING!")
         
-        if present_commands:
-            print(f"✅ NEW COMMANDS REGISTERED: {', '.join(present_commands)}")
-        if missing_commands:
-            print(f"❌ MISSING COMMANDS: {', '.join(missing_commands)}")
+        success_count = sum(1 for cmd in new_commands if cmd in command_names)
+        print(f"\n🎯 NEW COMMANDS STATUS: {success_count}/{len(new_commands)} registered")
         
-        print(f"🎯 COMMAND SYNC STATUS: {len(present_commands)}/{len(new_commands)} new commands registered")
+        if success_count == len(new_commands):
+            print("🎉 ALL NEW COMMANDS SUCCESSFULLY REGISTERED!")
+        else:
+            print("⚠️ SOME NEW COMMANDS ARE MISSING - Check imports!")
                 
     except Exception as e:
-        print(f"❌ Failed to sync commands: {e}")
+        print(f"❌ CRITICAL: Command sync failed: {e}")
         import traceback
         traceback.print_exc()
     
@@ -179,8 +187,6 @@ async def on_ready():
         print("✅ Persistent views added for ticket system")
     except Exception as e:
         print(f"❌ Failed to add persistent views: {e}")
-        import traceback
-        traceback.print_exc()
     
     # Start MongoDB ping task
     if mongo_client:
@@ -195,8 +201,12 @@ async def on_ready():
     else:
         print("⚠️ No MongoDB URI found - database features disabled")
     
-    print("🎉 VAAZHA Bot startup complete! All systems ready.")
-    print(f"🚀 Bot is now online and serving {len(bot.guilds)} servers!")
+    print("\n" + "="*60)
+    print("🎉 VAAZHA BOT STARTUP COMPLETE!")
+    print(f"🚀 Bot is ONLINE and serving {len(bot.guilds)} servers!")
+    print("📱 Commands should now be available in Discord!")
+    print("🐾 Try: /adoptpet, /giverole, /profile")
+    print("="*60)
 
 @bot.event
 async def on_guild_join(guild):
@@ -1148,9 +1158,10 @@ async def ping_mongodb():
             print(f"❌ MongoDB ping failed: {e}")
         await asyncio.sleep(300)  # Ping every 5 minutes
 
-# Import command modules
-print("🔄 Loading core command modules...")
+# Import command modules - SINGLE LOAD ONLY
+print("🔄 Loading all command modules...")
 
+# Core modules
 try:
     from setup_commands import *
     print("✅ Setup commands loaded")
@@ -1193,32 +1204,24 @@ try:
 except Exception as e:
     print(f"❌ Timeout system failed: {e}")
 
-# Import new features - ensure they load properly
-print("🔄 Loading NEW FEATURES...")
-
+# NEW FEATURES
 try:
     from timed_roles import *
     print("✅ Timed roles system loaded (commands: giverole, removerole, timedroles)")
 except Exception as e:
     print(f"❌ CRITICAL: Timed roles failed to load: {e}")
-    import traceback
-    traceback.print_exc()
 
 try:
     from pet_system import *
     print("✅ Pet system loaded (commands: adoptpet, petinfo, feedpet, playpet, dailypet)")
 except Exception as e:
     print(f"❌ CRITICAL: Pet system failed to load: {e}")
-    import traceback
-    traceback.print_exc()
 
 try:
     from profile_cards import *
     print("✅ Profile cards system loaded (commands: profile, profilesetup)")
 except Exception as e:
     print(f"❌ CRITICAL: Profile cards failed to load: {e}")
-    import traceback
-    traceback.print_exc()
 
 try:
     from autorole import *
@@ -1226,7 +1229,7 @@ try:
 except Exception as e:
     print(f"❌ Auto role system failed: {e}")
 
-print("✅ All command modules loading complete!")
+print("🚀 ALL MODULES LOADED SUCCESSFULLY!")
 
 # Try to import voice commands
 try:
