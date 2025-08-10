@@ -23,10 +23,10 @@ KARMA_QUOTES = [
     "The world needs more people like you! Keep being awesome! 🌍"
 ]
 
-@bot.tree.command(name="givekarma", description="Give karma points to another user")
+@bot.tree.command(name="givekarma", description="Give karma points to another user for their positive contribution")
 @app_commands.describe(
     user="User to give karma to",
-    reason="Reason for giving karma (optional)"
+    reason="Reason for giving karma (optional but recommended)"
 )
 async def give_karma(interaction: discord.Interaction, user: discord.Member, reason: str = None):
     # Prevent self-karma
@@ -105,7 +105,7 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, rea
     
     await log_action(interaction.guild.id, "karma", f"✨ [KARMA] {interaction.user} gave +{karma_points} karma to {user}")
 
-@bot.tree.command(name="karma", description="Check someone's karma points")
+@bot.tree.command(name="karma", description="Check someone's karma points and server rank")
 @app_commands.describe(user="User to check karma for (optional)")
 async def check_karma(interaction: discord.Interaction, user: discord.Member = None):
     target_user = user or interaction.user
@@ -142,11 +142,11 @@ async def check_karma(interaction: discord.Interaction, user: discord.Member = N
     
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="mykarma", description="Check your own karma points")
+@bot.tree.command(name="mykarma", description="Check your own karma points quickly")
 async def my_karma(interaction: discord.Interaction):
     await check_karma(interaction, interaction.user)
 
-@bot.tree.command(name="karmaboard", description="Show server karma leaderboard")
+@bot.tree.command(name="karmaboard", description="Show server karma leaderboard with top 10 contributors")
 async def karma_leaderboard(interaction: discord.Interaction):
     if db is None:
         await interaction.response.send_message("❌ Database not connected!", ephemeral=True)
@@ -191,7 +191,7 @@ async def karma_leaderboard(interaction: discord.Interaction):
     embed.set_footer(text="🌟 These members are making our community amazing!", icon_url=bot.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="setkarmachannel", description="Set karma announcement channel")
+@bot.tree.command(name="setkarmachannel", description="Set karma announcement channel (Main Moderator only)")
 @app_commands.describe(channel="Channel for karma level-up announcements")
 async def set_karma_channel(interaction: discord.Interaction, channel: discord.TextChannel):
     if not await has_permission(interaction, "main_moderator"):
@@ -211,7 +211,7 @@ async def set_karma_channel(interaction: discord.Interaction, channel: discord.T
     
     await log_action(interaction.guild.id, "setup", f"✨ [KARMA SETUP] Karma channel set to {channel} by {interaction.user}")
 
-@bot.tree.command(name="resetkarma", description="Reset karma data for user or server")
+@bot.tree.command(name="resetkarma", description="Reset karma data for user or entire server (Main Moderator only)")
 @app_commands.describe(
     scope="Reset scope",
     user="User to reset (if scope is user)"

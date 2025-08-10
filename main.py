@@ -1102,7 +1102,7 @@ async def ping_mongodb():
 from setup_commands import *
 from moderation_commands import *
 from communication_commands import *
-from xp_commands import *  # Now contains karma system
+from xp_commands import *  # Karma system only
 from reaction_roles import *
 from ticket_system import *
 from automod import *

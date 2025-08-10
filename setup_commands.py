@@ -16,9 +16,9 @@ from main import bot, has_permission, get_server_data, update_server_data, log_a
     app_commands.Choice(name="welcome", value="welcome"),
     app_commands.Choice(name="welcome_image", value="welcome_image"),
     app_commands.Choice(name="logs", value="logs"),
-    app_commands.Choice(name="xp", value="xp"),
+    app_commands.Choice(name="karma", value="karma"),
     app_commands.Choice(name="ticket_support_role", value="ticket_support_role"),
-    app_commands.Choice(name="xp_commands_channel", value="xp_commands_channel")
+    app_commands.Choice(name="auto_role", value="auto_role")
 ])
 async def setup(
     interaction: discord.Interaction,
@@ -136,7 +136,7 @@ async def setup(
             await interaction.response.send_message("❌ Please specify log type and channel!\n**Log types:** all, moderation, xp, communication", ephemeral=True)
             return
 
-        valid_log_types = ["all", "moderation", "xp", "communication"]
+        valid_log_types = ["all", "moderation", "karma", "communication", "tickets"]
         if value not in valid_log_types:
             await interaction.response.send_message(f"❌ Invalid log type! Valid types: {', '.join(valid_log_types)}", ephemeral=True)
             return
@@ -155,23 +155,6 @@ async def setup(
         await interaction.response.send_message(embed=embed)
         await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] {value} log channel set to {channel.name} by {interaction.user}")
 
-    elif action == "xp":
-        if not channel:
-            await interaction.response.send_message("❌ Please specify a channel for XP announcements!", ephemeral=True)
-            return
-
-        await update_server_data(interaction.guild.id, {'xp_channel': str(channel.id)})
-
-        embed = discord.Embed(
-            title="✅ XP Channel Set",
-            description=f"**XP level-up announcements will be sent to:** {channel.mention}",
-            color=0x43b581
-        )
-        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
-        await interaction.response.send_message(embed=embed)
-
-        await log_action(interaction.guild.id, "setup", f"📊 [XP SETUP] XP channel set to {channel} by {interaction.user}")
-
     elif action == "karma":
         if not channel:
             await interaction.response.send_message("❌ Please specify a channel for karma announcements!", ephemeral=True)
@@ -189,21 +172,21 @@ async def setup(
 
         await log_action(interaction.guild.id, "setup", f"✨ [KARMA SETUP] Karma channel set to {channel} by {interaction.user}")
 
-    elif action == "xp_commands_channel":
-        if not channel:
-            await interaction.response.send_message("❌ Please specify a channel for XP commands!", ephemeral=True)
+    elif action == "auto_role":
+        if not role:
+            await interaction.response.send_message("❌ Please specify a role for auto assignment!", ephemeral=True)
             return
 
-        await update_server_data(interaction.guild.id, {'xp_commands_channel': str(channel.id)})
+        await update_server_data(interaction.guild.id, {'auto_role': str(role.id)})
 
         embed = discord.Embed(
-            title="✅ XP Commands Channel Set",
-            description=f"**Channel:** {channel.mention}\n**Set by:** {interaction.user.mention}\n\n*XP rank and leaderboard commands will only work in this channel.*",
+            title="✅ Auto Role Set",
+            description=f"**Role:** {role.mention}\n**Set by:** {interaction.user.mention}\n\n*This role will be automatically assigned to new members.*",
             color=0x43b581
         )
         embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
         await interaction.response.send_message(embed=embed)
-        await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] XP commands channel set to {channel.name} by {interaction.user}")
+        await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Auto role set to {role.name} by {interaction.user}")
 
     elif action == "ticket_support_role":
         if not role:
