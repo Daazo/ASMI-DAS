@@ -597,6 +597,11 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
+            name="🤖 **Auto-Timeout System**", 
+            value="**🔴 `/timeout-settings feature:spam enabled:true`** - Configure auto-timeouts\n**🟡 `/remove-timeout @user`** - Remove timeout early\n**🟡 `/timeout-stats @user`** - View user timeout statistics\n**Features:** Bad words (10m), Spam (5m), Links (8m) - Escalating penalties", 
+            inline=False
+        )
+        embed.add_field(
             name="🟡 **Voice Moderation Commands**", 
             value="**`/mute @user`** - Mute user in voice channel\n**`/unmute @user`** - Unmute user in voice channel\n**`/movevc @user #channel`** - Move user to different voice channel\n**`/vckick @user`** - Kick user from voice channel\n**`/vclock`** - Lock current voice channel\n**`/vcunlock`** - Unlock voice channel\n**`/vclimit <0-99>`** - Set voice channel user limit", 
             inline=False
@@ -1054,6 +1059,7 @@ from communication_commands import *
 from xp_commands import *  # Karma system only
 from reaction_roles import *
 from ticket_system import *
+from timeout_system import *
 
 from autorole import *
 
