@@ -148,8 +148,8 @@ def contains_links(text):
 async def timeout_user(member, guild, duration_minutes, reason, message_content, offense_count):
     """Timeout a user and send notifications"""
     try:
-        # Calculate timeout duration
-        timeout_until = datetime.now() + timedelta(minutes=duration_minutes)
+        # Calculate timeout duration with timezone awareness
+        timeout_until = discord.utils.utcnow() + timedelta(minutes=duration_minutes)
         
         # Apply timeout
         await member.timeout(timeout_until, reason=f"Auto-timeout: {reason} (Offense #{offense_count})")
@@ -317,7 +317,7 @@ async def timeout_stats(interaction: discord.Interaction, user: discord.Member =
         
         if user.is_timed_out():
             timeout_until = user.timed_out_until
-            remaining = timeout_until - datetime.now(timeout_until.tzinfo)
+            remaining = timeout_until - discord.utils.utcnow()
             minutes_left = int(remaining.total_seconds() / 60)
             embed.add_field(name="⏰ Current Status", value=f"🔴 Timed out ({minutes_left} minutes left)", inline=False)
         else:
