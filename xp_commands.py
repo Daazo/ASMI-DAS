@@ -130,11 +130,11 @@ async def give_karma(interaction: discord.Interaction, user: discord.Member, amo
 
     await interaction.response.send_message(embed=embed)
 
-    # Check for level up (every 5 karma) - FIXED: Check if milestone reached
-    old_milestone = (old_karma // 5) * 5
-    new_milestone = (new_karma // 5) * 5
+    # Check for level up (every 50 karma)
+    old_milestone = (old_karma // 50) * 50
+    new_milestone = (new_karma // 50) * 50
 
-    if new_milestone > old_milestone and new_karma >= 5:
+    if new_milestone > old_milestone and new_karma >= 50:
         await send_karma_levelup(interaction.guild, user, new_karma)
 
     await log_action(interaction.guild.id, "karma", f"✨ [KARMA] {interaction.user} gave +{karma_points} karma to {user}")
@@ -160,9 +160,11 @@ async def check_karma(interaction: discord.Interaction, user: discord.Member = N
     rank = next((i + 1 for i, u in enumerate(users_sorted) if u['user_id'] == str(target_user.id)), len(users_sorted) + 1)
 
     # Calculate progress to next milestone
-    next_milestone = ((karma // 5) + 1) * 5
-    progress = karma % 5
-    progress_bar = "█" * progress + "░" * (5 - progress)
+    next_milestone = ((karma // 50) + 1) * 50
+    progress = karma % 50
+    progress_segments = 10  # Show progress in 10 segments (each segment = 5 karma)
+    filled_segments = progress // 5
+    progress_bar = "█" * filled_segments + "░" * (progress_segments - filled_segments)
 
     embed = discord.Embed(
         title=f"✨ {target_user.display_name}'s Karma",
@@ -171,7 +173,7 @@ async def check_karma(interaction: discord.Interaction, user: discord.Member = N
     embed.set_thumbnail(url=target_user.display_avatar.url)
     embed.add_field(name="🌟 Karma Points", value=f"**{karma}** points", inline=True)
     embed.add_field(name="🏆 Server Rank", value=f"#{rank}", inline=True)
-    embed.add_field(name="📊 Progress to Next Milestone", value=f"`{progress_bar}` {progress}/5\n*Next milestone: {next_milestone} karma*", inline=False)
+    embed.add_field(name="📊 Progress to Next Milestone", value=f"`{progress_bar}` {progress}/50\n*Next milestone: {next_milestone} karma*", inline=False)
     embed.set_footer(text="🌟 Karma reflects positive contributions!", icon_url=bot.user.display_avatar.url)
 
     await interaction.response.send_message(embed=embed)
@@ -196,9 +198,11 @@ async def my_karma(interaction: discord.Interaction):
     rank = next((i + 1 for i, u in enumerate(users_sorted) if u['user_id'] == str(target_user.id)), len(users_sorted) + 1)
 
     # Calculate progress to next milestone
-    next_milestone = ((karma // 5) + 1) * 5
-    progress = karma % 5
-    progress_bar = "█" * progress + "░" * (5 - progress)
+    next_milestone = ((karma // 50) + 1) * 50
+    progress = karma % 50
+    progress_segments = 10  # Show progress in 10 segments (each segment = 5 karma)
+    filled_segments = progress // 5
+    progress_bar = "█" * filled_segments + "░" * (progress_segments - filled_segments)
 
     embed = discord.Embed(
         title=f"✨ {target_user.display_name}'s Karma",
@@ -207,7 +211,7 @@ async def my_karma(interaction: discord.Interaction):
     embed.set_thumbnail(url=target_user.display_avatar.url)
     embed.add_field(name="🌟 Karma Points", value=f"**{karma}** points", inline=True)
     embed.add_field(name="🏆 Server Rank", value=f"#{rank}", inline=True)
-    embed.add_field(name="📊 Progress to Next Milestone", value=f"`{progress_bar}` {progress}/5\n*Next milestone: {next_milestone} karma*", inline=False)
+    embed.add_field(name="📊 Progress to Next Milestone", value=f"`{progress_bar}` {progress}/50\n*Next milestone: {next_milestone} karma*", inline=False)
     embed.set_footer(text="🌟 Karma reflects positive contributions!", icon_url=bot.user.display_avatar.url)
 
     await interaction.response.send_message(embed=embed)
@@ -341,12 +345,14 @@ async def send_karma_levelup(guild, user, karma):
             quote = random.choice(KARMA_QUOTES)
 
             # Calculate milestone
-            milestone = (karma // 5) * 5
-            next_milestone = milestone + 5
+            milestone = (karma // 50) * 50
+            next_milestone = milestone + 50
 
             # Create progress bar for next milestone
-            progress = karma % 5
-            progress_bar = "█" * progress + "░" * (5 - progress)
+            progress = karma % 50
+            progress_segments = 10  # Show progress in 10 segments (each segment = 5 karma)
+            filled_segments = progress // 5
+            progress_bar = "█" * filled_segments + "░" * (progress_segments - filled_segments)
 
             # Select celebration GIF based on milestone level
             celebration_gifs = [
@@ -370,7 +376,7 @@ async def send_karma_levelup(guild, user, karma):
             embed.set_thumbnail(url=user.display_avatar.url)
             embed.add_field(
                 name="📊 Progress to Next Milestone",
-                value=f"`{progress_bar}` {progress}/5\n🎯 *Next celebration at: {next_milestone} karma*",
+                value=f"`{progress_bar}` {progress}/50\n*Next milestone: {next_milestone} karma*",
                 inline=False
             )
             embed.add_field(
@@ -450,8 +456,8 @@ async def on_reaction_add(reaction, user):
 
     # Check for level up only on positive karma
     if karma_change > 0:
-        old_milestone = (old_karma // 5) * 5
-        new_milestone = (new_karma // 5) * 5
+        old_milestone = (old_karma // 50) * 50
+        new_milestone = (new_karma // 50) * 50
 
-        if new_milestone > old_milestone and new_karma >= 5:
+        if new_milestone > old_milestone and new_karma >= 50:
             await send_karma_levelup(reaction.message.guild, reaction.message.author, new_karma)
