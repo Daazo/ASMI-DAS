@@ -668,6 +668,11 @@ class HelpView(discord.ui.View):
             value="**Usage:** `/setup ticket_support_role role:@support`\n**Description:** Set support role to be mentioned when tickets are created", 
             inline=False
         )
+        embed.add_field(
+            name="🔴 **Economy Category Setup**", 
+            value="**`/setecocategory #category`** - Setup organized economy channels\n**`/setgamecategory #category`** - Setup game channels for slots/trivia\n**`/setbankcategory #category`** - Setup banking channels for deposits/trades\n**Auto-creates:** Themed channels with proper permissions", 
+            inline=False
+        )
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
     
@@ -810,7 +815,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="🔧 **Admin Commands**", 
-            value="**🔴 `/addcoins @user <amount>`** - Give coins to users (1-10,000)\n**🔴 `/removecoins @user <amount>`** - Remove coins from users\n**Full logging:** All economy actions logged automatically", 
+            value="**🔴 `/addcoins @user <amount>`** - Give coins to users (1-10,000)\n**🔴 `/removecoins @user <amount>`** - Remove coins from users\n**🔴 Category Setup:** `/setecocategory`, `/setgamecategory`, `/setbankcategory`\n**Full logging:** All economy actions logged automatically", 
             inline=False
         )
         embed.add_field(
