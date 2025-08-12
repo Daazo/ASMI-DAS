@@ -1194,6 +1194,7 @@ from ticket_system import *
 from timeout_system import *
 from autorole import *
 from economy_system import *  # Vaazha Coins economy
+from economy_setup import *  # Economy category setup
 
 # Import timed roles system - ensure commands are loaded
 from timed_roles import *
