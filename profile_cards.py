@@ -254,16 +254,24 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     draw.text((400, stats_y + 55), f"{owner_status_emoji} {owner_status}", fill=status_color, font=text_font)
     draw.text((400, stats_y + 80), "🇮🇳 From God's Own Country", fill=ACCENT_COLOR, font=text_font)
 
-    # Features section
-    features_y = 280
+    # Features section - reorganized to avoid overlap
+    features_y = 270
     draw.text((50, features_y), "⚡ KEY FEATURES", fill=COIN_COLOR, font=subtitle_font)
-    features_text = "✨ Karma System • 🪙 Economy • 🎫 Tickets • 🛡️ Moderation • 🎮 Games"
-    draw.text((50, features_y + 25), features_text, fill=(200, 200, 200), font=small_font)
+    
+    # Column 1 features
+    draw.text((50, features_y + 25), "✨ Karma System", fill=(200, 200, 200), font=small_font)
+    draw.text((50, features_y + 45), "🪙 Economy", fill=(200, 200, 200), font=small_font)
+    draw.text((50, features_y + 65), "🎫 Tickets", fill=(200, 200, 200), font=small_font)
+    
+    # Column 2 features
+    draw.text((180, features_y + 25), "🛡️ Moderation", fill=(200, 200, 200), font=small_font)
+    draw.text((180, features_y + 45), "🎮 Games", fill=(200, 200, 200), font=small_font)
+    draw.text((180, features_y + 65), "🎭 Roles", fill=(200, 200, 200), font=small_font)
 
-    # Version and build info
-    draw.text((400, features_y), "🔧 BUILD INFO", fill=(155, 89, 182), font=subtitle_font)
-    draw.text((400, features_y + 25), "Version: Latest Stable", fill=(200, 200, 200), font=small_font)
-    draw.text((400, features_y + 45), "Framework: discord.py", fill=(200, 200, 200), font=small_font)
+    # Version and build info - moved to the right side
+    draw.text((500, features_y), "🔧 BUILD INFO", fill=(155, 89, 182), font=subtitle_font)
+    draw.text((500, features_y + 25), "Version: Latest Stable", fill=(200, 200, 200), font=small_font)
+    draw.text((500, features_y + 45), "Framework: discord.py", fill=(200, 200, 200), font=small_font)
 
     # Footer with special message
     footer_y = CARD_HEIGHT - 35

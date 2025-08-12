@@ -20,7 +20,7 @@ import requests
 
 # Bot configuration
 BOT_NAME = "ᴠᴀᴀᴢʜᴀ"
-BOT_TAGLINE = "🤖 Your friendly server assistant from God's Own Country 🌴🇮🇳"
+BOT_TAGLINE = "Your friendly server assistant from God's Own Country"
 BOT_OWNER_NAME = "Daazo|Rio"
 BOT_OWNER_DESCRIPTION = "Creator and developer of ᴠᴀᴀᴢʜᴀ bot. Passionate developer from Kerala, India 🇮🇳"
 
