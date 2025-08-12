@@ -20,7 +20,7 @@ async def setup_economy_category(interaction: discord.Interaction, category: dis
         
         # Create economy channels with cool names and emojis
         channels_to_create = [
-            ("📋-vaazha-info", "Vaazha Coins economy features and rules! 📖", True),  # Bot-only channel
+            ("📋-vaazha-coins-info", "Vaazha Coins economy features and rules! 📖", True),  # Bot-only channel
             ("💰-coin-vault", "Check your balance, claim daily & weekly rewards! 🪙", False),
             ("🍌-banana-jobs", "Work Kerala-themed jobs and earn Vaazha Coins! 🌴", False),
             ("🏆-rich-leaderboard", "See who's the richest in our community! 💎", False),
@@ -73,7 +73,7 @@ async def setup_economy_category(interaction: discord.Interaction, category: dis
         
         # Update server data with channel IDs
         economy_channels = {
-            'info_channel': discord.utils.get(category.channels, name="📋-vaazha-info"),
+            'info_channel': discord.utils.get(category.channels, name="📋-vaazha-coins-info"),
             'balance_channel': discord.utils.get(category.channels, name="💰-coin-vault"),
             'work_channel': discord.utils.get(category.channels, name="🍌-banana-jobs"),
             'richest_channel': discord.utils.get(category.channels, name="🏆-rich-leaderboard"),
