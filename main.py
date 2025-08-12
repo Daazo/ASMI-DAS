@@ -749,6 +749,11 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
+            name="🎨 **Profile Cards** (NEW!)", 
+            value="**🟢 `/profile [user]`** - Generate beautiful profile card with avatar, karma, coins\n**🟡 `/servercard`** - Create server overview card with stats and info\n**Features:** Circular avatars, progress bars, karma levels, wealth display", 
+            inline=False
+        )
+        embed.add_field(
             name="🔧 **Admin Setup Commands**", 
             value="**🔴 `/setkarmacategory #category`** - Setup organized karma channels\n**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma\n**🔴 `/resetkarma scope:server`** - Reset all server karma data\n**Auto-creates:** Rules, level-ups, and karma zone channels", 
             inline=False
@@ -1209,6 +1214,13 @@ try:
     from voice_commands import *
 except ImportError:
     print("Voice commands module not found, skipping...")
+
+# Import profile cards system
+try:
+    from profile_cards import *
+    print("✅ Profile cards system loaded")
+except ImportError as e:
+    print(f"⚠️ Profile cards module not found: {e}")
 
 # Music system removed due to compatibility issues
 
