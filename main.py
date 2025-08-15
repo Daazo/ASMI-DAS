@@ -21,8 +21,6 @@ BOT_NAME = "ᴠᴀᴀᴢʜᴀ"
 BOT_TAGLINE = "Your friendly server assistant from God's Own Country"
 BOT_OWNER_NAME = "Daazo|Rio"
 BOT_OWNER_DESCRIPTION = "Creator and developer of ᴠᴀᴀᴢʜᴀ bot. Passionate developer from Kerala, India 🇮🇳"
-BOT_SUPPORT_SERVER_ID = 1404842638615777331
-BOT_LOGS_CATEGORY_ID = 1405764734812160053
 
 # MongoDB setup
 MONGO_URI = os.getenv('MONGO_URI')
@@ -227,14 +225,6 @@ async def on_ready():
     # Start MongoDB ping task
     if mongo_client:
         bot.loop.create_task(ping_mongodb())
-    
-    # Initialize support server logging
-    try:
-        from support_server_logs import on_ready_support_logging
-        await on_ready_support_logging()
-        print("✅ Support server logging initialized")
-    except Exception as e:
-        print(f"⚠️ Could not initialize support server logging: {e}")
 
 @bot.event
 async def on_guild_join(guild):
@@ -263,13 +253,6 @@ async def on_message(message):
 
     # Handle DM mentions
     if not message.guild:  # This is a DM
-        # Log all DM messages to support server
-        try:
-            from support_server_logs import log_dm_to_support
-            await log_dm_to_support(message.author, message.content)
-        except:
-            pass  # Don't break if logging fails
-        
         # Check for bot mention in DMs - Send contact info
         if (bot.user in message.mentions or
             f"<@{bot.user.id}>" in message.content or
@@ -490,11 +473,6 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
         "reactionrole": {
             "title": "🎭 **REACTION ROLE Command Help**",
             "description": "**Usage:** `/reactionrole message:\"text\" emoji:😀 role:@role channel:#channel`\n\n**What it does:** Sets up reaction roles for users\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/reactionrole message:\"React for roles!\" emoji:😀 role:@Member channel:#roles`",
-            "color": 0x9b59b6
-        },
-        "autorole": {
-            "title": "🎭 **AUTOROLE Command Help**",
-            "description": "**Usage:** `/autorole action:set/remove role:@role`\n\n**What it does:** Configure auto role for new members\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/autorole action:set role:@Member`",
             "color": 0x9b59b6
         },
 
@@ -801,11 +779,6 @@ class HelpView(discord.ui.View):
         embed.add_field(
             name="🔴 `/setup ticket_support_role role`",
             value="**Usage:** `/setup ticket_support_role role:@support`\n**Description:** Set support role to be mentioned when tickets are created",
-            inline=False
-        )
-        embed.add_field(
-            name="🔴 `/autorole action role`",
-            value="**Usage:** `/autorole action:set/remove role:@role`\n**Description:** Configure auto role assignment for new members",
             inline=False
         )
         embed.add_field(
@@ -1499,13 +1472,6 @@ try:
     print("✅ Profile cards system loaded")
 except ImportError as e:
     print(f"⚠️ Profile cards module not found: {e}")
-
-# Import support server logging system
-try:
-    from support_server_logs import *
-    print("✅ Support server logging system loaded")
-except ImportError as e:
-    print(f"⚠️ Support server logging system not found: {e}")
 
 # Music system removed due to compatibility issues
 
