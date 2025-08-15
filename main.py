@@ -508,7 +508,10 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
 
 @bot.event
 async def on_member_join(member):
-    """Send welcome message, DM, and assign auto role"""
+    """Send welcome message, DM, assign auto role, and run security checks"""
+    # Run security checks first
+    await on_member_join_security_check(member)
+    
     server_data = await get_server_data(member.guild.id)
 
     # Auto role assignment
@@ -620,6 +623,17 @@ async def on_member_remove(member):
         await member.send(embed=embed, view=view)
     except:
         pass  # User has DMs disabled
+
+# Security event hooks
+@bot.event
+async def on_guild_channel_delete(channel):
+    """Security hook for channel deletions"""
+    await on_guild_channel_delete_security(channel)
+
+@bot.event
+async def on_member_update(before, after):
+    """Security hook for member updates"""
+    await on_member_update_security(before, after)
 
 # Help Command Callback
 async def help_command_callback(interaction):
@@ -923,7 +937,52 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • 🌴 Welcome to God's Own Economy!")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Advanced Features", style=discord.ButtonStyle.danger, emoji="🎭", row=2)
+    @discord.ui.button(label="Security & Safety", style=discord.ButtonStyle.danger, emoji="🛡️", row=2)
+    async def security_help(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="🛡️ **Security & Safety Features**",
+            description="*Comprehensive security system to protect your server from raids, spam, malicious links, and unauthorized actions.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            color=0xe74c3c
+        )
+        embed.add_field(
+            name="🔴 `/security feature enabled [threshold]`",
+            value="**Features:** anti_raid, anti_nuke, permission_monitoring, auto_ban, verification_system\n**Description:** Configure all security features with custom thresholds\n**Example:** `/security anti_raid enabled:true threshold:10`",
+            inline=False
+        )
+        embed.add_field(
+            name="✅ **Verification System**",
+            value="**🔴 `/verification-setup #channel @role`** - Setup member verification\n**🟢 Click verification button** - New members verify to access server\n**Features:** Prevents unverified access, reduces bot/spam accounts",
+            inline=False
+        )
+        embed.add_field(
+            name="🛡️ **Anti-Raid Protection**",
+            value="**Auto-detects mass joins** (configurable threshold, default: 10 in 1 minute)\n**Sends instant alerts** to staff channels\n**Logs all raid attempts** with timestamps and member counts\n**Configurable sensitivity** for different server sizes",
+            inline=False
+        )
+        embed.add_field(
+            name="🚫 **Anti-Nuke Protection**",
+            value="**Monitors mass deletions** - channels, roles, bans\n**Instant staff alerts** when thresholds exceeded\n**Tracks suspicious activity** patterns\n**Protects against compromised accounts** performing mass actions",
+            inline=False
+        )
+        embed.add_field(
+            name="⚠️ **Auto-Timeout System** (Already Active)",
+            value="**🔴 `/timeout-settings feature enabled`** - Configure auto-timeouts\n**Bad Words:** Auto-timeout for inappropriate language (10m+)\n**Spam Detection:** Auto-timeout for message spam (5m+)\n**Link Protection:** Auto-timeout for unauthorized links (8m+)\n**Escalating Penalties:** Longer timeouts for repeat offenders",
+            inline=False
+        )
+        embed.add_field(
+            name="🤖 **Bot & Role Whitelist**",
+            value="**🔴 `/whitelist add/remove bot/role @target`** - Manage security whitelist\n**Approved bots only** - Only whitelisted bots can perform sensitive actions\n**Role protection** - Whitelist high-permission roles\n**View current whitelist** with `/whitelist list`",
+            inline=False
+        )
+        embed.add_field(
+            name="👁️ **Advanced Monitoring**",
+            value="**Permission Monitoring:** Alerts when users get admin/dangerous permissions\n**Auto-Ban System:** Automatically bans suspicious/new accounts\n**Security Logs:** Detailed logs of all security events and actions\n**Real-time Alerts:** Instant notifications to staff channels",
+            inline=False
+        )
+        embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • 🛡️ = Advanced Server Protection")
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Advanced Features", style=discord.ButtonStyle.secondary, emoji="🎭", row=3)
     async def advanced_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🎭 **Advanced Features & Tools**",
@@ -938,7 +997,7 @@ class HelpView(discord.ui.View):
 
         embed.add_field(
             name="📊 **Comprehensive Logging System**",
-            value="**All Logs:** Combined logging channel for everything\n**Moderation:** Kicks, bans, mutes, voice actions\n**Economy:** Coin transactions, karma purchases, admin actions\n**Tickets:** Creation, closing, reopening events\n**Setup:** All configuration changes\n**Communication:** Announcements, polls, messages",
+            value="**All Logs:** Combined logging channel for everything\n**Moderation:** Kicks, bans, mutes, voice actions\n**Economy:** Coin transactions, karma purchases, admin actions\n**Tickets:** Creation, closing, reopening events\n**Setup:** All configuration changes\n**Communication:** Announcements, polls, messages\n**Security:** Anti-raid, anti-nuke, permission changes",
             inline=False
         )
         embed.add_field(
@@ -1384,6 +1443,7 @@ from timeout_system import *
 from autorole import *
 from economy_system import *  # Vaazha Coins economy
 from economy_setup import *  # Economy category setup
+from security_system import *  # Security features
 
 # Import timed roles system - ensure commands are loaded
 from timed_roles import *
