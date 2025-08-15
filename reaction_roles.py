@@ -38,6 +38,12 @@ async def reaction_role_setup(
         )
 
         async def on_submit(self, modal_interaction: discord.Interaction):
+            # If this is not from a modal, create the modal interface
+            if not hasattr(modal_interaction, 'data') or 'components' not in modal_interaction.data:
+                # Show modal
+                await modal_interaction.response.send_modal(self)
+                return
+                
             await modal_interaction.response.defer()
 
             try:
@@ -150,16 +156,9 @@ async def reaction_role_setup(
             except Exception as e:
                 await modal_interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
 
-    # Show the modal
+    # Show the modal properly
     modal = ReactionRoleModal()
-    await interaction.followup.send("Opening reaction role setup form...", ephemeral=True)
-    try:
-        await interaction.user.send("Please fill out the reaction role setup form that should appear in Discord!", embed=discord.Embed(title="🎭 Reaction Role Setup", description="A modal should have appeared in the server. If not, please try the command again.", color=0x9b59b6))
-    except:
-        pass
-    
-    # This is a workaround since we can't send modal in followup
-    await interaction.edit_original_response(content="Please use the reaction role setup form that should appear!")
+    await interaction.response.send_modal(modal)
 
 # Alternative command for quick single reaction role setup
 @bot.tree.command(name="quickreactionrole", description="🎭 Quick setup for single reaction role")

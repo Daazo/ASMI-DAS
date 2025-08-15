@@ -188,19 +188,37 @@ async def on_ready():
     )
 
     try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        # First sync globally to ensure all servers get commands
+        synced_global = await bot.tree.sync()
+        print(f"Synced {len(synced_global)} global command(s)")
+        
+        # Then sync to all guilds the bot is in for immediate visibility
+        guild_sync_count = 0
+        for guild in bot.guilds:
+            try:
+                await bot.tree.sync(guild=guild)
+                guild_sync_count += 1
+            except Exception as e:
+                print(f"Failed to sync commands for guild {guild.name}: {e}")
+        
+        print(f"Synced commands to {guild_sync_count} guild(s)")
 
         # Debug: List all registered commands
         all_commands = [cmd.name for cmd in bot.tree.get_commands()]
-        print(f"📋 Registered commands: {', '.join(all_commands)}")
+        all_commands.sort()  # Sort for better readability
+        print(f"📋 Registered commands ({len(all_commands)}): {', '.join(all_commands)}")
 
-        # Check specifically for timed role commands
+        # Check specifically for important command groups
+        reaction_role_commands = [cmd for cmd in ['reactionrole', 'quickreactionrole', 'listreactionroles'] if cmd in all_commands]
+        auto_remove_commands = [cmd for cmd in ['autoremoverole'] if cmd in all_commands]
         timed_role_commands = [cmd for cmd in ['giverole', 'removerole', 'timedroles'] if cmd in all_commands]
+        
+        if reaction_role_commands:
+            print(f"✅ Reaction role commands: {', '.join(reaction_role_commands)}")
+        if auto_remove_commands:
+            print(f"✅ Auto-remove commands: {', '.join(auto_remove_commands)}")
         if timed_role_commands:
-            print(f"✅ Timed role commands registered: {', '.join(timed_role_commands)}")
-        else:
-            print("⚠️ Timed role commands not found in registered commands")
+            print(f"✅ Timed role commands: {', '.join(timed_role_commands)}")
 
     except Exception as e:
         print(f"Failed to sync commands: {e}")
@@ -1002,6 +1020,11 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
+            name="🔄 **Auto-Remove Role System** (NEW!)",
+            value="**🔴 `/autoremoverole add @remove_role @reason_role`** - Auto-remove role when user gets another\n**🔴 `/autoremoverole remove @reason_role`** - Remove auto-remove rule\n**🟡 `/autoremoverole list`** - View all active auto-remove rules\n**Use case:** Remove @Unverified when user gets @Member role automatically",
+            inline=False
+        )
+        embed.add_field(
             name="✨ **New Reaction Role Features**",
             value="**Multiple Emoji/Roles:** Up to 10 emoji:role pairs per message\n**Auto-Remove Role:** Automatically remove specified role when user gets any reaction role\n**Interactive Setup:** User-friendly form for multiple pairs\n**Format:** 🎯:@Role1 (one per line in setup form)",
             inline=False
@@ -1472,6 +1495,13 @@ try:
     print("✅ Profile cards system loaded")
 except ImportError as e:
     print(f"⚠️ Profile cards module not found: {e}")
+
+# Import auto-remove role system
+try:
+    from autorole_system import *
+    print("✅ Auto-remove role system loaded")
+except ImportError as e:
+    print(f"⚠️ Auto-remove role system not found: {e}")
 
 # Music system removed due to compatibility issues
 
