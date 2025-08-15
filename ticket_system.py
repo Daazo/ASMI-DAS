@@ -234,7 +234,7 @@ class CloseReopenedTicketView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label='Close Ticket', style=discord.ButtonStyle.danger, emoji='🔒', custom_id='close_reopened_ticket_button')
+    @discord.ui.button(label='Close Ticket', style=discord.ButtonStyle.danger, emoji='🔒', custom_id='ticket_close_button')
     async def close_reopened_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Check if user has moderator permissions OR ticket support role
         has_mod_permission = await has_permission(interaction, "junior_moderator")
