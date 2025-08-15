@@ -320,6 +320,7 @@ async def work(interaction: discord.Interaction):
     embed.set_footer(text="🍌 Hard work pays off in Kerala style!", icon_url=bot.user.display_avatar.url)
 
     await interaction.response.send_message(embed=embed)
+    await log_action(interaction.guild.id, "economy", f"🪙 [WORK] {interaction.user} earned {earnings} coins from {job['name']}")
 
 @bot.tree.command(name="buykarma", description="✨ Buy karma points with Vaazha Coins")
 @app_commands.describe(amount="Amount of karma to buy (1 karma = 10 coins)")
@@ -473,6 +474,11 @@ async def slots(interaction: discord.Interaction, bet: int):
 
     await interaction.response.send_message(embed=embed)
 
+    if winnings > 0:
+        await log_action(interaction.guild.id, "economy", f"🪙 [SLOTS] {interaction.user} won {winnings} coins (bet: {bet})")
+    else:
+        await log_action(interaction.guild.id, "economy", f"🪙 [SLOTS] {interaction.user} lost {bet} coins")
+
 @bot.tree.command(name="trivia", description="🧠 Answer Kerala trivia questions for rewards")
 async def trivia(interaction: discord.Interaction):
     # Check if command is used in correct channel
@@ -519,6 +525,7 @@ async def trivia(interaction: discord.Interaction):
             color=0x43b581
         )
         await interaction.followup.send(embed=embed)
+        await log_action(interaction.guild.id, "economy", f"🪙 [TRIVIA] {interaction.user} answered correctly and earned {question_data['reward']} coins")
 
     except asyncio.TimeoutError:
         embed = discord.Embed(
@@ -527,6 +534,7 @@ async def trivia(interaction: discord.Interaction):
             color=0xe74c3c
         )
         await interaction.followup.send(embed=embed)
+        await log_action(interaction.guild.id, "economy", f"🪙 [TRIVIA] {interaction.user} failed to answer trivia question in time")
 
 @bot.tree.command(name="richest", description="🏆 Show the richest members leaderboard")
 async def richest(interaction: discord.Interaction):
@@ -632,6 +640,7 @@ async def deposit(interaction: discord.Interaction, amount: str):
     )
     embed.set_footer(text="🌴 Your coins are safe in the Kerala Central Bank!", icon_url=bot.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
+    await log_action(interaction.guild.id, "economy", f"🪙 [DEPOSIT] {interaction.user} deposited {deposit_amount} coins to bank")
 
 @bot.tree.command(name="withdraw", description="💸 Withdraw coins from your bank account")
 @app_commands.describe(amount="Amount to withdraw")
@@ -683,6 +692,7 @@ async def withdraw(interaction: discord.Interaction, amount: str):
     )
     embed.set_footer(text="🌴 Enjoy spending your Kerala coins!", icon_url=bot.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
+    await log_action(interaction.guild.id, "economy", f"🪙 [WITHDRAW] {interaction.user} withdrew {withdraw_amount} coins from bank")
 
 @bot.tree.command(name="trade", description="🤝 Send coins to another user")
 @app_commands.describe(user="User to send coins to", amount="Amount to send")
