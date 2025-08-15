@@ -8,7 +8,8 @@ from main import bot, has_permission, get_server_data, update_server_data, log_a
     action="What to setup",
     value="Value to set",
     role="Role to assign",
-    channel="Channel to set"
+    channel="Channel to set",
+    category="Category for organized logging"
 )
 @app_commands.choices(action=[
     app_commands.Choice(name="main_moderator", value="main_moderator"),
@@ -18,14 +19,16 @@ from main import bot, has_permission, get_server_data, update_server_data, log_a
     app_commands.Choice(name="logs", value="logs"),
     app_commands.Choice(name="karma_channel", value="karma_channel"),
     app_commands.Choice(name="ticket_support_role", value="ticket_support_role"),
-    app_commands.Choice(name="auto_role", value="auto_role")
+    app_commands.Choice(name="auto_role", value="auto_role"),
+    app_commands.Choice(name="log_category", value="log_category")
 ])
 async def setup(
     interaction: discord.Interaction,
     action: str,
     value: str = None,
     role: discord.Role = None,
-    channel: discord.TextChannel = None
+    channel: discord.TextChannel = None,
+    category: discord.CategoryChannel = None
 ):
     # Check permissions
     if action == "main_moderator":
@@ -220,3 +223,93 @@ async def setup(
         embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
         await interaction.response.send_message(embed=embed)
         await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Ticket support role set to {role.name} by {interaction.user}")
+
+    elif action == "log_category":
+        if not category:
+            await interaction.response.send_message("❌ Please specify a category for organized logging channels!", ephemeral=True)
+            return
+
+        # Defer the response to prevent timeout
+        await interaction.response.defer()
+
+        try:
+            # Store the category
+            await update_server_data(interaction.guild.id, {'log_category': str(category.id)})
+            
+            # Get category permissions to inherit
+            overwrites = category.overwrites
+            
+            # Create all log channels with proper names and descriptions
+            log_channels_to_create = [
+                ("📋-general-logs", "General commands and bot usage logs 🤖", False),
+                ("🛡️-moderation-logs", "Moderation commands and actions logs ⚔️", False),
+                ("⚙️-setup-config-logs", "Setup and configuration commands logs 🔧", False),
+                ("💬-communication-logs", "Communication commands and messages logs 📢", False),
+                ("✨-karma-logs", "Karma system commands and level-up logs 🌟", False),
+                ("🪙-economy-logs", "Economy system commands and transactions logs 💰", False),
+                ("🎫-ticket-logs", "Ticket system creation and management logs 🎟️", False),
+                ("🎭-reaction-role-logs", "Reaction role verification and assignment logs 🎪", False),
+                ("👋-welcome-logs", "Member join and welcome message logs 🎊", False),
+                ("🔊-voice-logs", "Voice channel join, leave, and activity logs 🎵", False),
+                ("🕰️-timed-role-logs", "Timed role assignments and removals logs ⏰", False),
+                ("🔒-timeout-logs", "Auto-timeout system and penalty logs ⚠️", False)
+            ]
+            
+            created_channels = []
+            log_channel_ids = {}
+            
+            for channel_name, description, bot_only in log_channels_to_create:
+                # Check if channel already exists
+                existing_channel = discord.utils.get(category.channels, name=channel_name)
+                if not existing_channel:
+                    # Create channel with inherited permissions
+                    channel_overwrites = overwrites.copy()
+                    
+                    # If bot_only, restrict to bot and admins only
+                    if bot_only:
+                        channel_overwrites[interaction.guild.default_role] = discord.PermissionOverwrite(
+                            read_messages=False, send_messages=False
+                        )
+                        channel_overwrites[interaction.guild.me] = discord.PermissionOverwrite(
+                            read_messages=True, send_messages=True
+                        )
+                    
+                    channel = await interaction.guild.create_text_channel(
+                        name=channel_name,
+                        category=category,
+                        overwrites=channel_overwrites,
+                        topic=description
+                    )
+                    created_channels.append(channel)
+                    
+                    # Send initial message to log channels
+                    embed = discord.Embed(
+                        title=f"🌴 **{channel_name.replace('-', ' ').title()} Channel**",
+                        description=f"**{description}**\n\n*This channel will automatically receive relevant bot logs.*\n\n**🤖 Bot:** {interaction.guild.me.mention}\n**Setup by:** {interaction.user.mention}\n**Setup time:** {discord.utils.format_dt(discord.utils.utcnow())}",
+                        color=0x43b581
+                    )
+                    embed.set_footer(text="🌴 ᴠᴀᴀᴢʜᴀ Logging System", icon_url=interaction.guild.me.display_avatar.url)
+                    await channel.send(embed=embed)
+                
+                # Store channel ID for log mapping
+                log_key = channel_name.split('-')[1]  # Extract key from channel name
+                if existing_channel:
+                    log_channel_ids[log_key] = str(existing_channel.id)
+                else:
+                    log_channel_ids[log_key] = str(channel.id)
+            
+            # Update server data with organized log channels
+            await update_server_data(interaction.guild.id, {'organized_log_channels': log_channel_ids})
+            
+            embed = discord.Embed(
+                title="✅ Organized Logging System Setup Complete!",
+                description=f"**Category:** {category.mention}\n**Channels Created:** {len(created_channels)}\n**Total Log Channels:** {len(log_channels_to_create)}\n\n🎯 **Organized Logging Features:**\n📋 General logs for bot usage\n🛡️ Moderation action tracking\n⚙️ Setup and configuration logs\n💬 Communication command logs\n✨ Karma system activity\n🪙 Economy transactions\n🎫 Ticket management\n🎭 Reaction role verifications\n👋 Welcome system logs\n🔊 Voice activity tracking\n🕰️ Timed role management\n🔒 Auto-timeout system logs",
+                color=0x3498db
+            )
+            embed.set_footer(text="🌴 Professional logging system active!")
+            await interaction.followup.send(embed=embed)
+            
+            await log_action(interaction.guild.id, "setup", f"📋 [LOG SETUP] Organized logging system set up in {category.name} by {interaction.user}")
+            
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error setting up log category: {str(e)}", ephemeral=True)

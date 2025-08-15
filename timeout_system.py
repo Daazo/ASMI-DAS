@@ -155,6 +155,14 @@ async def timeout_user(member, guild, timeout_duration, offense_type, message_co
         log_channel = bot.get_channel(int(log_channels['moderation']))
     elif 'all' in log_channels:
         log_channel = bot.get_channel(int(log_channels['all']))
+    
+    # This is for the new setup command, will be refactored later
+    # Use generic 'timeout' log type if specific one is not found
+    log_type = 'timeout' 
+    if log_channel is None:
+        if 'all' in log_channels:
+            log_channel = bot.get_channel(int(log_channels['all']))
+            log_type = 'all' # If 'all' is the fallback, log it there
 
     try:
         # Check if bot has timeout permissions
@@ -283,7 +291,7 @@ async def remove_timeout(interaction: discord.Interaction, user: discord.Member)
         embed.set_footer(text="🤖 ᴠᴀᴀʀᴀ Moderation", icon_url=bot.user.display_avatar.url)
 
         await interaction.response.send_message(embed=embed)
-        await log_action(interaction.guild.id, "moderation", f"🔓 [TIMEOUT REMOVED] {user} timeout removed by {interaction.user}")
+        await log_action(interaction.guild.id, "timeout", f"⏰ [TIMEOUT REMOVED] {user} timeout removed by {interaction.user}")
 
         # Notify user via DM
         try:

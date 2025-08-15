@@ -45,7 +45,7 @@ async def check_expired_roles():
                     except:
                         pass  # User has DMs disabled
 
-                    await log_action(guild.id, "moderation", f"⏰ [TIMED ROLE EXPIRED] {role.name} removed from {member} automatically")
+                    await log_action(guild.id, "timed_roles", f"⏰ [TIMED ROLE] {role.name} automatically removed from {member} (expired)")
 
                 # Remove from database
                 await db.timed_roles.delete_one({'_id': role_data['_id']})
@@ -151,7 +151,7 @@ async def give_timed_role(
         if is_permanent:
             # Assign permanent role
             await user.add_roles(role, reason=f"Permanent role assigned by {interaction.user}")
-            
+
             # Send confirmation for permanent role
             embed = discord.Embed(
                 title="✅ **Permanent Role Assigned**",
@@ -174,7 +174,7 @@ async def give_timed_role(
                 pass  # User has DMs disabled
 
             await log_action(interaction.guild.id, "moderation", f"🎭 [PERMANENT ROLE] {role.name} assigned to {user} by {interaction.user}")
-        
+
         else:
             # Calculate expiry time for timed role
             expires_at = datetime.utcnow() + timedelta(seconds=duration_seconds)
@@ -215,7 +215,7 @@ async def give_timed_role(
             except:
                 pass  # User has DMs disabled
 
-            await log_action(interaction.guild.id, "moderation", f"🎭 [TIMED ROLE] {role.name} assigned to {user} by {interaction.user} for {format_duration(duration_seconds)}")
+            await log_action(interaction.guild.id, "timed_roles", f"🕰️ [TIMED ROLE] {role.name} given to {user} for {format_duration(duration_seconds)} by {interaction.user}")
 
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to assign this role!", ephemeral=True)
@@ -283,7 +283,7 @@ async def remove_role(
             pass  # User has DMs disabled
 
         action_text = "cancelled timed role" if was_timed else "removed role"
-        await log_action(interaction.guild.id, "moderation", f"🗑️ [ROLE REMOVED] {role.name} {action_text} from {user} by {interaction.user}")
+        await log_action(interaction.guild.id, "timed_roles", f"🕰️ [TIMED ROLE] {role.name} manually removed from {user} by {interaction.user}")
 
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to remove this role!", ephemeral=True)

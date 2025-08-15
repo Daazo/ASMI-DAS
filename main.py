@@ -66,6 +66,56 @@ async def update_server_data(guild_id, data):
 async def log_action(guild_id, log_type, message):
     """Log actions to appropriate channels"""
     server_data = await get_server_data(guild_id)
+    
+    # Check for organized logging system first
+    organized_logs = server_data.get('organized_log_channels', {})
+    if organized_logs:
+        # Map log types to organized channels
+        log_mapping = {
+            "general": "general",
+            "moderation": "moderation", 
+            "setup": "setup",
+            "communication": "communication",
+            "karma": "karma",
+            "economy": "economy",
+            "tickets": "ticket",
+            "reaction_role": "reaction",
+            "welcome": "welcome",
+            "voice": "voice",
+            "timed_roles": "timed",
+            "timeout": "timeout"
+        }
+        
+        mapped_channel = log_mapping.get(log_type)
+        if mapped_channel and mapped_channel in organized_logs:
+            channel = bot.get_channel(int(organized_logs[mapped_channel]))
+            if channel:
+                # Determine embed color based on log type
+                colors = {
+                    "general": 0x3498db,
+                    "moderation": 0xe74c3c,
+                    "setup": 0xf39c12,
+                    "communication": 0x43b581,
+                    "karma": 0x9b59b6,
+                    "economy": 0xf1c40f,
+                    "tickets": 0x3498db,
+                    "reaction_role": 0xe67e22,
+                    "welcome": 0x43b581,
+                    "voice": 0x9b59b6,
+                    "timed_roles": 0xf39c12,
+                    "timeout": 0xe74c3c
+                }
+                
+                embed = discord.Embed(
+                    description=message,
+                    color=colors.get(log_type, 0x3498db),
+                    timestamp=datetime.now()
+                )
+                embed.set_footer(text="🌴 ᴠᴀᴀᴢʜᴀ Logs", icon_url=bot.user.display_avatar.url)
+                await channel.send(embed=embed)
+                return
+    
+    # Fallback to old logging system
     log_channels = server_data.get('log_channels', {})
     
     # Send to specific log channel if set
@@ -498,6 +548,9 @@ async def on_member_join(member):
             embed.set_footer(text=f"🌴 Member #{member.guild.member_count}", icon_url=member.guild.icon.url if member.guild.icon else None)
             await welcome_channel.send(embed=embed)
     
+    # Log member joining
+    await log_action(member.guild.id, "welcome", f"🎊 [MEMBER JOIN] {member} ({member.id}) joined the server - Member #{member.guild.member_count}")
+    
     # Send DM to new member
     try:
         embed = discord.Embed(
@@ -517,8 +570,39 @@ async def on_member_join(member):
         pass  # User has DMs disabled
 
 @bot.event
+async def on_voice_state_update(member, before, after):
+    """Log voice channel activities"""
+    if member.bot:
+        return
+    
+    # Member joined a voice channel
+    if before.channel is None and after.channel is not None:
+        await log_action(member.guild.id, "voice", f"🔊 [VOICE JOIN] {member} joined {after.channel.name}")
+    
+    # Member left a voice channel
+    elif before.channel is not None and after.channel is None:
+        await log_action(member.guild.id, "voice", f"🔇 [VOICE LEAVE] {member} left {before.channel.name}")
+    
+    # Member moved between voice channels
+    elif before.channel is not None and after.channel is not None and before.channel != after.channel:
+        await log_action(member.guild.id, "voice", f"🔄 [VOICE MOVE] {member} moved from {before.channel.name} to {after.channel.name}")
+    
+    # Member was muted/unmuted
+    if before.mute != after.mute:
+        status = "muted" if after.mute else "unmuted"
+        await log_action(member.guild.id, "voice", f"🔇 [VOICE MUTE] {member} was {status} in {after.channel.name if after.channel else 'voice'}")
+    
+    # Member was deafened/undeafened
+    if before.deaf != after.deaf:
+        status = "deafened" if after.deaf else "undeafened"
+        await log_action(member.guild.id, "voice", f"🔇 [VOICE DEAF] {member} was {status} in {after.channel.name if after.channel else 'voice'}")
+
+@bot.event
 async def on_member_remove(member):
-    """Send goodbye DM"""
+    """Send goodbye DM and log"""
+    # Log member leaving
+    await log_action(member.guild.id, "welcome", f"👋 [MEMBER LEAVE] {member} ({member.id}) left the server")
+    
     try:
         embed = discord.Embed(
             title=f"**Hey {member.display_name}, we noticed you left {member.guild.name}** 😔",
