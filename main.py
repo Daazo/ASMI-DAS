@@ -239,77 +239,45 @@ async def on_message(message):
         if owner_id and (f"<@{owner_id}>" in message.content or 
                         f"<@!{owner_id}>" in message.content or 
                         "daazo" in message.content.lower()):
-            owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
-            embed = discord.Embed(
-                title="📢 DEVELOPER MENTION",
-                description=f"✨DAAZO ne vilicho: {owner_mention} aanu Vaazha Bot inte Developer🚀.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.",
-                color=0x3498db
-            )
-            embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
-            embed.set_thumbnail(url=bot.user.display_avatar.url)
-            sent_message = await message.channel.send(embed=embed)
-            # Auto delete after 1 minute
-            await asyncio.sleep(60)
+            # Add reactions instead of sending message
             try:
-                await sent_message.delete()
+                await message.add_reaction("👨‍💻")  # Developer emoji
+                await message.add_reaction("🚀")  # Rocket emoji
+                await message.add_reaction("💬")  # Chat emoji
             except:
                 pass
             return
         
         return  # Don't process other DM messages
     
-    
-    
-    # Check for owner mention - PRIORITY CHECK
+    # Check for owner mention in server - Use reactions instead of messages
     owner_id = os.getenv('BOT_OWNER_ID')
     if owner_id and (f"<@{owner_id}>" in message.content or 
                     f"<@!{owner_id}>" in message.content or 
                     "daazo" in message.content.lower()):
-        owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
-        embed = discord.Embed(
-            title="📢 DEVELOPER MENTION",
-                description=f"✨DAAZO ne vilicho: {owner_mention} aanu Vaazha Bot inte Developer🚀.\n🛠 For support, `/help` use cheyyu allenkil 💬 ee bot-ne DM cheyyu.",
-            color=0x3498db
-        )
-        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
-        embed.set_thumbnail(url=bot.user.display_avatar.url)
-        sent_message = await message.channel.send(embed=embed)
-        # Auto delete after 1 minute
-        await asyncio.sleep(60)
         try:
-            await sent_message.delete()
+            # Add developer-related reactions
+            await message.add_reaction("👨‍💻")  # Developer emoji
+            await message.add_reaction("🚀")  # Rocket emoji  
+            await message.add_reaction("🌴")  # Kerala/God's Own Country emoji
+            await message.add_reaction("💻")  # Computer emoji
         except:
             pass
-        return
+        # Continue processing other checks, don't return here
     
-    # Check for bot mention - PRIORITY CHECK  
+    # Check for bot mention - Use reactions instead of messages
     if (bot.user in message.mentions or 
         f"<@{bot.user.id}>" in message.content or 
         f"<@!{bot.user.id}>" in message.content) and not message.content.startswith('/'):
-        owner_id = os.getenv('BOT_OWNER_ID')
-        owner_mention = f"<@{owner_id}>" if owner_id else "Contact via server"
-        
-        embed = discord.Embed(
-            title="👋🏼 Hello, I'm Vaazha Bot",
-                description=f"🍁Vaazha Bot anne – your server's assistant.\n🌴 Enthenkilum help venel, type /help.\nNeed assistance? Contact: {owner_mention}",
-            color=0x43b581
-        )
-        embed.set_thumbnail(url=bot.user.display_avatar.url)
-        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ-ʙᴏᴛ", icon_url=bot.user.display_avatar.url)
-        
-        view = discord.ui.View()
-        help_button = discord.ui.Button(label="📋 Commands", style=discord.ButtonStyle.primary, emoji="📋")
-        help_button.callback = lambda i: help_command_callback(i)
-        view.add_item(help_button)
-        
-        sent_message = await message.channel.send(embed=embed, view=view)
-        # Auto delete after 1 minute
-        await asyncio.sleep(60)
         try:
-            await sent_message.delete()
+            # Add bot-related reactions
+            await message.add_reaction("👋")  # Wave emoji
+            await message.add_reaction("🤖")  # Robot emoji
+            await message.add_reaction("❤️")  # Heart emoji
+            await message.add_reaction("🌴")  # Kerala emoji
         except:
             pass
-        return
+        # Continue processing other checks, don't return here
     
     # Karma system is handled via reactions and commands
     
