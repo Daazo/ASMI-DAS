@@ -82,8 +82,8 @@ async def log_action(guild_id, log_type, message):
             "voice": "voice",
             "timed_roles": "timed",
             "timeout": "timeout",
-            "profile": "profile",
-            "utility": "utility"
+            "profile": "general",  # Route profile logs to general
+            "utility": "general"   # Route utility logs to general
         }
 
         mapped_channel = log_mapping.get(log_type)

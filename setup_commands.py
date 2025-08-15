@@ -241,7 +241,7 @@ async def setup(
             
             # Create all log channels with proper names and descriptions
             log_channels_to_create = [
-                ("📋-general-logs", "General commands and bot usage logs 🤖", False),
+                ("📋-general-logs", "General commands and bot usage logs (includes ping, uptime, profile commands) 🤖", False),
                 ("🛡️-moderation-logs", "Moderation commands and actions logs ⚔️", False),
                 ("⚙️-setup-config-logs", "Setup and configuration commands logs 🔧", False),
                 ("💬-communication-logs", "Communication commands and messages logs 📢", False),
@@ -252,9 +252,7 @@ async def setup(
                 ("👋-welcome-logs", "Member join and welcome message logs 🎊", False),
                 ("🔊-voice-logs", "Voice channel join, leave, and activity logs 🎵", False),
                 ("🕰️-timed-role-logs", "Timed role assignments and removals logs ⏰", False),
-                ("🔒-timeout-logs", "Auto-timeout system and penalty logs ⚠️", False),
-                ("🎨-profile-logs", "Profile cards and visual command logs 📊", False),
-                ("🔧-utility-logs", "Utility commands like ping, uptime, info logs ⚙️", False)
+                ("🔒-timeout-logs", "Auto-timeout system and penalty logs ⚠️", False)
             ]
             
             created_channels = []
@@ -305,7 +303,7 @@ async def setup(
             
             embed = discord.Embed(
                 title="✅ Organized Logging System Setup Complete!",
-                description=f"**Category:** {category.mention}\n**Channels Created:** {len(created_channels)}\n**Total Log Channels:** {len(log_channels_to_create)}\n\n🎯 **Organized Logging Features:**\n📋 General logs for bot usage\n🛡️ Moderation action tracking\n⚙️ Setup and configuration logs\n💬 Communication command logs\n✨ Karma system activity\n🪙 Economy transactions\n🎫 Ticket management\n🎭 Reaction role verifications\n👋 Welcome system logs\n🔊 Voice activity tracking\n🕰️ Timed role management\n🔒 Auto-timeout system logs",
+                description=f"**Category:** {category.mention}\n**Channels Created:** {len(created_channels)}\n**Total Log Channels:** {len(log_channels_to_create)}\n\n🎯 **Organized Logging Features:**\n📋 General logs (includes ping, uptime, profile commands)\n🛡️ Moderation action tracking\n⚙️ Setup and configuration logs\n💬 Communication command logs\n✨ Karma system activity\n🪙 Economy transactions\n🎫 Ticket management\n🎭 Reaction role verifications\n👋 Welcome system logs\n🔊 Voice activity tracking\n🕰️ Timed role management\n🔒 Auto-timeout system logs",
                 color=0x3498db
             )
             embed.set_footer(text="🌴 Professional logging system active!")
