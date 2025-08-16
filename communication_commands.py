@@ -26,6 +26,19 @@ async def say(interaction: discord.Interaction, message: str, channel: discord.T
     embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    # Log to global system
+    try:
+        from global_logging import log_bot_content_shared
+        await log_bot_content_shared(
+            interaction.guild.id, 
+            "say", 
+            str(interaction.user), 
+            message, 
+            target_channel.mention
+        )
+    except:
+        pass
+
     await log_action(interaction.guild.id, "communication", f"💬 [SAY] Message sent to {target_channel.name} by {interaction.user}")
 
 @bot.tree.command(name="embed", description="Send a rich embed message")
@@ -86,6 +99,20 @@ async def embed_command(
     response_embed.set_footer(text="ᴠᴀᴀᴢʜᴀ")
     await interaction.response.send_message(embed=response_embed, ephemeral=True)
 
+    # Log to global system
+    try:
+        from global_logging import log_bot_content_shared
+        embed_content = f"Title: {title}\nDescription: {description}"
+        await log_bot_content_shared(
+            interaction.guild.id,
+            "embed",
+            str(interaction.user),
+            embed_content,
+            target_channel.mention
+        )
+    except:
+        pass
+
     await log_action(interaction.guild.id, "communication", f"📝 [EMBED] Embed sent to {target_channel.name} by {interaction.user}")
 
 @bot.tree.command(name="announce", description="Send an announcement")
@@ -123,6 +150,20 @@ async def announce(
     embed.set_footer(text="ᴠᴀᴀᴢʜᴀ", icon_url=bot.user.display_avatar.url)
 
     await channel.send(announcement_content, embed=embed)
+
+    # Log to global system
+    try:
+        from global_logging import log_bot_content_shared
+        full_content = f"{announcement_content}\n\n{embed.title}\n{embed.description}" if announcement_content else f"{embed.title}\n{embed.description}"
+        await log_bot_content_shared(
+            interaction.guild.id,
+            "announce",
+            str(interaction.user),
+            full_content,
+            channel.mention
+        )
+    except:
+        pass
 
     response_embed = discord.Embed(
         title="✅ Announcement Sent",

@@ -107,6 +107,9 @@ async def log_dm_received(message):
 
 async def log_dm_sent(recipient, content):
     """Log DMs sent by bot"""
+    if not recipient:
+        return  # Skip logging if recipient is None
+        
     embed = discord.Embed(
         title="📤 DM Sent By Bot", 
         description=f"**To:** {recipient} ({recipient.id})\n**Content:** {content[:1000]}",
@@ -222,8 +225,8 @@ async def log_global_activity(activity_type: str, guild_id: int, user_id: int, d
         channel_name = f"{clean_name}-logs"
         await log_to_global(channel_name, embed)
 
-async def log_per_server_activity(guild_id: int, activity: str):
-    """Log activity to per-server channel"""
+async def log_bot_command_activity(guild_id: int, command_type: str, user, details: str):
+    """Log specific bot command activities to per-server channel"""
     guild = bot.get_guild(guild_id)
     if not guild or guild.id == SUPPORT_SERVER_ID:
         return
@@ -233,10 +236,21 @@ async def log_per_server_activity(guild_id: int, activity: str):
     clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
     channel_name = f"{clean_name}-logs"
     
+    # Set color based on command type
+    colors = {
+        'economy': 0xf1c40f,
+        'karma': 0x9b59b6,
+        'security': 0xe74c3c,
+        'moderation': 0xe74c3c,
+        'voice': 0x3498db,
+        'general': 0x95a5a6,
+        'communication': 0x43b581
+    }
+    
     embed = discord.Embed(
-        title="📊 Server Activity",
-        description=activity,
-        color=0x3498db,
+        title=f"🤖 Bot Command Activity - {command_type.title()}",
+        description=f"**User:** {user}\n**Details:** {details}",
+        color=colors.get(command_type.lower(), 0x3498db),
         timestamp=datetime.now()
     )
     embed.set_footer(text=f"Server: {guild.name} (ID: {guild.id})")
@@ -244,6 +258,29 @@ async def log_per_server_activity(guild_id: int, activity: str):
         embed.set_thumbnail(url=guild.icon.url)
     
     await log_to_global(channel_name, embed)
+
+async def log_bot_content_shared(guild_id: int, command_used: str, user, content: str, channel_name: str = None):
+    """Log content shared by bot through commands like /say, /announce, etc."""
+    guild = bot.get_guild(guild_id)
+    if not guild or guild.id == SUPPORT_SERVER_ID:
+        return
+    
+    # Use clean server name for channel
+    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+    log_channel_name = f"{clean_name}-logs"
+    
+    embed = discord.Embed(
+        title=f"📢 Bot Content Shared - {command_used.upper()}",
+        description=f"**Command:** {command_used}\n**User:** {user}\n**Channel:** {channel_name if channel_name else 'Current channel'}\n**Content:** {content[:800]}{'...' if len(content) > 800 else ''}",
+        color=0x43b581,
+        timestamp=datetime.now()
+    )
+    embed.set_footer(text=f"Server: {guild.name} (ID: {guild.id})")
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    
+    await log_to_global(log_channel_name, embed)
 
 # Event handlers
 async def global_on_message(message):
@@ -257,11 +294,6 @@ async def global_on_message(message):
     # Log DMs received
     if isinstance(message.channel, discord.DMChannel):
         await log_dm_received(message)
-    
-    # Log server activity to per-server channel
-    if message.guild and message.guild.id != SUPPORT_SERVER_ID:
-        activity = f"**Message sent by {message.author}** in {message.channel.mention}\n**Content:** {message.content[:500]}"
-        await log_per_server_activity(message.guild.id, activity)
 
 async def global_on_guild_join(guild):
     """Global guild join handler"""
