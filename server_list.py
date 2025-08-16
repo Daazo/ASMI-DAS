@@ -6,8 +6,8 @@ from datetime import datetime
 from main import bot, log_action
 import os
 
-# Get support server channel ID from environment or use default
-SUPPORT_SERVER_CHANNEL_ID = int(os.getenv('SERVER_LIST_CHANNEL_ID', '1406243267632300052'))
+# Server list channel ID
+SUPPORT_SERVER_CHANNEL_ID = 1406243267632300052
 
 # Store the last sent message so it can be deleted
 last_servers_message = None
