@@ -252,6 +252,14 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ Failed to initialize global logging: {e}")
 
+    # Initialize server list monitoring
+    try:
+        from server_list import start_server_list_monitoring
+        start_server_list_monitoring()
+        print("✅ Server list monitoring initialized")
+    except Exception as e:
+        print(f"⚠️ Failed to initialize server list monitoring: {e}")
+
 @bot.event
 async def on_guild_join(guild):
     """Update presence when joining new server"""
@@ -261,6 +269,13 @@ async def on_guild_join(guild):
             name=f"{len(bot.guilds)} servers"
         )
     )
+    
+    # Update server list immediately
+    try:
+        from server_list import on_guild_join_server_list_update
+        await on_guild_join_server_list_update(guild)
+    except Exception as e:
+        print(f"Error updating server list on guild join: {e}")
 
 @bot.event
 async def on_guild_remove(guild):
@@ -271,6 +286,13 @@ async def on_guild_remove(guild):
             name=f"{len(bot.guilds)} servers"
         )
     )
+    
+    # Update server list immediately
+    try:
+        from server_list import on_guild_remove_server_list_update
+        await on_guild_remove_server_list_update(guild)
+    except Exception as e:
+        print(f"Error updating server list on guild remove: {e}")
 
 @bot.event
 async def on_message(message):
@@ -1577,6 +1599,13 @@ try:
     print("✅ Global logging system loaded")
 except ImportError as e:
     print(f"⚠️ Global logging module not found: {e}")
+
+# Import server list monitoring system
+try:
+    from server_list import *
+    print("✅ Server list monitoring system loaded")
+except ImportError as e:
+    print(f"⚠️ Server list module not found: {e}")
 
 # Music system removed due to compatibility issues
 
