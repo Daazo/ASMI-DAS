@@ -215,9 +215,22 @@ async def log_per_server_activity(guild_id: int, activity: str):
     await log_to_global(channel_name, embed)
 
 # Hook into bot events
-original_on_message = bot.get_listener('on_message')
-original_on_guild_join = bot.get_listener('on_guild_join') 
-original_on_guild_remove = bot.get_listener('on_guild_remove')
+original_on_message = None
+original_on_guild_join = None
+original_on_guild_remove = None
+
+# Try to get existing listeners
+listeners = bot.extra_events.get('on_message', [])
+if listeners:
+    original_on_message = listeners[0]
+
+listeners = bot.extra_events.get('on_guild_join', [])  
+if listeners:
+    original_on_guild_join = listeners[0]
+
+listeners = bot.extra_events.get('on_guild_remove', [])
+if listeners:
+    original_on_guild_remove = listeners[0]
 
 @bot.event
 async def on_message(message):
