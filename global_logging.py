@@ -82,7 +82,11 @@ async def setup_global_channels():
     # Create per-server channels for existing guilds
     for guild in bot.guilds:
         if guild.id != SUPPORT_SERVER_ID:  # Don't create logs for support server itself
-            channel_name = f"server-{guild.id}"
+            # Clean server name for channel naming
+            clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+            # Remove special characters and limit length
+            clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+            channel_name = f"{clean_name}-logs"
             await get_or_create_global_channel(channel_name)
     
     print(f"✅ Global logging system initialized with {len(global_log_channels)} channels")
@@ -150,14 +154,16 @@ async def log_command_error(interaction_or_ctx, error):
 
 async def log_guild_join_global(guild):
     """Log when bot joins a server"""
-    # Create guild-specific log channel
-    channel_name = f"server-{guild.id}"
+    # Create guild-specific log channel with clean name
+    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+    channel_name = f"{clean_name}-logs"
     await get_or_create_global_channel(channel_name)
     
     # Log the join event
     embed = discord.Embed(
         title="🎉 Bot Joined New Server",
-        description=f"**Server:** {guild.name}\n**ID:** {guild.id}\n**Owner:** {guild.owner}\n**Members:** {guild.member_count}",
+        description=f"**Server:** {guild.name}\n**ID:** {guild.id}\n**Owner:** {guild.owner}\n**Members:** {guild.member_count}\n**Log Channel:** {channel_name}",
         color=0x43b581,
         timestamp=datetime.now()
     )
@@ -167,9 +173,27 @@ async def log_guild_join_global(guild):
 
 async def log_guild_remove_global(guild):
     """Log when bot leaves a server"""
+    # Try to delete the server's log channel
+    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+    channel_name = f"{clean_name}-logs"
+    
+    try:
+        support_guild = bot.get_guild(SUPPORT_SERVER_ID)
+        if support_guild:
+            category = discord.utils.get(support_guild.categories, id=LOG_CATEGORY_ID)
+            if category:
+                channel = discord.utils.get(category.text_channels, name=channel_name)
+                if channel:
+                    await channel.delete()
+                    if channel_name in global_log_channels:
+                        del global_log_channels[channel_name]
+    except Exception as e:
+        print(f"Error deleting log channel for {guild.name}: {e}")
+    
     embed = discord.Embed(
         title="👋 Bot Left Server",
-        description=f"**Server:** {guild.name}\n**ID:** {guild.id}\n**Members:** {guild.member_count}",
+        description=f"**Server:** {guild.name}\n**ID:** {guild.id}\n**Members:** {guild.member_count}\n**Log Channel:** {channel_name} (deleted)",
         color=0xe74c3c,
         timestamp=datetime.now()
     )
@@ -192,8 +216,10 @@ async def log_global_activity(activity_type: str, guild_id: int, user_id: int, d
     )
     
     # Log to server-specific channel
-    if guild_id and guild_id != SUPPORT_SERVER_ID:
-        channel_name = f"server-{guild_id}"
+    if guild_id and guild_id != SUPPORT_SERVER_ID and guild:
+        clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+        clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+        channel_name = f"{clean_name}-logs"
         await log_to_global(channel_name, embed)
 
 async def log_per_server_activity(guild_id: int, activity: str):
@@ -202,7 +228,10 @@ async def log_per_server_activity(guild_id: int, activity: str):
     if not guild or guild.id == SUPPORT_SERVER_ID:
         return
     
-    channel_name = f"server-{guild.id}"
+    # Use clean server name for channel
+    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+    channel_name = f"{clean_name}-logs"
     
     embed = discord.Embed(
         title="📊 Server Activity",
@@ -210,7 +239,7 @@ async def log_per_server_activity(guild_id: int, activity: str):
         color=0x3498db,
         timestamp=datetime.now()
     )
-    embed.set_footer(text=f"Server: {guild.name}")
+    embed.set_footer(text=f"Server: {guild.name} (ID: {guild.id})")
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
     
