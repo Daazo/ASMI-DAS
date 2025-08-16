@@ -65,7 +65,7 @@ async def update_server_data(guild_id, data):
 async def log_action(guild_id, log_type, message):
     """Log actions to appropriate channels"""
     server_data = await get_server_data(guild_id)
-    
+
     # Send to global logging system
     try:
         from global_logging import log_global_activity
@@ -300,7 +300,7 @@ async def on_message(message):
             view.add_item(invite_button)
 
             sent_message = await message.channel.send(embed=embed, view=view)
-            
+
             # Log DM interaction globally
             try:
                 from global_logging import log_to_global
@@ -313,7 +313,7 @@ async def on_message(message):
                 await log_to_global("dm-logs", log_embed)
             except:
                 pass
-            
+
             # Auto delete after 1 minute
             await asyncio.sleep(60)
             try:
@@ -548,14 +548,14 @@ async def on_member_join(member):
     """Send welcome message, DM, assign auto role, and run security checks"""
     # Run security checks first
     await on_member_join_security_check(member)
-    
+
     # Log to global system
     try:
         from global_logging import log_per_server_activity
         await log_per_server_activity(member.guild.id, f"**New member joined:** {member} ({member.id})")
     except:
         pass
-    
+
     server_data = await get_server_data(member.guild.id)
 
     # Auto role assignment
@@ -610,11 +610,11 @@ async def on_member_join(member):
         embed.set_footer(text="🌴 Welcome to the community!", icon_url=bot.user.display_avatar.url)
 
         view = discord.ui.View()
-        invite_button = discord.ui.Button(label="🤖 Invite Bot", style=discord.ButtonStyle.link, url=f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot%20applications.commands", emoji="🤖")
+        invite_button = discord.ui.Button(label="🤖 Invite Bot to Other Servers", style=discord.ButtonStyle.link, url=f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot%20applications.commands", emoji="🤖")
         view.add_item(invite_button)
 
         await member.send(embed=embed, view=view)
-        
+
         # Log welcome DM globally
         try:
             from global_logging import on_bot_dm_send
@@ -682,7 +682,7 @@ async def on_member_remove(member):
     """Send goodbye DM and log"""
     # Log member leaving
     await log_action(member.guild.id, "welcome", f"👋 [MEMBER LEAVE] {member} ({member.id}) left the server")
-    
+
     # Log to global system
     try:
         from global_logging import log_per_server_activity
@@ -704,6 +704,13 @@ async def on_member_remove(member):
         view.add_item(invite_button)
 
         await member.send(embed=embed, view=view)
+
+        # Log goodbye DM globally
+        try:
+            from global_logging import log_dm_sent
+            await log_dm_sent(member, f"Goodbye message - Thank you for being part of {member.guild.name}")
+        except:
+            pass
     except:
         pass  # User has DMs disabled
 
@@ -731,7 +738,7 @@ async def help_command_callback(interaction):
 
     view = HelpView()
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-    
+
     await log_action(interaction.guild.id, "general", f"📋 [HELP] {interaction.user} used help command")
 
 # Professional Help View Class
@@ -808,7 +815,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="🟡 **Voice Moderation Commands**",
-            value="**`/mute @user`** - Mute user in voice channel\n**`/unmute @user`** - Unmute user in voice channel\n**`/movevc @user #channel`** - Move user to different voice channel\n**`/vckick @user`** - Kick user from voice channel\n**`/vclock`** - Lock current voice channel\n**`/vcunlock`** - Unlock voice channel\n**`/vclimit <0-99>`** - Set voice channel user limit",
+            value="**`/mute @user`** - Mute user in voice channel\n**`/unmute @user`** - Unmute user in voice channel\n**`/movevc @user #channel`** - Move user to different voice channel\n**`/vckick @user`** - Kick user from voice channel\n**`/vckick`** - Lock current voice channel\n**`/vcunlock`** - Unlock voice channel\n**`/vclimit <0-99>`** - Set voice channel user limit",
             inline=False
         )
         embed.add_field(
@@ -964,7 +971,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="🔴 `/ticketsetup action category channel description`",
-            value="**Usage:** `/ticketsetup action:open category:#tickets channel:#support description:\"Need help?\"`\n**Description:** Setup professional ticket system with clickable buttons\n**Actions:** open (setup button), close (set close category)",
+            value="**Usage:** `/ticketsetup action:open category:#tickets channel:#support description:\"Need help?\"`\n**Description:** Setup professional ticket system with clickable buttons\n**Actions:** open, close\n**Example:** `/ticketsetup action:open category:#tickets channel:#support`",
             inline=False
         )
         embed.add_field(
@@ -1208,7 +1215,7 @@ async def ping(interaction: discord.Interaction):
     )
     embed.set_footer(text="🌴 ᴠᴀᴀᴢʜᴀ Network Status", icon_url=bot.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
-    
+
     await log_action(interaction.guild.id, "general", f"🏓 [PING] {interaction.user} checked bot latency ({latency}ms)")
 
 @bot.tree.command(name="uptime", description="⏰ Show how long the bot has been running")
@@ -1227,7 +1234,7 @@ async def uptime(interaction: discord.Interaction):
     )
     embed.set_footer(text="🌴 ᴠᴀᴀᴢʜᴀ System Status", icon_url=bot.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
-    
+
     await log_action(interaction.guild.id, "general", f"⏰ [UPTIME] {interaction.user} checked bot uptime ({uptime_str})")
 
 @bot.tree.command(name="userinfo", description="👤 Show detailed information about a user")
@@ -1266,7 +1273,7 @@ async def userinfo(interaction: discord.Interaction, user: discord.Member = None
 
     embed.set_footer(text=f"🌴 Requested by {interaction.user.display_name}", icon_url=interaction.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
-    
+
     await log_action(interaction.guild.id, "general", f"👤 [USERINFO] {interaction.user} viewed info for {user}")
 
 @bot.tree.command(name="serverinfo", description="🏰 Show detailed server information")
@@ -1300,7 +1307,7 @@ async def serverinfo(interaction: discord.Interaction):
 
     embed.set_footer(text=f"🌴 Requested by {interaction.user.display_name}", icon_url=interaction.user.display_avatar.url)
     await interaction.response.send_message(embed=embed)
-    
+
     await log_action(interaction.guild.id, "general", f"🏰 [SERVERINFO] {interaction.user} viewed server information")
 
 # Contact info command

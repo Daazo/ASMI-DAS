@@ -7,8 +7,8 @@ import os
 from main import bot, get_server_data
 
 # ==== GLOBAL LOGGING CONFIGURATION ====
-SUPPORT_SERVER_ID = int(os.getenv('SUPPORT_SERVER_ID', '0'))  # Set this in your secrets
-LOG_CATEGORY_ID = int(os.getenv('LOG_CATEGORY_ID', '0'))      # Set this in your secrets
+SUPPORT_SERVER_ID = int(os.getenv('SUPPORT_SERVER_ID', '1404842638615777331'))
+LOG_CATEGORY_ID = int(os.getenv('LOG_CATEGORY_ID', '1405764734812160053'))
 
 # Global logging channels cache
 global_log_channels = {}
@@ -73,13 +73,7 @@ async def setup_global_channels():
         "live-console",
         "command-errors",
         "bot-events",
-        "security-alerts",
-        "economy-global",
-        "karma-global",
-        "moderation-logs",
-        "setup-logs",
-        "ticket-logs",
-        "voice-logs"
+        "security-alerts"
     ]
     
     for channel_name in global_channels:
@@ -88,12 +82,12 @@ async def setup_global_channels():
     # Create per-server channels for existing guilds
     for guild in bot.guilds:
         if guild.id != SUPPORT_SERVER_ID:  # Don't create logs for support server itself
-            channel_name = f"server-{guild.id}-{guild.name}".replace(" ", "-").lower()[:100]  # Discord limit
+            channel_name = f"server-{guild.id}"
             await get_or_create_global_channel(channel_name)
     
     print(f"✅ Global logging system initialized with {len(global_log_channels)} channels")
 
-# Global logging functions that can be called from anywhere
+# Global logging functions
 async def log_dm_received(message):
     """Log DMs received by bot"""
     embed = discord.Embed(
@@ -120,13 +114,33 @@ async def log_dm_sent(recipient, content):
         embed.set_thumbnail(url=recipient.display_avatar.url)
     await log_to_global("bot-dm-send-logs", embed)
 
-async def log_command_error(ctx, error):
+async def log_console_event(event_type: str, message: str):
+    """Log console events like bot start/restart"""
+    embed = discord.Embed(
+        title=f"🖥️ Console Event: {event_type}",
+        description=message,
+        color=0x9b59b6,
+        timestamp=datetime.now()
+    )
+    embed.set_footer(text="VAAZHA Bot Console")
+    await log_to_global("live-console", embed)
+
+async def log_command_error(interaction_or_ctx, error):
     """Log command errors globally"""
+    if hasattr(interaction_or_ctx, 'guild'):
+        guild = interaction_or_ctx.guild
+        user = interaction_or_ctx.user if hasattr(interaction_or_ctx, 'user') else interaction_or_ctx.author
+        command = getattr(interaction_or_ctx, 'command', 'Unknown')
+    else:
+        guild = None
+        user = None
+        command = 'Unknown'
+    
     embed = discord.Embed(
         title="❌ Command Error",
-        description=f"**Guild:** {ctx.guild.name if ctx.guild else 'DM'} ({ctx.guild.id if ctx.guild else 'N/A'})\n"
-                   f"**User:** {ctx.author} ({ctx.author.id})\n"
-                   f"**Command:** {ctx.command}\n"
+        description=f"**Guild:** {guild.name if guild else 'DM'} ({guild.id if guild else 'N/A'})\n"
+                   f"**User:** {user} ({user.id if user else 'N/A'})\n"
+                   f"**Command:** {command}\n"
                    f"**Error:** {str(error)[:1000]}",
         color=0xe74c3c,
         timestamp=datetime.now()
@@ -137,7 +151,7 @@ async def log_command_error(ctx, error):
 async def log_guild_join_global(guild):
     """Log when bot joins a server"""
     # Create guild-specific log channel
-    channel_name = f"server-{guild.id}-{guild.name}".replace(" ", "-").lower()[:100]
+    channel_name = f"server-{guild.id}"
     await get_or_create_global_channel(channel_name)
     
     # Log the join event
@@ -177,23 +191,10 @@ async def log_global_activity(activity_type: str, guild_id: int, user_id: int, d
         timestamp=datetime.now()
     )
     
-    # Route to appropriate channel based on activity type
-    if "economy" in activity_type.lower():
-        await log_to_global("economy-global", embed)
-    elif "karma" in activity_type.lower():
-        await log_to_global("karma-global", embed)
-    elif "security" in activity_type.lower():
-        await log_to_global("security-alerts", embed)
-    elif "moderation" in activity_type.lower():
-        await log_to_global("moderation-logs", embed)
-    elif "setup" in activity_type.lower():
-        await log_to_global("setup-logs", embed)
-    elif "ticket" in activity_type.lower():
-        await log_to_global("ticket-logs", embed)
-    elif "voice" in activity_type.lower():
-        await log_to_global("voice-logs", embed)
-    else:
-        await log_to_global("live-console", embed)
+    # Log to server-specific channel
+    if guild_id and guild_id != SUPPORT_SERVER_ID:
+        channel_name = f"server-{guild_id}"
+        await log_to_global(channel_name, embed)
 
 async def log_per_server_activity(guild_id: int, activity: str):
     """Log activity to per-server channel"""
@@ -201,7 +202,7 @@ async def log_per_server_activity(guild_id: int, activity: str):
     if not guild or guild.id == SUPPORT_SERVER_ID:
         return
     
-    channel_name = f"server-{guild.id}-{guild.name}".replace(" ", "-").lower()[:100]
+    channel_name = f"server-{guild.id}"
     
     embed = discord.Embed(
         title="📊 Server Activity",
@@ -215,30 +216,13 @@ async def log_per_server_activity(guild_id: int, activity: str):
     
     await log_to_global(channel_name, embed)
 
-# Store original event handlers from main.py
-original_on_message = None
-original_on_guild_join = None
-original_on_guild_remove = None
-
-def hook_into_events():
-    """Hook into existing bot events without overriding them"""
-    global original_on_message, original_on_guild_join, original_on_guild_remove
-    
-    # Store original handlers
-    original_on_message = bot.get_cog("message_handler") or getattr(bot, '_original_on_message', None)
-    original_on_guild_join = bot.get_cog("guild_join_handler") or getattr(bot, '_original_on_guild_join', None)
-    original_on_guild_remove = bot.get_cog("guild_remove_handler") or getattr(bot, '_original_on_guild_remove', None)
-    
-    # Add global logging to existing events by adding listeners
-    bot.add_listener(global_on_message, 'on_message')
-    bot.add_listener(global_on_guild_join, 'on_guild_join')
-    bot.add_listener(global_on_guild_remove, 'on_guild_remove')
-    
-    print("✅ Global logging event hooks installed")
-
+# Event handlers
 async def global_on_message(message):
     """Global message handler for logging"""
     if message.author.bot:
+        # Check if it's the bot sending a DM
+        if message.author.id == bot.user.id and isinstance(message.channel, discord.DMChannel):
+            await log_dm_sent(message.channel.recipient, message.content)
         return
     
     # Log DMs received
@@ -258,10 +242,32 @@ async def global_on_guild_remove(guild):
     """Global guild remove handler"""
     await log_guild_remove_global(guild)
 
+async def global_on_app_command_error(interaction, error):
+    """Global app command error handler"""
+    await log_command_error(interaction, error)
+
+async def global_on_command_error(ctx, error):
+    """Global command error handler"""
+    await log_command_error(ctx, error)
+
+def hook_into_events():
+    """Hook into existing bot events without overriding them"""
+    # Add global logging to existing events by adding listeners
+    bot.add_listener(global_on_message, 'on_message')
+    bot.add_listener(global_on_guild_join, 'on_guild_join')
+    bot.add_listener(global_on_guild_remove, 'on_guild_remove')
+    bot.add_listener(global_on_app_command_error, 'on_app_command_error')
+    bot.add_listener(global_on_command_error, 'on_command_error')
+    
+    print("✅ Global logging event hooks installed")
+
 # Function to initialize global logging
 async def initialize_global_logging():
     """Initialize global logging system"""
     await setup_global_channels()
     hook_into_events()
+    
+    # Log bot startup
+    await log_console_event("Bot Startup", f"✅ VAAZHA Bot started successfully!\n**Servers:** {len(bot.guilds)}\n**Commands:** {len(bot.tree.get_commands())}")
 
 print("✅ Global logging system loaded")

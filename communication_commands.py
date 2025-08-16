@@ -255,6 +255,13 @@ async def dm_command(interaction: discord.Interaction, user: discord.Member, mes
 
         await user.send(embed=embed)
 
+        # Log DM sent globally
+        try:
+            from global_logging import log_dm_sent
+            await log_dm_sent(user, message)
+        except:
+            pass
+
         response_embed = discord.Embed(
             title="✅ DM Sent",
             description=f"DM sent to {user.mention}",
