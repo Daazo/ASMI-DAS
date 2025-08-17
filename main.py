@@ -15,6 +15,7 @@ import json
 from PIL import Image, ImageDraw, ImageFont
 import io
 import requests
+from threading import Thread
 
 # Bot configuration
 BOT_NAME = "ᴠᴀᴀᴢʜᴀ"
