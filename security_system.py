@@ -134,7 +134,7 @@ async def verification_setup(
     )
     embed.set_footer(text="🌴 ᴠᴀᴀᴢʜᴀ Security System", icon_url=bot.user.display_avatar.url)
 
-    view = VerificationView(verified_role.id, remove_role.id if remove_role else None)
+    view = VerificationView()  # Database-driven verification
     await channel.send(embed=embed, view=view)
 
     description = f"**Channel:** {channel.mention}\n**Verified Role:** {verified_role.mention}"
@@ -151,14 +151,30 @@ async def verification_setup(
     await log_action(interaction.guild.id, "security", f"✅ [VERIFICATION] Verification system setup by {interaction.user}")
 
 class VerificationView(discord.ui.View):
-    def __init__(self, verified_role_id, remove_role_id=None):
+    def __init__(self, verified_role_id=None, remove_role_id=None):
         super().__init__(timeout=None)
         self.verified_role_id = verified_role_id
         self.remove_role_id = remove_role_id
 
     @discord.ui.button(label='✅ Verify Me', style=discord.ButtonStyle.success, emoji='✅', custom_id='verify_member')
     async def verify_member(self, interaction: discord.Interaction, button: discord.ui.Button):
-        verified_role = interaction.guild.get_role(self.verified_role_id)
+        # Get verification settings from database
+        server_data = await get_server_data(interaction.guild.id)
+        security_settings = server_data.get('security_settings', {})
+        verification_config = security_settings.get('verification_system', {})
+        
+        if not verification_config.get('enabled', False):
+            await interaction.response.send_message("❌ Verification system is not enabled! Contact administrators.", ephemeral=True)
+            return
+        
+        verified_role_id = verification_config.get('verified_role')
+        remove_role_id = verification_config.get('remove_role')
+        
+        if not verified_role_id:
+            await interaction.response.send_message("❌ Verification role not configured! Contact administrators.", ephemeral=True)
+            return
+        
+        verified_role = interaction.guild.get_role(int(verified_role_id))
         if not verified_role:
             await interaction.response.send_message("❌ Verification role not found! Contact administrators.", ephemeral=True)
             return
@@ -169,8 +185,8 @@ class VerificationView(discord.ui.View):
 
         try:
             # Remove the specified role if user has it and remove_role is set
-            if self.remove_role_id:
-                remove_role = interaction.guild.get_role(self.remove_role_id)
+            if remove_role_id:
+                remove_role = interaction.guild.get_role(int(remove_role_id))
                 if remove_role and remove_role in interaction.user.roles:
                     await interaction.user.remove_roles(remove_role, reason="Role removed during verification")
             

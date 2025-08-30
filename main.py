@@ -233,7 +233,7 @@ async def on_ready():
 
     # Add persistent views for security system
     from security_system import VerificationView
-    bot.add_view(VerificationView(0))  # Dummy role ID, will be updated when used
+    bot.add_view(VerificationView())  # No dummy role ID - will load from database
     print("✅ Persistent views added for security system")
 
     # Start timed roles background task
