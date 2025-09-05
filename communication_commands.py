@@ -8,15 +8,38 @@ from datetime import datetime, timedelta
 import time
 
 @bot.tree.command(name="say", description="Make the bot say something")
-@app_commands.describe(message="Message to say", channel="Channel to send to (optional)")
-async def say(interaction: discord.Interaction, message: str, channel: discord.TextChannel = None):
+@app_commands.describe(
+    message="Message to say", 
+    channel="Channel to send to (optional)",
+    image="Image URL to attach (optional)",
+    heading="Custom heading/title for the message (optional)"
+)
+async def say(interaction: discord.Interaction, message: str, channel: discord.TextChannel = None, image: str = None, heading: str = None):
     if not await has_permission(interaction, "junior_moderator"):
         await interaction.response.send_message("❌ You need Junior Moderator permissions to use this command!", ephemeral=True)
         return
 
     target_channel = channel or interaction.channel
 
-    await target_channel.send(message)
+    # If heading or image is provided, send as embed
+    if heading or image:
+        embed = discord.Embed(
+            title=heading if heading else None,
+            description=message,
+            color=0x3498db
+        )
+        if image:
+            # Basic URL validation
+            if image.startswith(('http://', 'https://')) and any(ext in image.lower() for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+                embed.set_image(url=image)
+            else:
+                await interaction.response.send_message("❌ Invalid image URL! Please provide a valid image URL.", ephemeral=True)
+                return
+        
+        embed.set_footer(text="ᴠᴀᴀᴢʜᴀ", icon_url=bot.user.display_avatar.url)
+        await target_channel.send(embed=embed)
+    else:
+        await target_channel.send(message)
 
     embed = discord.Embed(
         title="✅ Message Sent",
@@ -29,11 +52,12 @@ async def say(interaction: discord.Interaction, message: str, channel: discord.T
     # Log to global system
     try:
         from global_logging import log_bot_content_shared
+        full_content = f"{heading}\n{message}" if heading else message
         await log_bot_content_shared(
             interaction.guild.id, 
             "say", 
             str(interaction.user), 
-            message, 
+            full_content, 
             target_channel.mention
         )
     except:
@@ -46,14 +70,16 @@ async def say(interaction: discord.Interaction, message: str, channel: discord.T
     title="Embed title",
     description="Embed description",
     color="Embed color (hex or name)",
-    channel="Channel to send to (optional)"
+    channel="Channel to send to (optional)",
+    image="Image URL to attach (optional)"
 )
 async def embed_command(
     interaction: discord.Interaction,
     title: str = None,
     description: str = None,
     color: str = "blue",
-    channel: discord.TextChannel = None
+    channel: discord.TextChannel = None,
+    image: str = None
 ):
     if not await has_permission(interaction, "junior_moderator"):
         await interaction.response.send_message("❌ You need Junior Moderator permissions to use this command!", ephemeral=True)
@@ -87,6 +113,15 @@ async def embed_command(
         embed.title = title
     if description:
         embed.description = description
+    
+    if image:
+        # Basic URL validation
+        if image.startswith(('http://', 'https://')) and any(ext in image.lower() for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+            embed.set_image(url=image)
+        else:
+            await interaction.response.send_message("❌ Invalid image URL! Please provide a valid image URL.", ephemeral=True)
+            return
+    
     embed.set_footer(text="ᴠᴀᴀᴢʜᴀ", icon_url=bot.user.display_avatar.url)
 
     await target_channel.send(embed=embed)
@@ -103,6 +138,8 @@ async def embed_command(
     try:
         from global_logging import log_bot_content_shared
         embed_content = f"Title: {title}\nDescription: {description}"
+        if image:
+            embed_content += f"\nImage: {image}"
         await log_bot_content_shared(
             interaction.guild.id,
             "embed",
@@ -119,13 +156,17 @@ async def embed_command(
 @app_commands.describe(
     channel="Channel to announce in",
     message="Announcement message",
-    mention="Role or @everyone to mention (optional)"
+    mention="Role or @everyone to mention (optional)",
+    image="Image URL to attach (optional)",
+    heading="Custom announcement heading (default: Server Announcement)"
 )
 async def announce(
     interaction: discord.Interaction,
     channel: discord.TextChannel,
     message: str,
-    mention: str = None
+    mention: str = None,
+    image: str = None,
+    heading: str = None
 ):
     if not await has_permission(interaction, "main_moderator"):
         await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
@@ -142,11 +183,23 @@ async def announce(
             if role:
                 announcement_content = f"{role.mention}\n"
 
+    # Use custom heading or default
+    announcement_title = heading if heading else "📢 **Server Announcement** 📢"
+    
     embed = discord.Embed(
-        title="📢 **Server Announcement** 📢",
+        title=announcement_title,
         description=message,
         color=0xf39c12
     )
+    
+    if image:
+        # Basic URL validation
+        if image.startswith(('http://', 'https://')) and any(ext in image.lower() for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+            embed.set_image(url=image)
+        else:
+            await interaction.response.send_message("❌ Invalid image URL! Please provide a valid image URL.", ephemeral=True)
+            return
+    
     embed.set_footer(text="ᴠᴀᴀᴢʜᴀ", icon_url=bot.user.display_avatar.url)
 
     await channel.send(announcement_content, embed=embed)
@@ -155,6 +208,8 @@ async def announce(
     try:
         from global_logging import log_bot_content_shared
         full_content = f"{announcement_content}\n\n{embed.title}\n{embed.description}" if announcement_content else f"{embed.title}\n{embed.description}"
+        if image:
+            full_content += f"\nImage: {image}"
         await log_bot_content_shared(
             interaction.guild.id,
             "announce",
