@@ -17,12 +17,14 @@ import io
 import requests
 
 # Bot configuration - Import from brand config
-from brand_config import BOT_NAME, BOT_VERSION, BOT_TAGLINE, BOT_DESCRIPTION, BOT_FOOTER, BrandColors
+from brand_config import (
+    BOT_NAME, BOT_VERSION, BOT_TAGLINE, BOT_DESCRIPTION, BOT_FOOTER, 
+    BOT_OWNER_NAME, BOT_OWNER_DESCRIPTION,
+    BrandColors, VisualElements, EmbedStyles, MessageTemplates, PERSONALITY
+)
 
 # Owner configuration
 BOT_OWNER_ID = os.getenv('BOT_OWNER_ID')  # Get owner ID from environment
-BOT_OWNER_NAME = "R!O</>"
-BOT_OWNER_DESCRIPTION = "Creator and developer of RXT ENGINE bot. Powering automation and security for Discord communities."
 
 # MongoDB setup
 MONGO_URI = os.getenv('MONGO_URI')
@@ -762,9 +764,9 @@ async def on_member_update(before, after):
 async def help_command_callback(interaction):
     """Callback for help button"""
     embed = discord.Embed(
-        title=f"⚡ **{BOT_NAME} Command Center** ⚡",
-        description=f"**Welcome!**\n\nNeed some help? I'm RXT ENGINE, ready to assist!\n\nSelect a category from the buttons below to explore my commands. For details on any specific command, just type `/` followed by the command name (e.g., `/userinfo`).\n\n**🚦 Aarkokke Enthokke Cheyyam? (Permission Levels)**\n\n🟢 **Everyone** - Can use all general, karma, and ticket commands\n🟡 **Junior Moderator (Cheriya Muthalali)** - Limited moderation access (use /setup and select junior moderator and select the role you want has junior moderator)\n🔴 **Main Moderator (Valiya Muthalali)** - Full access to moderation and setup (use /setup then main moderator and select the role you want has main moderator)\n👑 **Server Owner** - God-level. Complete control (Can do everything!)",
-        color=0x43b581
+        title=f"💠 **{BOT_NAME} • Quantum Command Core**",
+        description=f"**◆ SYSTEM READY**\n{VisualElements.CIRCUIT_LINE}\n\nWelcome to RXT ENGINE—an advanced AI core for complete server automation.\n\nSelect a category below to access quantum-powered commands. For command details, type `/` followed by the command name.\n\n**⚡ AUTHORIZATION LEVELS**\n\n🟣 **Everyone** — General access to karma, tickets, and public commands\n🟡 **Junior Moderator** — Basic moderation capabilities\n🔴 **Main Moderator** — Full moderation and configuration access  \n👑 **Server Owner** — Complete quantum core control",
+        color=BrandColors.PRIMARY
     )
     embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
     embed.set_thumbnail(url=bot.user.display_avatar.url)
@@ -782,9 +784,9 @@ class HelpView(discord.ui.View):
     @discord.ui.button(label="General", style=discord.ButtonStyle.primary, emoji="🏠", row=0)
     async def general_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="🏠 **General Commands**",
-            description="*Commands for user/server info, checking my ping, uptime, and other general utilities.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            color=0x3498db
+            title="💠 **General Commands**",
+            description=f"*Core system utilities for user/server information, diagnostics, and statistics.*\n\n{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.PRIMARY
         )
         embed.add_field(
             name="🟢 `/help`",
@@ -816,15 +818,15 @@ class HelpView(discord.ui.View):
             value="**🟢 `/profile [user]`** - Generate beautiful profile cards with stats\n**🟡 `/servercard`** - Create server overview cards\n**🟢 `/botprofile`** - View bot information card\n**🟢 `/contact`** - Get bot contact information and support",
             inline=False
         )
-        embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
+        embed.set_footer(text="🟣 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Moderation", style=discord.ButtonStyle.danger, emoji="⚔️", row=0)
     async def moderation_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="🛡️ **Moderation Commands**",
-            description="*Keep the server clean and in order. For moderators to handle kicks, bans, mutes, and more.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            color=0xe74c3c
+            title="⚔️ **Moderation Commands**",
+            description=f"*Security enforcement protocols for maintaining server order and safety.*\n\n{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.DANGER
         )
         embed.add_field(
             name="🔴 `/kick user [reason]`",
@@ -857,15 +859,15 @@ class HelpView(discord.ui.View):
             inline=False
         )
 
-        embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
+        embed.set_footer(text="🟣 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Setup", style=discord.ButtonStyle.secondary, emoji="⚙️", row=0)
     async def setup_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="⚙️ **Setup & Configuration Commands**",
-            description="*Configure welcome messages, logging channels, moderator roles, tickets, and other bot settings.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            color=0xf39c12
+            title="⚙️ **Setup & Configuration**",
+            description=f"*Quantum core configuration protocols for system customization and automation.*\n\n{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.PANEL
         )
         embed.add_field(
             name="👑 `/setup main_moderator role`",

@@ -1,118 +1,245 @@
 # RXT ENGINE Brand Configuration
-# Complete theming system for the bot
+# Quantum Purple Theme - Advanced AI Core System
 
 # Bot Information
 BOT_NAME = "RXT ENGINE"
 BOT_VERSION = "2.0.0"
-BOT_TAGLINE = "RXT ENGINE — Powering Every Corner of Your Community"
-BOT_DESCRIPTION = "RXT ENGINE is a powerful multi-function Discord bot built for automation, moderation, music, utilities, security, and more — engineered to keep your server fast, stable, and perfectly managed."
-BOT_FOOTER = "RXT ENGINE • Powered by R!O</>"
+BOT_TAGLINE = "Advanced AI Core • Quantum-Powered Community Management"
+BOT_DESCRIPTION = "RXT ENGINE is an advanced AI core system operating inside a holographic engine. Built with futuristic quantum technology for complete server automation, security, and community management."
+BOT_FOOTER = "⚡ RXT ENGINE • Quantum Core System"
 
-# Brand Colors (Hex to Discord int conversion)
+# Owner Information
+BOT_OWNER_NAME = "R!O</>"
+BOT_OWNER_DESCRIPTION = "Creator of RXT ENGINE • Advanced bot systems architect"
+
+# Brand Colors - Quantum Purple Theme (Discord int format)
 class BrandColors:
-    # Primary Colors
-    PRIMARY = 0x8A4FFF  # Quantum Purple
-    SECONDARY = 0x4F8CFF  # Hyper Blue
-    ACCENT = 0xB86BFF  # Soft Neon Violet
+    # Primary Quantum Purple Theme
+    PRIMARY = 0xA66BFF  # Quantum Purple (Main brand color)
+    SECONDARY = 0xC78CFF  # Hyper Violet Glow
+    ACCENT = 0xD6D6FF  # Electric White Glow
+    NEON_EDGE = 0xE0C9FF  # Neon Edge Lines
     
-    # Background Colors
-    BACKGROUND = 0x0E0E11  # Matte Black
-    HIGHLIGHT = 0x2A2A2F  # Carbon Grey
+    # Background & Panels
+    BACKGROUND = 0x0D0D0F  # Deep Matte Black
+    PANEL = 0x1A1A1D  # Carbon Grey
     
-    # Status Colors
-    SUCCESS = 0x00E68A  # Success Green
-    WARNING = 0xFFB84D  # Warning Orange
-    DANGER = 0xFF4D4D  # Danger Red
+    # Status Colors (Neon variants to match theme)
+    SUCCESS = 0x3DFFAA  # Hologram Green
+    WARNING = 0xFFB84D  # Neon Amber
+    DANGER = 0xFF3B5F  # Neon Red
     
     # Utility Colors
-    INFO = 0x4F8CFF  # Same as Secondary
-    NEUTRAL = 0x2A2A2F  # Same as Highlight
+    INFO = 0xA66BFF  # Same as Primary
+    NEUTRAL = 0x1A1A1D  # Same as Panel
 
-# RGB Colors for Image Generation (PIL)
+# RGB Colors for Image Generation (PIL) - Quantum Purple Theme
 class BrandColorsRGB:
-    # Primary Colors
-    PRIMARY = (138, 79, 255)  # Quantum Purple
-    SECONDARY = (79, 140, 255)  # Hyper Blue
-    ACCENT = (184, 107, 255)  # Soft Neon Violet
+    # Primary Quantum Purple Theme
+    PRIMARY = (166, 107, 255)  # Quantum Purple
+    SECONDARY = (199, 140, 255)  # Hyper Violet Glow
+    ACCENT = (214, 214, 255)  # Electric White Glow
+    NEON_EDGE = (224, 201, 255)  # Neon Edge Lines
     
-    # Background Colors
-    BACKGROUND = (14, 14, 17)  # Matte Black
-    HIGHLIGHT = (42, 42, 47)  # Carbon Grey
+    # Background & Panels
+    BACKGROUND = (13, 13, 15)  # Deep Matte Black
+    PANEL = (26, 26, 29)  # Carbon Grey
     
     # Status Colors
-    SUCCESS = (0, 230, 138)  # Success Green
-    WARNING = (255, 184, 77)  # Warning Orange
-    DANGER = (255, 77, 77)  # Danger Red
+    SUCCESS = (61, 255, 170)  # Hologram Green
+    WARNING = (255, 184, 77)  # Neon Amber
+    DANGER = (255, 59, 95)  # Neon Red
     
     # Text Colors
-    TEXT_PRIMARY = (255, 255, 255)  # White
-    TEXT_SECONDARY = (200, 200, 200)  # Light Grey
+    TEXT_PRIMARY = (255, 255, 255)  # Pure White
+    TEXT_SECONDARY = (214, 214, 255)  # Electric White Glow
     TEXT_MUTED = (150, 150, 150)  # Medium Grey
+    TEXT_NEON = (224, 201, 255)  # Neon Edge Glow
 
-# Embed Style Templates
+# Visual Elements - Geometric Tech Design
+class VisualElements:
+    # Circuit Line Dividers
+    CIRCUIT_LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    THIN_LINE = "─────────────────────────────────────────────────"
+    
+    # Hologram Dots & Particles
+    DOTS = "⬡ ⬢ ⬣"
+    PARTICLES = "✦ ✧ ⚡ ◆ ◇"
+    
+    # System Icons
+    SYSTEM_ONLINE = "🟣"  # Purple dot
+    SYSTEM_ACTIVE = "⚡"
+    SYSTEM_CORE = "◆"
+    QUANTUM_ICON = "💠"
+    
+    # Geometric Shapes
+    HEXAGON = "⬡"
+    DIAMOND = "◆"
+    TRIANGLE = "▲"
+    
+    # Status Indicators
+    STATUS_ONLINE = "🟣 ONLINE"
+    STATUS_ACTIVE = "⚡ ACTIVE"
+    STATUS_PROCESSING = "◆ PROCESSING"
+
+# Embed Style Templates - Quantum Theme
 class EmbedStyles:
     @staticmethod
     def success(title, description):
-        """Success embed template"""
+        """Success embed - Hologram Green"""
         return {
-            "title": f"✅ {title}",
-            "description": description,
+            "title": f"✓ {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
             "color": BrandColors.SUCCESS
         }
     
     @staticmethod
     def error(title, description):
-        """Error embed template"""
+        """Error embed - Neon Red"""
         return {
-            "title": f"❌ {title}",
-            "description": description,
+            "title": f"✗ {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
             "color": BrandColors.DANGER
         }
     
     @staticmethod
     def warning(title, description):
-        """Warning embed template"""
+        """Warning embed - Neon Amber"""
         return {
-            "title": f"⚠️ {title}",
-            "description": description,
+            "title": f"⚠ {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
             "color": BrandColors.WARNING
         }
     
     @staticmethod
     def info(title, description):
-        """Info embed template"""
+        """Info embed - Quantum Purple"""
         return {
-            "title": f"ℹ️ {title}",
-            "description": description,
-            "color": BrandColors.INFO
+            "title": f"◆ {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
+            "color": BrandColors.PRIMARY
         }
     
     @staticmethod
     def command(title, description):
-        """Command execution embed template"""
+        """Command execution embed - Quantum Purple"""
         return {
-            "title": f"🚀 {title}",
-            "description": description,
+            "title": f"⚡ {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
+            "color": BrandColors.PRIMARY
+        }
+    
+    @staticmethod
+    def quantum(title, description):
+        """Quantum theme embed - Primary color with circuit lines"""
+        return {
+            "title": f"💠 {title}",
+            "description": f"{description}\n{VisualElements.CIRCUIT_LINE}",
             "color": BrandColors.PRIMARY
         }
 
-# Message Templates
+# Message Templates - AI Core Personality
 class MessageTemplates:
     @staticmethod
     def permission_denied():
-        return "**Access Denied**\nYou don't have the required permissions to use this command."
+        return f"**◆ ACCESS DENIED**\n{VisualElements.CIRCUIT_LINE}\nInsufficient permissions to execute this command.\nRequired authorization level not met."
     
     @staticmethod
     def cooldown(seconds):
-        return f"**Cooldown Active**\nPlease wait **{seconds:.1f}s** before using this command again."
+        return f"**⚡ SYSTEM COOLDOWN**\n{VisualElements.CIRCUIT_LINE}\nQuantum core recharging...\n**Retry in:** {seconds:.1f}s"
     
     @staticmethod
     def command_success(action):
-        return f"**Command Executed Successfully**\n**Action:** {action}\n**Status:** Completed ⚡"
+        return f"**✓ COMMAND EXECUTED**\n{VisualElements.CIRCUIT_LINE}\n**Action:** {action}\n**Status:** {VisualElements.STATUS_ACTIVE}"
+    
+    @staticmethod
+    def processing():
+        return f"**◆ PROCESSING REQUEST**\n{VisualElements.CIRCUIT_LINE}\nQuantum core analyzing..."
+    
+    @staticmethod
+    def system_ready():
+        return f"**⚡ SYSTEM READY**\n{VisualElements.CIRCUIT_LINE}\nAll quantum systems operational."
 
-# Bot Personality & Tone
+# Bot Personality & Tone - Futuristic AI Core
 PERSONALITY = {
-    "vibe": ["Futuristic", "Fast", "Clean", "Professional", "AI-powered assistant"],
-    "tone": "Short, confident, uses bold text and emojis",
-    "style": "Title → Body → Footer"
+    "core_identity": "Advanced AI Core System",
+    "vibe": ["Futuristic", "Quantum-powered", "Automated", "Smart", "Clean", "Fast", "Responsive"],
+    "tone": "Professional AI assistant - confident, efficient, minimal",
+    "style": "Geometric lines + neon purple accents + circuit patterns",
+    "voice": [
+        "System notifications",
+        "Clean status reports", 
+        "Direct responses",
+        "Quantum/holographic terminology"
+    ],
+    "visual_theme": [
+        "Circuit-line dividers",
+        "Hologram dots/particles",
+        "Geometric shapes",
+        "Neon scanlines",
+        "Hexagon framing",
+        "Glowing wireframes"
+    ]
 }
+
+# Button Styles - Matching Logo Design
+class ButtonStyles:
+    """
+    Button style guide for Discord components
+    """
+    # Primary - Quantum Purple
+    PRIMARY = {
+        "style": "primary",  # Discord's blue (we can't set custom colors for buttons)
+        "emoji": "⚡",
+        "description": "Main actions - Quantum Purple theme"
+    }
+    
+    # Secondary - Carbon Grey with Purple Border
+    SECONDARY = {
+        "style": "secondary",  # Discord's grey
+        "emoji": "◆",
+        "description": "Secondary actions - Carbon Grey"
+    }
+    
+    # Success - Hologram Green
+    SUCCESS = {
+        "style": "success",  # Discord's green
+        "emoji": "✓",
+        "description": "Confirmations - Hologram Green"
+    }
+    
+    # Danger - Neon Red
+    DANGER = {
+        "style": "danger",  # Discord's red
+        "emoji": "✗",
+        "description": "Destructive actions - Neon Red"
+    }
+
+# Quantum Core System Messages
+class SystemMessages:
+    BOOT_UP = f"""
+⚡ **QUANTUM CORE INITIALIZING**
+{VisualElements.CIRCUIT_LINE}
+◆ AI systems loading...
+◆ Holographic engine calibrating...
+◆ Neural networks synchronizing...
+{VisualElements.CIRCUIT_LINE}
+✓ **RXT ENGINE ONLINE**
+    """
+    
+    SHUTDOWN = f"""
+⚡ **QUANTUM CORE SHUTTING DOWN**
+{VisualElements.CIRCUIT_LINE}
+◆ Saving neural patterns...
+◆ Disconnecting from matrix...
+{VisualElements.CIRCUIT_LINE}
+✓ **SAFE TO POWER OFF**
+    """
+    
+    ERROR = f"""
+✗ **SYSTEM ERROR DETECTED**
+{VisualElements.CIRCUIT_LINE}
+◆ Quantum core encountered an anomaly
+◆ Error handlers active
+◆ Attempting auto-recovery...
+    """
