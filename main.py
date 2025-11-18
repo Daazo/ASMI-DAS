@@ -779,7 +779,7 @@ class HelpView(discord.ui.View):
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="General", style=discord.ButtonStyle.secondary, emoji="🏠", row=0)
+    @discord.ui.button(label="General", style=discord.ButtonStyle.primary, emoji="🏠", row=0)
     async def general_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🏠 **General Commands**",
@@ -819,7 +819,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Moderation", style=discord.ButtonStyle.danger, emoji="🛡️", row=0)
+    @discord.ui.button(label="Moderation", style=discord.ButtonStyle.danger, emoji="⚔️", row=0)
     async def moderation_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🛡️ **Moderation Commands**",
@@ -860,7 +860,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Setup & Config", style=discord.ButtonStyle.secondary, emoji="⚙️", row=0)
+    @discord.ui.button(label="Setup", style=discord.ButtonStyle.secondary, emoji="⚙️", row=0)
     async def setup_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="⚙️ **Setup & Configuration Commands**",
@@ -902,15 +902,10 @@ class HelpView(discord.ui.View):
             value="**Usage:** `/setup ticket_support_role role:@support`\n**Description:** Set support role to be mentioned when tickets are created",
             inline=False
         )
-        embed.add_field(
-            name="🔴 **Category Setup Commands**",
-            value="**`/setecocategory #category`** - Setup organized economy channels\n**`/setgamecategory #category`** - Setup game channels for slots/trivia\n**`/setbankcategory #category`** - Setup banking channels for deposits/trades\n**`/setkarmacategory #category`** - Setup karma system channels\n**Auto-creates:** Themed channels with proper permissions and topics",
-            inline=False
-        )
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Communication", style=discord.ButtonStyle.success, emoji="💬", row=0)
+    @discord.ui.button(label="Messages", style=discord.ButtonStyle.success, emoji="💬", row=0)
     async def communication_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="💬 **Communication & Messaging Commands**",
@@ -950,7 +945,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Karma System", style=discord.ButtonStyle.primary, emoji="✨", row=1)
+    @discord.ui.button(label="Karma", style=discord.ButtonStyle.primary, emoji="⭐", row=1)
     async def karma_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="✨ **Karma System** (Replaced XP System)",
@@ -979,23 +974,23 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="🎉 **Milestones & Level-Ups**",
-            value="**Every 5 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next 5-karma milestone\n**Channel announcements:** Set with `/setkarmachannel`",
+            value="**Every 5 karma:** Celebration announcement with motivational quotes\n**Animated GIFs:** Level-up messages include celebration animations\n**Progress tracking:** Visual progress bars toward next 5-karma milestone\n**Channel announcements:** Set with `/setup karma_channel #channel`",
             inline=False
         )
         embed.add_field(
             name="🎨 **Profile & Visual Cards**",
-            value="**🟢 `/profile [user]`** - Generate beautiful profile card with avatar, karma, coins\n**🟡 `/servercard`** - Create server overview card with stats and member info\n**🟢 `/botprofile`** - View bot information card with system status\n**Features:** Circular avatars, progress bars, karma levels, wealth display, server stats\n**Design:** Modern futuristic design with professional UI",
+            value="**🟢 `/profile [user]`** - Generate beautiful profile card with avatar and karma\n**🟡 `/servercard`** - Create server overview card with stats and member info\n**🟢 `/botprofile`** - View bot information card with system status\n**Features:** Circular avatars, progress bars, karma levels, server stats\n**Design:** Modern futuristic design with professional UI",
             inline=False
         )
         embed.add_field(
             name="🔧 **Admin Setup Commands**",
-            value="**🔴 `/setkarmacategory #category`** - Setup organized karma channels\n**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma\n**🔴 `/resetkarma scope:server`** - Reset all server karma data\n**Auto-creates:** Rules, level-ups, and karma zone channels",
+            value="**🔴 `/resetkarma scope:user user:@member`** - Reset specific user's karma\n**🔴 `/resetkarma scope:server`** - Reset all server karma data\n**Setup:** Use `/setup karma_channel #channel` for level-up announcements",
             inline=False
         )
         embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • ⚠️ Old XP system completely removed!")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Tickets & Support", style=discord.ButtonStyle.secondary, emoji="🎫", row=2)
+    @discord.ui.button(label="Tickets", style=discord.ButtonStyle.secondary, emoji="🎫", row=1)
     async def ticket_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🎫 **Tickets & Support System**",
@@ -1025,47 +1020,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Economy System", style=discord.ButtonStyle.success, emoji="🪙", row=1)
-    async def economy_help(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(
-            title="⚡ **Coming Soon: Enhanced Features** ⚡",
-            description="*Earn, spend, and trade RXT Credits in our futuristic economy! Fully integrated with karma system.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            color=0xf1c40f
-        )
-        embed.add_field(
-            name="💰 **Basic Economy Commands**",
-            value="**🟢 `/balance [user]`** - Check coin wallet and bank balance\n**🟢 `/daily`** - Claim daily reward (50+ coins, streak bonus)\n**🟢 `/weekly`** - Claim weekly jackpot (300+ coins)\n**🟢 `/work`** - Work futuristic jobs for coins (1h cooldown)",
-            inline=False
-        )
-        embed.add_field(
-            name="🎮 **Mini-Games & Fun**",
-            value="**🟢 `/slots <bet>`** - Play slot machine for credits (10-500 coins)\n**🟢 `/trivia`** - Answer trivia questions for rewards\n**🟢 `/richest`** - View top credit holders leaderboard",
-            inline=False
-        )
-        embed.add_field(
-            name="🏦 **Banking & Trading**",
-            value="**🟢 `/deposit <amount>`** - Store coins safely in bank\n**🟢 `/withdraw <amount>`** - Take coins from bank to wallet\n**🟢 `/trade @user <amount>`** - Send coins to other users (2% tax)",
-            inline=False
-        )
-        embed.add_field(
-            name="✨ **Karma Integration**",
-            value="**🟢 `/buykarma <amount>`** - Buy karma with coins (1 karma = 10 coins)\n**Perfect synergy:** Earn coins, buy karma, boost your server rank!\n**Strategic:** Balance economy progression with karma advancement",
-            inline=False
-        )
-        embed.add_field(
-            name="🔧 **Admin Commands**",
-            value="**🔴 `/addcoins @user <amount>`** - Give coins to users (1-10,000)\n**🔴 `/removecoins @user <amount>`** - Remove coins from users\n**🔴 `/createeconomychannels`, `/create_game_channels`, `/create_bank_channels`** - Manual channel creation\n**🔴 Category Setup:** `/setecocategory`, `/setgamecategory`, `/setbankcategory`\n**Full logging:** All economy actions logged automatically",
-            inline=False
-        )
-        embed.add_field(
-            name="⚡ **Special Features**",
-            value="**Daily Streaks:** Consecutive daily claims = bonus coins\n**Futuristic Theme:** Advanced earning mechanics and rewards\n**Smart Economics:** Interest, taxes, anti-inflation measures\n**Random Events:** Bonus rewards and special messages!",
-            inline=False
-        )
-        embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • ⚡ Welcome to RXT ENGINE!")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Security & Safety", style=discord.ButtonStyle.danger, emoji="🛡️", row=2)
+    @discord.ui.button(label="Security", style=discord.ButtonStyle.danger, emoji="🛡️", row=2)
     async def security_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🛡️ **Security & Safety Features**",
@@ -1110,7 +1065,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🔴 = Main Moderator • 🛡️ = Advanced Server Protection")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Advanced Features", style=discord.ButtonStyle.secondary, emoji="🎭", row=3)
+    @discord.ui.button(label="Advanced", style=discord.ButtonStyle.secondary, emoji="🎭", row=2)
     async def advanced_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🎭 **Advanced Features & Tools**",
@@ -1146,7 +1101,7 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟢 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Bot Info", style=discord.ButtonStyle.secondary, emoji="🤖", row=2)
+    @discord.ui.button(label="About", style=discord.ButtonStyle.secondary, emoji="ℹ️", row=3)
     async def bot_info_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         bot_owner_id = os.getenv('BOT_OWNER_ID')
         owner_mention = f"<@{bot_owner_id}>" if bot_owner_id else "Contact via server"
@@ -1168,7 +1123,7 @@ class HelpView(discord.ui.View):
         )
         embed.add_field(
             name="✨ **What Makes Me Special**",
-            value="⚡ **Futuristic cyberpunk design and interface**\n🏆 **Professional moderation & XP system**\n🎫 **Advanced ticket system with interactive forms**\n🛡️ **Smart auto-moderation that learns**\n📊 **Persistent database - never lose data**\n🎭 **Reaction roles and advanced features**",
+            value="⚡ **Futuristic cyberpunk design and interface**\n🏆 **Professional moderation & Karma system**\n🎫 **Advanced ticket system with interactive forms**\n🛡️ **Smart auto-moderation that learns**\n📊 **Persistent database - never lose data**\n🎭 **Reaction roles and advanced features**",
             inline=False
         )
         embed.add_field(
@@ -1180,11 +1135,11 @@ class HelpView(discord.ui.View):
         embed.set_thumbnail(url=bot.user.display_avatar.url)
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Contact & Support", style=discord.ButtonStyle.secondary, emoji="📞", row=3)
+    @discord.ui.button(label="Contact", style=discord.ButtonStyle.success, emoji="📞", row=3)
     async def contact_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         await contact_info(interaction)
 
-    @discord.ui.button(label="Recent Updates", style=discord.ButtonStyle.success, emoji="🌴", row=3)
+    @discord.ui.button(label="Updates", style=discord.ButtonStyle.success, emoji="🆕", row=3)
     async def recent_updates_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="🌴 **Latest Features & Updates** ✨",
@@ -1197,18 +1152,18 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
-            name="🪙 **Economy System** (RXT Credits)",
-            value="**🌅 `/daily` & `/weekly`** - Claim coin rewards with streak bonuses\n**💼 `/work`** - futuristic jobs for earning coins\n**🎰 `/slots` & `/trivia`** - Fun mini-games to test your luck\n**🏦 Banking system** with `/deposit`, `/withdraw`, `/trade`\n**⭐ `/buykarma`** - Purchase karma points with coins",
+            name="🎨 **Profile & Server Cards** (Visual Stats)",
+            value="**🟢 `/profile [user]`** - Beautiful profile cards with avatar and karma\n**🏰 `/servercard`** - Generate server overview cards with statistics\n**🤖 `/botprofile`** - View bot information and status\n**🟢 `/contact`** - Get bot contact information\n**Circular avatars** with progress bars and modern theme",
             inline=False
         )
         embed.add_field(
-            name="🎨 **Profile & Server Cards** (Visual Stats)",
-            value="**🟢 `/profile [user]`** - Beautiful profile cards with avatar, karma, coins\n**🏰 `/servercard`** - Generate server overview cards with statistics\n**🤖 Contact cards** with bot info and owner status\n**Circular avatars** with progress bars and modern theme",
+            name="🛡️ **Advanced Moderation & Security**",
+            value="**🎫 Ticket System** - Professional support ticket system\n**🔒 Security Features** - Anti-raid, anti-nuke protection\n**⚔️ Moderation Tools** - Kick, ban, timeout, voice moderation\n**🎭 Reaction Roles** - Easy role assignment with reactions",
             inline=False
         )
         embed.add_field(
             name="🔧 **How to Get Started**",
-            value="**Step 1:** Use `/givekarma` to appreciate helpful members\n**Step 2:** Try `/daily` to start earning RXT Credits\n**Step 3:** Generate your `/profile` to see your beautiful stats card\n**Step 4:** Use `/help` to explore all available commands!",
+            value="**Step 1:** Use `/givekarma` to appreciate helpful members\n**Step 2:** Generate your `/profile` to see your beautiful stats card\n**Step 3:** Try `/ticketsetup` to create a support system\n**Step 4:** Use `/help` to explore all available commands!",
             inline=False
         )
         embed.set_footer(text="🌴 Made with ❤️ by Daazo from Advanced Community Management • Ready to serve!", icon_url=bot.user.display_avatar.url)
