@@ -7,8 +7,18 @@ RXT ENGINE is a powerful multi-function Discord bot focused on automation, moder
 **Tagline:** "Powering the future of Discord automation"  
 **Status:** ✅ Fully operational (requires Discord bot token to run)
 
-## Recent Changes (November 18, 2025)
-### Complete Rebrand to RXT ENGINE
+## Recent Changes
+
+### November 19, 2025 - Critical Bug Fixes
+- ✅ Fixed `/help` About button interaction failure (removed duplicate view creation)
+- ✅ Removed duplicate Contact button from help menu (merged into About section)
+- ✅ Fixed ticket panel persistence - now works correctly after bot restarts
+  - Added persistent custom_id ("persistent_ticket_select") to TicketCategorySelect
+  - TicketSelectionView always includes select component for proper registration
+  - Callback validates category existence and shows helpful errors
+- ✅ All persistent views properly registered at bot startup
+
+### November 18, 2025 - Complete Rebrand to RXT ENGINE
 - ✅ Deleted all economy system files (economy_system.py, economy_setup.py)
 - ✅ Created brand_config.py with new color scheme and branding constants
 - ✅ Updated all 15+ command modules with new RXT ENGINE branding
