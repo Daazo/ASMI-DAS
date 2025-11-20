@@ -13,10 +13,12 @@ import re
 enhanced_security_data = {
     'user_roles': {},  # Store user roles before timeout {guild_id: {user_id: [role_ids]}}
     'timeout_roles': {},  # Store timeout role IDs {guild_id: role_id}
+    'quarantine_roles': {},  # Store quarantine role IDs {guild_id: role_id}
     'whitelists': {},  # Store whitelists per feature {guild_id: {feature: [user_ids]}}
     'mention_tracking': {},  # Track @everyone/@here mentions
     'spam_tracking': {},  # Track message spam {guild_id: {user_id: {'messages': [], 'last_message': '', 'repeat_count': 0}}}
     'raid_tracking': {},  # Track member joins {guild_id: {'joins': [], 'raid_mode': False}}
+    'warnings': {},  # Track user warnings {guild_id: {user_id: [warning_data]}}
     'nuke_tracking': {  # Track nuke actions (Phase 3)
         'bans': {},  # {guild_id: [(timestamp, (user_id, moderator_id))]}
         'kicks': {},  # {guild_id: [(timestamp, (user_id, moderator_id))]}
@@ -569,7 +571,7 @@ async def security_whitelist_command(
         embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
         await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="security-config", description="⚙️ Configure auto-timeout security features")
+@bot.tree.command(name="security-config", description="⚙️ Configure security features - Main security control panel")
 @app_commands.describe(
     feature="Security feature to configure",
     enabled="Enable or disable the feature",
@@ -596,6 +598,9 @@ async def security_whitelist_command(
     app_commands.Choice(name="Auto Bot-Block", value="bot_block"),
     app_commands.Choice(name="Malware/File Filter", value="malware_filter"),
     app_commands.Choice(name="Auto Warning System", value="warning_system"),
+    app_commands.Choice(name="Timeout: Bad Words Detection", value="timeout_bad_words"),
+    app_commands.Choice(name="Timeout: Spam Detection", value="timeout_spam"),
+    app_commands.Choice(name="Timeout: Link Detection", value="timeout_links"),
 ])
 async def security_config_command(
     interaction: discord.Interaction,
@@ -684,6 +689,18 @@ async def security_config_command(
             'strike_2_warnings': strike_2,
             'strike_3_warnings': strike_3
         }
+    elif feature == "timeout_bad_words":
+        timeout_settings = server_data.get('timeout_settings', {})
+        timeout_settings['bad_words'] = enabled
+        await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
+    elif feature == "timeout_spam":
+        timeout_settings = server_data.get('timeout_settings', {})
+        timeout_settings['spam'] = enabled
+        await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
+    elif feature == "timeout_links":
+        timeout_settings = server_data.get('timeout_settings', {})
+        timeout_settings['links'] = enabled
+        await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
     
     await update_server_data(interaction.guild.id, {'security_settings': security_settings})
     
@@ -700,7 +717,10 @@ async def security_config_command(
         'anti_alt': '🚫 Anti-Alt (Quarantine New Accounts)',
         'bot_block': '🤖 Auto Bot-Block',
         'malware_filter': '🛡️ Malware/File Filter',
-        'warning_system': '⚠️ Auto Warning System'
+        'warning_system': '⚠️ Auto Warning System',
+        'timeout_bad_words': '🤬 Timeout: Bad Words Detection',
+        'timeout_spam': '💨 Timeout: Spam Detection',
+        'timeout_links': '🔗 Timeout: Link Detection'
     }
     
     # Build description based on feature type
@@ -2182,6 +2202,95 @@ async def clearwarnings_command(interaction: discord.Interaction, member: discor
         color=BrandColors.SUCCESS
     )
     embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+    
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="security-timeout-channel", description="🔒 Configure timeout channel for isolated communication")
+@app_commands.describe(
+    channel="Channel where timed-out members can chat (leave empty to disable)"
+)
+async def security_timeout_channel_config(interaction: discord.Interaction, channel: discord.TextChannel = None):
+    if not await has_permission(interaction, "main_moderator"):
+        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
+        return
+    
+    server_data = await get_server_data(interaction.guild.id)
+    timeout_settings = server_data.get('timeout_settings', {})
+    
+    if channel:
+        timeout_settings['timeout_channel'] = str(channel.id)
+        status_msg = f"✅ Timeout channel set to {channel.mention}"
+        description = f"**Timeout Channel:** {channel.mention}\n**Status:** Active\n\n⚡ **How it works:**\nWhen a member is timed out, they will:\n• Lose access to all server channels\n• Only see and chat in {channel.mention}\n• Have restrictions removed when timeout ends\n\n💠 This provides 100% isolation for timed-out members"
+        color = BrandColors.SUCCESS
+    else:
+        timeout_settings.pop('timeout_channel', None)
+        status_msg = "❌ Timeout channel disabled"
+        description = "**Status:** Disabled\n\nTimed-out members will use Discord's default timeout system only."
+        color = BrandColors.WARNING
+    
+    await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
+    
+    embed = discord.Embed(
+        title="🔒 **Timeout Channel Configuration**",
+        description=description,
+        color=color
+    )
+    embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
+    
+    await interaction.response.send_message(embed=embed)
+    await log_action(interaction.guild.id, "security", f"🔒 [TIMEOUT CHANNEL] {status_msg} by {interaction.user}")
+
+@bot.tree.command(name="security-status", description="📊 View all security settings for this server")
+async def security_status_command(interaction: discord.Interaction):
+    if not await has_permission(interaction, "junior_moderator"):
+        await interaction.response.send_message("❌ You need Junior Moderator permissions to use this command!", ephemeral=True)
+        return
+    
+    server_data = await get_server_data(interaction.guild.id)
+    security_settings = server_data.get('security_settings', {})
+    timeout_settings = server_data.get('timeout_settings', {})
+    
+    def get_status_emoji(setting_dict):
+        return "✅" if setting_dict.get('enabled', False) else "❌"
+    
+    def get_timeout_status(setting_key):
+        return "✅" if timeout_settings.get(setting_key, True) else "❌"
+    
+    embed = discord.Embed(
+        title="🛡️ **Security System Status**",
+        description=f"**Server:** {interaction.guild.name}\n\n**Complete security overview for this server**",
+        color=BrandColors.PRIMARY
+    )
+    
+    auto_security = f"{get_status_emoji(security_settings.get('auto_timeout_mentions', {}))} @everyone/@here Protection\n"
+    auto_security += f"{get_status_emoji(security_settings.get('anti_spam', {}))} Anti-Spam\n"
+    auto_security += f"{get_status_emoji(security_settings.get('anti_raid', {}))} Anti-Raid\n"
+    auto_security += f"{get_status_emoji(security_settings.get('anti_nuke', {}))} Anti-Nuke"
+    
+    content_filters = f"{get_status_emoji(security_settings.get('link_filter', {}))} Link Filter\n"
+    content_filters += f"{get_status_emoji(security_settings.get('anti_invite', {}))} Anti-Invite\n"
+    content_filters += f"{get_status_emoji(security_settings.get('malware_filter', {}))} Malware Filter"
+    
+    member_protection = f"{get_status_emoji(security_settings.get('anti_alt', {}))} Anti-Alt Accounts\n"
+    member_protection += f"{get_status_emoji(security_settings.get('bot_block', {}))} Auto Bot-Block\n"
+    member_protection += f"{get_status_emoji(security_settings.get('warning_system', {}))} Auto Warning System"
+    
+    timeout_system = f"{get_timeout_status('bad_words')} Bad Words Detection\n"
+    timeout_system += f"{get_timeout_status('spam')} Spam Detection\n"
+    timeout_system += f"{get_timeout_status('links')} Link Detection"
+    
+    embed.add_field(name="🚨 Auto Security", value=auto_security, inline=True)
+    embed.add_field(name="🔗 Content Filters", value=content_filters, inline=True)
+    embed.add_field(name="👥 Member Protection", value=member_protection, inline=True)
+    embed.add_field(name="⏰ Timeout System", value=timeout_system, inline=False)
+    
+    timeout_channel_id = timeout_settings.get('timeout_channel')
+    if timeout_channel_id:
+        timeout_channel = interaction.guild.get_channel(int(timeout_channel_id))
+        if timeout_channel:
+            embed.add_field(name="🔒 Timeout Channel", value=f"{timeout_channel.mention}", inline=False)
+    
+    embed.set_footer(text=f"{BOT_FOOTER} • Use /security-config to modify settings", icon_url=bot.user.display_avatar.url)
     
     await interaction.response.send_message(embed=embed)
 

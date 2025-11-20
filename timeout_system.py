@@ -331,50 +331,8 @@ async def timeout_user(member, guild, timeout_duration, offense_type, message_co
         print(f"❌ [TIMEOUT ERROR] Failed to timeout {member}: {e}")
         return False
 
-@bot.tree.command(name="timeout-settings", description="⚙️ Configure auto-timeout system")
-@app_commands.describe(
-    feature="Which feature to toggle",
-    enabled="Enable or disable the feature"
-)
-@app_commands.choices(feature=[
-    app_commands.Choice(name="bad_words", value="bad_words"),
-    app_commands.Choice(name="spam", value="spam"),
-    app_commands.Choice(name="links", value="links"),
-    app_commands.Choice(name="all_features", value="enabled")
-])
-async def timeout_settings(
-    interaction: discord.Interaction,
-    feature: str,
-    enabled: bool
-):
-    if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
-        return
-
-    server_data = await get_server_data(interaction.guild.id)
-    timeout_settings = server_data.get('timeout_settings', {})
-
-    timeout_settings[feature] = enabled
-    await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
-
-    feature_names = {
-        'bad_words': 'Bad Words Detection',
-        'spam': 'Spam Detection',
-        'links': 'Link Detection',
-        'enabled': 'Auto-Timeout System'
-    }
-
-    status = "✅ Enabled" if enabled else "❌ Disabled"
-
-    embed = discord.Embed(
-        title="⚙️ **Timeout Settings Updated**",
-        description=f"**Feature:** {feature_names.get(feature, feature)}\n**Status:** {status}",
-        color=BrandColors.SUCCESS if enabled else 0xe74c3c
-    )
-    embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
-
-    await interaction.response.send_message(embed=embed)
-    await log_action(interaction.guild.id, "setup", f"⚙️ [TIMEOUT SETTINGS] {feature_names.get(feature, feature)} {status.lower()} by {interaction.user}")
+# NOTE: /timeout-settings has been consolidated into /security-config
+# Use /security-config with timeout_bad_words, timeout_spam, timeout_links options instead
 
 # NOTE: /remove-timeout command has been moved to enhanced_security.py (Phase 1)
 # The enhanced version includes role restoration in addition to channel permission restoration
@@ -428,40 +386,8 @@ async def timeout_stats(interaction: discord.Interaction, user: discord.Member =
 
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="timeout-channel", description="🔒 Configure timeout channel for isolated communication")
-@app_commands.describe(
-    channel="Channel where timed-out members can chat (set to None to disable)"
-)
-async def timeout_channel_config(interaction: discord.Interaction, channel: discord.TextChannel = None):
-    if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
-        return
-
-    server_data = await get_server_data(interaction.guild.id)
-    timeout_settings = server_data.get('timeout_settings', {})
-    
-    if channel:
-        timeout_settings['timeout_channel'] = str(channel.id)
-        status_msg = f"✅ Timeout channel set to {channel.mention}"
-        description = f"**Timeout Channel:** {channel.mention}\n**Status:** Active\n\n⚡ **How it works:**\nWhen a member is timed out, they will:\n• Lose access to all server channels\n• Only see and chat in {channel.mention}\n• Have restrictions removed when timeout ends\n\nThis provides 100% isolation for timed-out members while allowing communication."
-        color = BrandColors.SUCCESS
-    else:
-        timeout_settings.pop('timeout_channel', None)
-        status_msg = "❌ Timeout channel disabled"
-        description = "**Status:** Disabled\n\nTimed-out members will use Discord's default timeout system only."
-        color = BrandColors.WARNING
-    
-    await update_server_data(interaction.guild.id, {'timeout_settings': timeout_settings})
-    
-    embed = discord.Embed(
-        title="🔒 **Timeout Channel Configuration**",
-        description=description,
-        color=color
-    )
-    embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
-    
-    await interaction.response.send_message(embed=embed)
-    await log_action(interaction.guild.id, "setup", f"🔒 [TIMEOUT CHANNEL] {status_msg} by {interaction.user}")
+# NOTE: /timeout-channel has been moved to /security-timeout-channel
+# Use /security-timeout-channel for configuring the timeout isolation channel
 
 async def timeout_cleanup_task():
     """Background task to check and clean up expired timeouts"""

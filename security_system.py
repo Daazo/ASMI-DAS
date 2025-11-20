@@ -25,69 +25,15 @@ security_data = {
 # Initialize CAPTCHA generator
 captcha_gen = CaptchaGenerator()
 
-# Security settings command
-@bot.tree.command(name="security", description="🛡️ Configure security system settings")
-@app_commands.describe(
-    feature="Security feature to configure",
-    enabled="Enable or disable the feature",
-    threshold="Threshold value for the feature (where applicable)"
-)
-@app_commands.choices(feature=[
-    app_commands.Choice(name="anti_raid", value="anti_raid"),
-    app_commands.Choice(name="anti_nuke", value="anti_nuke"),
-    app_commands.Choice(name="permission_monitoring", value="permission_monitoring"),
-    app_commands.Choice(name="auto_ban", value="auto_ban"),
-    app_commands.Choice(name="bot_whitelist", value="bot_whitelist"),
-    app_commands.Choice(name="security_logs", value="security_logs")
-])
-async def security_settings(
-    interaction: discord.Interaction,
-    feature: str,
-    enabled: bool,
-    threshold: int = None
-):
-    if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
-        return
+# ═══════════════════════════════════════════════════════════════════════════
+# DEPRECATED COMMANDS - MOVED TO ENHANCED_SECURITY.PY
+# These commands are now consolidated under /security-config
+# Keeping commented for reference only
+# ═══════════════════════════════════════════════════════════════════════════
 
-    server_data = await get_server_data(interaction.guild.id)
-    security_settings = server_data.get('security_settings', {})
-
-    # Update the specific security feature
-    if threshold is not None:
-        security_settings[feature] = {
-            'enabled': enabled,
-            'threshold': threshold
-        }
-    else:
-        security_settings[feature] = {'enabled': enabled}
-
-    await update_server_data(interaction.guild.id, {'security_settings': security_settings})
-
-    feature_names = {
-        'anti_raid': '🛡️ Anti-Raid Protection',
-        'anti_nuke': '🚫 Anti-Nuke Protection', 
-        'permission_monitoring': '👁️ Permission Monitoring',
-        'auto_ban': '🔨 Auto Ban System',
-        'bot_whitelist': '🤖 Bot Whitelist',
-        'security_logs': '📋 Security Logs'
-    }
-
-    status = "✅ Enabled" if enabled else "❌ Disabled"
-    extra_info = ""
-    
-    if threshold:
-        extra_info = f"\n**Threshold:** {threshold}"
-
-    embed = discord.Embed(
-        title="⚡ **Security Settings Updated**",
-        description=f"**◆ Feature:** {feature_names.get(feature, feature)}\n**◆ Status:** {status}{extra_info}",
-        color=BrandColors.PRIMARY if enabled else BrandColors.DANGER
-    )
-    embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
-
-    await interaction.response.send_message(embed=embed)
-    await log_action(interaction.guild.id, "security", f"🛡️ [SECURITY] {feature_names.get(feature, feature)} {status.lower()} by {interaction.user}")
+# NOTE: The /security command has been replaced with /security-config
+# which provides more comprehensive security configuration options
+# Use /security-config instead for all security settings
 
 # Verification setup command
 @bot.tree.command(name="verification-setup", description="✅ Setup verification system for new members")
@@ -282,106 +228,9 @@ class CaptchaInputView(discord.ui.View):
     async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(self.modal)
 
-# Bot whitelist command
-@bot.tree.command(name="whitelist", description="🤖 Manage bot and role whitelist for security")
-@app_commands.describe(
-    action="Add or remove from whitelist",
-    target="Bot or role to whitelist",
-    target_type="Whether it's a bot or role"
-)
-@app_commands.choices(
-    action=[
-        app_commands.Choice(name="add", value="add"),
-        app_commands.Choice(name="remove", value="remove"),
-        app_commands.Choice(name="list", value="list")
-    ],
-    target_type=[
-        app_commands.Choice(name="bot", value="bot"),
-        app_commands.Choice(name="role", value="role")
-    ]
-)
-async def whitelist_command(
-    interaction: discord.Interaction,
-    action: str,
-    target_type: str = None,
-    target: discord.Member = None
-):
-    if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message("❌ You need Main Moderator permissions to use this command!", ephemeral=True)
-        return
-
-    server_data = await get_server_data(interaction.guild.id)
-    whitelist = server_data.get('security_whitelist', {'bots': [], 'roles': []})
-
-    if action == "list":
-        bot_list = [f"<@{bot_id}>" for bot_id in whitelist.get('bots', [])]
-        role_list = [f"<@&{role_id}>" for role_id in whitelist.get('roles', [])]
-        
-        embed = discord.Embed(
-            title="◆ **Security Whitelist**",
-            color=BrandColors.PRIMARY
-        )
-        embed.add_field(
-            name="🤖 Whitelisted Bots",
-            value="\n".join(bot_list) if bot_list else "*None*",
-            inline=False
-        )
-        embed.add_field(
-            name="👥 Whitelisted Roles", 
-            value="\n".join(role_list) if role_list else "*None*",
-            inline=False
-        )
-        embed.set_footer(text=BOT_FOOTER)
-        
-        await interaction.response.send_message(embed=embed)
-        return
-
-    if not target or not target_type:
-        await interaction.response.send_message("❌ Please specify a target and target type!", ephemeral=True)
-        return
-
-    target_id = str(target.id)
-    target_list = whitelist.get(target_type + 's', [])
-
-    if action == "add":
-        if target_id not in target_list:
-            target_list.append(target_id)
-            whitelist[target_type + 's'] = target_list
-            await update_server_data(interaction.guild.id, {'security_whitelist': whitelist})
-            
-            embed = discord.Embed(
-                title="⚡ **Added to Whitelist**",
-                description=f"**◆ {target_type.title()}:** {target.mention}\n**◆ Action:** Added to security whitelist",
-                color=BrandColors.PRIMARY
-            )
-            await log_action(interaction.guild.id, "security", f"🤖 [WHITELIST] {target} added to {target_type} whitelist by {interaction.user}")
-        else:
-            embed = discord.Embed(
-                title="⚠️ **Already Whitelisted**",
-                description=f"{target.mention} is already in the {target_type} whitelist.",
-                color=BrandColors.WARNING
-            )
-    
-    elif action == "remove":
-        if target_id in target_list:
-            target_list.remove(target_id)
-            whitelist[target_type + 's'] = target_list
-            await update_server_data(interaction.guild.id, {'security_whitelist': whitelist})
-            
-            embed = discord.Embed(
-                title="⚡ **Removed from Whitelist**",
-                description=f"**◆ {target_type.title()}:** {target.mention}\n**◆ Action:** Removed from security whitelist",
-                color=BrandColors.PRIMARY
-            )
-            await log_action(interaction.guild.id, "security", f"🤖 [WHITELIST] {target} removed from {target_type} whitelist by {interaction.user}")
-        else:
-            embed = discord.Embed(
-                title="⚠️ **Not Whitelisted**",
-                description=f"{target.mention} is not in the {target_type} whitelist.",
-                color=BrandColors.WARNING
-            )
-
-    await interaction.response.send_message(embed=embed)
+# NOTE: The /whitelist command has been replaced with /security-whitelist
+# which provides more granular control over security feature whitelists
+# Use /security-whitelist instead for managing security bypasses
 
 # Event handlers for security monitoring
 @bot.event
