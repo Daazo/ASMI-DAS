@@ -11,6 +11,45 @@ RXT ENGINE is a multi-functional Discord bot designed for automation, moderation
 
 ## Recent Changes
 
+### November 20, 2025 - Phase 4: Anti-Alt, Auto Bot-Block, Malware Filter, Auto Warning System
+- 🚫 **Anti-Alt System (New Account Quarantine)**
+  - Automatically quarantines new accounts younger than configured days (default: 7 days)
+  - Creates "🚫 Quarantine" role with view-only permissions
+  - Sends DM to quarantined users explaining restrictions and when they'll be released
+  - Logs all quarantine actions to security channel with account age details
+  - Whitelist support via `/security-whitelist add anti_alt @user`
+  - Configure minimum age via `/security-config feature:Anti-Alt min_age_days:X`
+  
+- 🤖 **Auto Bot-Block System**
+  - Automatically blocks unauthorized bot joins to prevent raid bots
+  - Kicks unauthorized bots immediately upon join
+  - Whitelist support for authorized bots via `/security-whitelist add bot_block @bot`
+  - Alerts sent to security channel when bots are blocked
+  - Enable/disable via `/security-config feature:Auto Bot-Block enabled:True/False`
+  
+- 🛡️ **Malware/File Filter System**
+  - Blocks 30+ dangerous file extensions (.exe, .bat, .cmd, .scr, .vbs, .jar, .msi, etc.)
+  - Detects 13+ suspicious domains (grabify, iplogger, fake discord/steam, URL shorteners)
+  - Automatically deletes messages containing malicious content
+  - Auto-applies warning to violators via warning system
+  - Whitelist support via `/security-whitelist add malware_filter @user`
+  - Logs all blocked content to security channel
+  - Enable/disable via `/security-config feature:Malware/File Filter enabled:True/False`
+  
+- ⚠️ **Auto Warning System (3-Strike Escalation)**
+  - **Strike Level 1 (3 warnings)**: 1-hour timeout
+  - **Strike Level 2 (5 warnings)**: 24-hour timeout
+  - **Strike Level 3 (7 warnings)**: Permanent ban
+  - Configurable strike thresholds via `/security-config feature:Auto Warning System strike_1:X strike_2:Y strike_3:Z`
+  - All warnings persist in MongoDB database
+  - DMs users on each warning with count and next strike level
+  - Commands:
+    - `/warn @user reason:"..."` - Issue manual warning
+    - `/warnings @user` - View user's warning history
+    - `/clearwarnings @user` - Clear all warnings for user
+  - Warnings logged to moderation channel with full context
+  - Automatic timeout/ban when strike thresholds exceeded
+
 ### November 20, 2025 - Phase 3: Anti-Nuke, Permission Shield, Webhook Protection Implementation
 - 🚫 **Anti-Nuke System (Mass Action Detection & Auto-Rollback)**
   - **Mass Ban Detection & Rollback**: Tracks bans via audit logs (default: 5 bans/min), automatically unbans all affected users
@@ -47,7 +86,7 @@ RXT ENGINE is a multi-functional Discord bot designed for automation, moderation
 - **Enhanced /security-config Command**
   - Added separate threshold configuration for each anti-nuke action type
   - Parameters: `ban_threshold`, `kick_threshold`, `role_threshold`, `channel_threshold`
-  - Supports all Phase 1, 2, and 3 security features
+  - Supports all Phase 1, 2, 3, and 4 security features
   - Individual enable/disable control for each feature
 
 ### System Architecture
@@ -77,6 +116,10 @@ The bot's functionalities are organized into distinct modules:
 - **Consistent Branding**: All branding elements are centralized in `brand_config.py`.
 
 **Key Features:**
+- **Anti-Alt System**: Quarantines new accounts younger than configured days to prevent alt account abuse.
+- **Auto Bot-Block**: Prevents unauthorized bot joins to protect against raid bots.
+- **Malware/File Filter**: Blocks dangerous files and suspicious links with auto-warning system.
+- **Auto Warning System**: 3-strike escalation system (3/5/7 warnings) with automatic timeout/ban enforcement.
 - **Anti-Nuke System**: Detects and rolls back mass bans, kicks, role deletions, and channel deletions using audit logs with configurable thresholds.
 - **Permission Shield**: Monitors and reverts unauthorized dangerous role permission changes to prevent privilege escalation.
 - **Webhook Protection**: Automatically deletes unauthorized webhooks while allowing whitelisted moderators to create them.
