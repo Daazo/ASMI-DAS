@@ -53,9 +53,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'main_moderator_role': str(role.id)})
 
         embed = discord.Embed(
-            title="✅ Main Moderator Role Set",
-            description=f"**Role:** {role.mention}\n**Set by:** {interaction.user.mention}",
-            color=BrandColors.SUCCESS
+            title="⚡ **Main Moderator Role Set**",
+            description=f"**◆ Role:** {role.mention}\n**◆ Set by:** {interaction.user.mention}",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -69,9 +69,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'junior_moderator_role': str(role.id)})
 
         embed = discord.Embed(
-            title="✅ Junior Moderator Role Set",
-            description=f"**Role:** {role.mention}\n**Set by:** {interaction.user.mention}",
-            color=BrandColors.SUCCESS
+            title="⚡ **Junior Moderator Role Set**",
+            description=f"**◆ Role:** {role.mention}\n**◆ Set by:** {interaction.user.mention}",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -102,10 +102,10 @@ async def setup(
 
         # Test welcome functionality
         test_embed = discord.Embed(
-            title="✅ Welcome System Test",
-            description=f"**Channel:** {channel.mention}\n**Message:** {welcome_data['welcome_message']}\n" + 
-                       (f"**Image/GIF:** ✅ Working properly" if welcome_data.get('welcome_image') else "**Image/GIF:** None set"),
-            color=BrandColors.SUCCESS
+            title="💠 **Welcome System Test**",
+            description=f"**◆ Channel:** {channel.mention}\n**◆ Message:** {welcome_data['welcome_message']}\n" + 
+                       (f"**◆ Image/GIF:** ✓ Working properly" if welcome_data.get('welcome_image') else "**◆ Image/GIF:** None set"),
+            color=BrandColors.PRIMARY
         )
         if welcome_data.get('welcome_image'):
             test_embed.set_image(url=welcome_data['welcome_image'])
@@ -121,9 +121,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'welcome_title': value})
 
         embed = discord.Embed(
-            title="✅ Welcome Title Set",
-            description=f"**Title:** {value}\n**Set by:** {interaction.user.mention}\n\n*Use {{user}} and {{server}} placeholders*",
-            color=BrandColors.SUCCESS
+            title="💠 **Welcome Title Set**",
+            description=f"**◆ Title:** {value}\n**◆ Set by:** {interaction.user.mention}\n\n*Use {{user}} and {{server}} placeholders*",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -142,9 +142,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'welcome_image': value})
 
         embed = discord.Embed(
-            title="✅ Welcome Image Set",
-            description=f"**Image URL:** {value}\n**Set by:** {interaction.user.mention}",
-            color=BrandColors.SUCCESS
+            title="💠 **Welcome Image Set**",
+            description=f"**◆ Image URL:** {value}\n**◆ Set by:** {interaction.user.mention}",
+            color=BrandColors.PRIMARY
         )
         embed.set_image(url=value)
         embed.set_footer(text=BOT_FOOTER)
@@ -163,9 +163,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'prefix': value})
 
         embed = discord.Embed(
-            title="✅ Prefix Updated",
-            description=f"**New Prefix:** `{value}`\n**Set by:** {interaction.user.mention}",
-            color=BrandColors.SUCCESS
+            title="⚡ **Prefix Updated**",
+            description=f"**◆ New Prefix:** `{value}`\n**◆ Set by:** {interaction.user.mention}",
+            color=BrandColors.PRIMARY
         )
         await interaction.response.send_message(embed=embed)
         await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Prefix set to '{value}' by {interaction.user}")
@@ -186,9 +186,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'log_channels': log_channels})
 
         embed = discord.Embed(
-            title="✅ Log Channel Set",
-            description=f"**Log Type:** {value}\n**Channel:** {channel.mention}\n**Set by:** {interaction.user.mention}",
-            color=BrandColors.SUCCESS
+            title="⚡ **Log Channel Set**",
+            description=f"**◆ Log Type:** {value}\n**◆ Channel:** {channel.mention}\n**◆ Set by:** {interaction.user.mention}",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -202,9 +202,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'karma_channel': str(channel.id)})
 
         embed = discord.Embed(
-            title="✅ Karma Channel Set",
-            description=f"**Karma milestone announcements will be sent to:** {channel.mention}",
-            color=BrandColors.SUCCESS
+            title="💠 **Karma Channel Set**",
+            description=f"**◆ Karma milestone announcements will be sent to:** {channel.mention}",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -219,9 +219,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'auto_role': str(role.id)})
 
         embed = discord.Embed(
-            title="✅ Auto Role Set",
-            description=f"**Role:** {role.mention}\n**Set by:** {interaction.user.mention}\n\n*This role will be automatically assigned to new members.*",
-            color=BrandColors.SUCCESS
+            title="⚡ **Auto Role Set**",
+            description=f"**◆ Role:** {role.mention}\n**◆ Set by:** {interaction.user.mention}\n\n*This role will be automatically assigned to new members.*",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -235,9 +235,9 @@ async def setup(
         await update_server_data(interaction.guild.id, {'ticket_support_role': str(role.id)})
 
         embed = discord.Embed(
-            title="✅ Ticket Support Role Set",
-            description=f"**Role:** {role.mention}\n**Set by:** {interaction.user.mention}\n\n*This role will be mentioned when tickets are created.*",
-            color=BrandColors.SUCCESS
+            title="🎫 **Ticket Support Role Set**",
+            description=f"**◆ Role:** {role.mention}\n**◆ Set by:** {interaction.user.mention}\n\n*This role will be mentioned when tickets are created.*",
+            color=BrandColors.PRIMARY
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
@@ -322,8 +322,8 @@ async def setup(
                     # Send initial message to log channels
                     embed = discord.Embed(
                         title=f"⚡ **{channel_name.replace('-', ' ').title()} Channel**",
-                        description=f"**{description}**\n\n*This channel will automatically receive relevant bot logs.*\n\n**🤖 Bot:** {interaction.guild.me.mention}\n**Setup by:** {interaction.user.mention}\n**Setup time:** {discord.utils.format_dt(discord.utils.utcnow())}",
-                        color=BrandColors.SUCCESS
+                        description=f"**{description}**\n\n*This channel will automatically receive relevant bot logs.*\n\n**◆ Bot:** {interaction.guild.me.mention}\n**◆ Setup by:** {interaction.user.mention}\n**◆ Setup time:** {discord.utils.format_dt(discord.utils.utcnow())}",
+                        color=BrandColors.PRIMARY
                     )
                     embed.set_footer(text=BOT_FOOTER, icon_url=interaction.guild.me.display_avatar.url)
                     await channel.send(embed=embed)
