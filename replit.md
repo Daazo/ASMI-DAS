@@ -9,6 +9,68 @@ RXT ENGINE is a powerful multi-function Discord bot focused on automation, moder
 
 ## Recent Changes
 
+### November 20, 2025 - Phase 2: Anti-Spam, Anti-Raid, Link Filter, Anti-Invite Implementation
+- ⚡ **Link Filter System**
+  - Automatically deletes external links (http://, https://, www.) from non-moderators
+  - Respects whitelist system (whitelisted users can post links freely)
+  - Configurable via `/security-config` → Link Filter
+  - Logs all blocked links to security channel
+  - Shows quantum purple notification when link is blocked (auto-deletes after 5s)
+  
+- 💬 **Anti-Invite System**
+  - Blocks Discord invite links (discord.gg, discord.com/invite, discordapp.com/invite)
+  - Moderators always exempt from restrictions
+  - Whitelist support for trusted users to post invites
+  - Configurable allowed channels (invites permitted in specific channels)
+  - Logs all blocked invites to security channel
+  - RXT ENGINE themed notifications with auto-delete
+  
+- 💨 **Anti-Spam Detection & Auto-Timeout**
+  - Detects repeated messages (3+ identical messages = auto-timeout)
+  - Detects message flooding (5+ messages in 5 seconds = auto-timeout)
+  - Applies enhanced timeout with role removal and timeout role
+  - Configurable timeout duration via `/security-config` duration parameter
+  - Moderators exempt from anti-spam detection
+  - All spam timeouts logged to security channel
+  - Quantum purple notification with reason and duration shown
+  
+- 🚨 **Anti-Raid System with Auto-Kick**
+  - Monitors member joins in real-time
+  - Detects raid conditions (default: 5+ joins in 10 seconds)
+  - Automatically enables raid mode when threshold exceeded
+  - Auto-kicks all new members while raid mode is active
+  - Configurable thresholds (join count and time window)
+  - Manual raid mode toggle via `/raid-mode` command
+  - Sends critical alert to security channel when raid detected
+  - All kicked members logged with user ID
+  
+- ⚙️ **Enhanced /security-config Command**
+  - Now supports 5 security features (up from 1):
+    - Auto-Timeout @everyone/@here
+    - Link Filter
+    - Anti-Invite
+    - Anti-Spam
+    - Anti-Raid
+  - Simple enable/disable per feature
+  - Duration parameter for timeout-based features
+  - Logs all configuration changes
+  - RXT ENGINE quantum purple themed responses
+  
+- 🚨 **New /raid-mode Command**
+  - Manually enable/disable raid mode
+  - Requires Main Moderator permissions
+  - Instant activation/deactivation
+  - Shows clear status (enabled = red danger theme, disabled = green success)
+  - Logs all manual raid mode changes
+  
+- 🔗 **Full Integration with Existing Systems**
+  - Phase 2 checks integrated into main.py `on_message` handler
+  - Anti-Raid check integrated into `on_member_join` handler
+  - All Phase 2 features use Phase 1 whitelist framework
+  - Security checks execute in correct order (spam → invites → links)
+  - All features log to security channel consistently
+  - 55 total commands registered (up from 54)
+
 ### November 20, 2025 - Phase 1 Bug Fixes & Improvements
 - ✅ **Fixed Circular Import Errors in enhanced_security.py**
   - Replaced `bot.user` with `interaction.client.user` in all slash commands
