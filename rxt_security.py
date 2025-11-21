@@ -569,6 +569,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         added_roles = after_roles - before_roles
         
         # Check who made the role change from audit logs
+        actor = None
         actor_is_trusted = False
         try:
             async for entry in before.guild.audit_logs(limit=1, action=discord.AuditLogAction.member_role_update):
@@ -604,9 +605,11 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                     except:
                         pass
                     
-                    await apply_quarantine(before, f"Attempted to remove high-permission role: {role.name}", "anti_nuke")
-                    await _log_action(before.guild.id, "security",
-                                   f"🚫 [ANTI-NUKE] {before} attempted to remove role: {role.name}")
+                    # If we have the actor from audit logs, quarantine them (they tried to remove admin role)
+                    if actor:
+                        await apply_quarantine(actor, f"Attempted to remove high-permission role: {role.name}", "anti_nuke")
+                        await _log_action(before.guild.id, "security",
+                                       f"🚫 [ANTI-NUKE] {actor} placed in quarantine - Attempted to remove role: {role.name} from {before}")
                     return
         
         if added_roles:
@@ -617,9 +620,11 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                     except:
                         pass
                     
-                    await apply_quarantine(before, f"Attempted to gain high-permission role: {role.name}", "anti_role")
-                    await _log_action(before.guild.id, "security",
-                                   f"🚫 [ANTI-ROLE] {before} attempted to add role: {role.name}")
+                    # If we have the actor from audit logs, quarantine them (they tried to give admin role)
+                    if actor:
+                        await apply_quarantine(actor, f"Unauthorized attempt to grant high-permission role: {role.name}", "anti_role")
+                        await _log_action(before.guild.id, "security",
+                                       f"🚫 [ANTI-ROLE] {actor} placed in quarantine - Attempted to grant role: {role.name} to {before}")
                     return
     
     @bot.listen('on_guild_channel_delete')
