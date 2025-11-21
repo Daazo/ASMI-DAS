@@ -657,41 +657,35 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         if not config.get('security_enabled') or not config.get('massdelete_enabled'):
             return
         
-        await _log_action(messages[0].guild.id, "security",
-                        f"🚫 [MASS MESSAGE DELETION] {len(messages)} messages deleted in {messages[0].channel.mention}")
-    
-    @bot.listen('on_message_delete')
-    async def security_on_message_delete(message):
-        if message.author.bot:
+        # Get the user who deleted the messages from audit logs
+        actor = None
+        try:
+            async for entry in messages[0].guild.audit_logs(limit=5, action=discord.AuditLogAction.message_delete):
+                if entry.user:
+                    actor = entry.user
+                    break
+        except:
+            pass
+        
+        if not actor or actor.bot:
             return
         
-        if not message.guild:
+        # Get the member object
+        try:
+            member = await messages[0].guild.fetch_member(actor.id)
+        except:
             return
         
-        config = await get_security_config(message.guild.id)
-        
-        if not config.get('security_enabled') or not config.get('massdelete_enabled'):
+        if await is_whitelisted(messages[0].guild.id, member):
             return
         
-        if await is_whitelisted(message.guild.id, message.author):
-            return
-        
-        user_id = message.author.id
-        guild_id = message.guild.id
-        current_time = time.time()
-        
-        user_message_deletion_attempts[guild_id][user_id].append(current_time)
-        
-        user_message_deletion_attempts[guild_id][user_id] = [
-            ts for ts in user_message_deletion_attempts[guild_id][user_id]
-            if current_time - ts < config.get('mass_delete_time_window', 5)
-        ]
-        
-        if len(user_message_deletion_attempts[guild_id][user_id]) > config.get('mass_delete_threshold', 5):
-            await apply_quarantine(message.author, "Mass message deletion detected", "mass_delete_violation")
+        # Quarantine user for mass message deletion
+        deletion_count = len(messages)
+        if deletion_count > config.get('mass_delete_threshold', 5):
+            await apply_quarantine(member, f"Mass message deletion detected ({deletion_count} messages)", "mass_delete_violation")
             
-            await _log_action(message.guild.id, "security",
-                            f"🚫 [MASS DELETE] {message.author} placed in quarantine for mass message deletion")
+            await _log_action(messages[0].guild.id, "security",
+                            f"🚫 [MASS DELETE] {actor} placed in quarantine - Deleted {deletion_count} messages in {messages[0].channel.mention}")
     
     @bot.listen('on_member_update')
     async def security_on_role_change(before, after):
