@@ -263,17 +263,16 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         
         if config.get('massmention_enabled'):
             if '@everyone' in message.content or '@here' in message.content:
-                if not message.author.guild_permissions.mention_everyone:
-                    try:
-                        await message.delete()
-                    except:
-                        pass
-                    
-                    await apply_timeout(message.author, "Unauthorized @everyone/@here mention", 3600)
-                    
-                    await _log_action(message.guild.id, "security", 
-                                   f"🚫 [MASS MENTION BLOCKED] {message.author} attempted @everyone/@here")
-                    return
+                try:
+                    await message.delete()
+                except:
+                    pass
+                
+                await apply_timeout(message.author, "Unauthorized @everyone/@here mention", 3600)
+                
+                await _log_action(message.guild.id, "security", 
+                               f"🚫 [MASS MENTION BLOCKED] {message.author} attempted @everyone/@here")
+                return
         
         if config.get('antispam_enabled'):
             user_id = message.author.id
