@@ -569,28 +569,33 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         added_roles = after_roles - before_roles
         
         # Check who made the role change from audit logs
-        actor = None
+        actor_member = None
         actor_is_trusted = False
         try:
-            async for entry in before.guild.audit_logs(limit=1, action=discord.AuditLogAction.member_role_update):
-                if entry.target.id == before.id:
-                    actor = entry.user
+            async for entry in before.guild.audit_logs(limit=10, action=discord.AuditLogAction.member_role_update):
+                if entry.target.id == before.id and entry.user:
+                    # Fetch the actor as a member object
+                    try:
+                        actor_member = await before.guild.fetch_member(entry.user.id)
+                    except:
+                        actor_member = entry.user
+                    
                     # Only trust: owner, whitelisted users, whitelisted roles, main mod role
-                    if actor:
-                        # Check if actor is server owner
-                        if actor.id == before.guild.owner_id:
-                            actor_is_trusted = True
-                        # Check if actor is whitelisted user
-                        elif await is_whitelisted(before.guild.id, actor):
-                            actor_is_trusted = True
-                        # Check if actor has main moderator role (from server setup)
-                        else:
+                    # Check if actor is server owner
+                    if entry.user.id == before.guild.owner_id:
+                        actor_is_trusted = True
+                    # Check if actor is whitelisted user
+                    elif await is_whitelisted(before.guild.id, entry.user):
+                        actor_is_trusted = True
+                    # Check if actor has main moderator role (from server setup)
+                    else:
+                        if hasattr(actor_member, 'roles'):
                             server_data = await _get_server_data(before.guild.id)
                             main_mod_role_id = server_data.get('main_moderator_role')
-                            if main_mod_role_id and any(role.id == int(main_mod_role_id) for role in actor.roles):
+                            if main_mod_role_id and any(role.id == int(main_mod_role_id) for role in actor_member.roles):
                                 actor_is_trusted = True
                     break
-        except:
+        except Exception as e:
             pass
         
         # If actor is trusted, skip quarantine
@@ -605,11 +610,11 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                     except:
                         pass
                     
-                    # If we have the actor from audit logs, quarantine them (they tried to remove admin role)
-                    if actor:
-                        await apply_quarantine(actor, f"Attempted to remove high-permission role: {role.name}", "anti_nuke")
+                    # Quarantine the actor who tried to remove admin role
+                    if actor_member:
+                        await apply_quarantine(actor_member, f"Attempted to remove high-permission role: {role.name}", "anti_nuke")
                         await _log_action(before.guild.id, "security",
-                                       f"🚫 [ANTI-NUKE] {actor} placed in quarantine - Attempted to remove role: {role.name} from {before}")
+                                       f"🚫 [ANTI-NUKE] {actor_member} placed in quarantine - Attempted to remove role: {role.name} from {before}")
                     return
         
         if added_roles:
@@ -620,11 +625,11 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                     except:
                         pass
                     
-                    # If we have the actor from audit logs, quarantine them (they tried to give admin role)
-                    if actor:
-                        await apply_quarantine(actor, f"Unauthorized attempt to grant high-permission role: {role.name}", "anti_role")
+                    # Quarantine the actor who tried to give admin role to someone
+                    if actor_member:
+                        await apply_quarantine(actor_member, f"Unauthorized attempt to grant high-permission role: {role.name}", "anti_role")
                         await _log_action(before.guild.id, "security",
-                                       f"🚫 [ANTI-ROLE] {actor} placed in quarantine - Attempted to grant role: {role.name} to {before}")
+                                       f"🚫 [ANTI-ROLE] {actor_member} placed in quarantine - Attempted to grant role: {role.name} to {before}")
                     return
     
     @bot.listen('on_guild_channel_delete')
