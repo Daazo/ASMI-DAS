@@ -101,8 +101,7 @@ async def log_action(guild_id, log_type, message):
             "welcome": "welcome",
             "voice": "voice",
             "timed_roles": "timed",
-            "timeout": "timeout",
-            "security": "security",  # Add security logs mapping
+            "security": "moderation",  # Route CAPTCHA verification logs to moderation
             "profile": "general",  # Route profile logs to general
             "utility": "general"   # Route utility logs to general
         }
@@ -123,8 +122,7 @@ async def log_action(guild_id, log_type, message):
                     "welcome": BrandColors.SUCCESS,
                     "voice": BrandColors.PRIMARY,
                     "timed_roles": BrandColors.WARNING,
-                    "timeout": BrandColors.DANGER,
-                    "security": BrandColors.DANGER
+                    "security": BrandColors.SUCCESS  # CAPTCHA verification logs
                 }
 
                 embed = discord.Embed(
@@ -851,11 +849,6 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
-            name="🤖 **Auto-Timeout System**",
-            value="**🔴 `/timeout-settings feature:spam enabled:true`** - Configure auto-timeouts\n**🟡 `/remove-timeout @user`** - Remove timeout early\n**🟡 `/timeout-stats @user`** - View user timeout statistics\n**Features:** Bad words (10m), Spam (5m), Links (8m) - Escalating penalties",
-            inline=False
-        )
-        embed.add_field(
             name="🟡 **Voice Moderation Commands**",
             value="**`/mute @user`** - Mute user in voice channel\n**`/unmute @user`** - Unmute user in voice channel\n**`/movevc @user #channel`** - Move user to different voice channel\n**`/vckick @user`** - Kick user from voice channel\n**`/vckick`** - Lock current voice channel\n**`/vcunlock`** - Unlock voice channel\n**`/vclimit <0-99>`** - Set voice channel user limit",
             inline=False
@@ -1029,49 +1022,34 @@ class HelpView(discord.ui.View):
         embed.set_footer(text="🟣 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=self)
 
-    @discord.ui.button(label="Security", style=discord.ButtonStyle.danger, emoji="🛡️", row=2)
-    async def security_help(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Verification", style=discord.ButtonStyle.success, emoji="✅", row=2)
+    async def verification_help(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="🛡️ **Security & Safety Protocols**",
-            description=f"*Quantum-grade protection system defending against raids, spam, and unauthorized access.*\n\n{VisualElements.CIRCUIT_LINE}",
-            color=BrandColors.DANGER
+            title="✅ **Verification System**",
+            description=f"*CAPTCHA-based member verification system for new member screening.*\n\n{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.SUCCESS
         )
         embed.add_field(
-            name="🔴 `/security feature enabled [threshold]`",
-            value="**Features:** anti_raid, anti_nuke, permission_monitoring, auto_ban, verification_system\n**Description:** Configure all security features with custom thresholds\n**Example:** `/security anti_raid enabled:true threshold:10`",
+            name="🔴 `/verification-setup #channel @role [remove_role]`",
+            value="**Usage:** `/verification-setup channel:#verify verified_role:@verified [remove_role:@unverified]`\n**Description:** Setup CAPTCHA verification system for new members\n**Features:** Prevents unverified access, reduces bot/spam accounts",
             inline=False
         )
         embed.add_field(
-            name="✅ **Verification System**",
-            value="**🔴 `/verification-setup #channel @role`** - Setup member verification\n**🟢 Click verification button** - New members verify to access server\n**Features:** Prevents unverified access, reduces bot/spam accounts",
+            name="✅ **How It Works**",
+            value="**1.** Bot posts verification button in specified channel\n**2.** New members click \"✅ Verify Me\" button\n**3.** Bot generates unique CAPTCHA image\n**4.** Member enters code to verify\n**5.** Verified role assigned automatically",
             inline=False
         )
         embed.add_field(
-            name="🛡️ **Anti-Raid Protection**",
-            value="**Auto-detects mass joins** (configurable threshold, default: 10 in 1 minute)\n**Sends instant alerts** to staff channels\n**Logs all raid attempts** with timestamps and member counts\n**Configurable sensitivity** for different server sizes",
+            name="🎯 **Verification Features**",
+            value="**✓ CAPTCHA-based verification** - Prevents automated bot accounts\n**✓ Custom verified role** - Assign role upon successful verification\n**✓ Optional unverified role removal** - Remove unverified role after verification\n**✓ Persistent system** - Verification button survives bot restarts\n**✓ Unique codes** - Each CAPTCHA is generated uniquely per user",
             inline=False
         )
         embed.add_field(
-            name="🚫 **Anti-Nuke Protection**",
-            value="**Monitors mass deletions** - channels, roles, bans\n**Instant staff alerts** when thresholds exceeded\n**Tracks suspicious activity** patterns\n**Protects against compromised accounts** performing mass actions",
+            name="🔧 **Setup Example**",
+            value="**Step 1:** Create roles: @Verified and @Unverified\n**Step 2:** Use `/verification-setup channel:#verification verified_role:@Verified remove_role:@Unverified`\n**Step 3:** Set @Unverified as auto-role with `/setup auto_role role:@Unverified`\n**Done!** New members will need to verify to access server",
             inline=False
         )
-        embed.add_field(
-            name="⚠️ **Auto-Timeout System** (Already Active)",
-            value="**🔴 `/timeout-settings feature enabled`** - Configure auto-timeouts\n**Bad Words:** Auto-timeout for inappropriate language (10m+)\n**Spam Detection:** Auto-timeout for message spam (5m+)\n**Link Protection:** Auto-timeout for unauthorized links (8m+)\n**Anti-Spam & Anti-Link:** Already integrated with timeout system\n**Escalating Penalties:** Longer timeouts for repeat offenders",
-            inline=False
-        )
-        embed.add_field(
-            name="🤖 **Security Whitelist System**",
-            value="**🔴 `/whitelist action:add type:bot target:@bot`** - Add bot to whitelist\n**🔴 `/whitelist action:add type:role target:@role`** - Add role to whitelist\n**🔴 `/whitelist action:remove type:bot target:@bot`** - Remove from whitelist\n**🔴 `/whitelist action:list`** - View current whitelisted bots/roles\n**Protection:** Only whitelisted bots can perform sensitive actions",
-            inline=False
-        )
-        embed.add_field(
-            name="👁️ **Advanced Monitoring**",
-            value="**Permission Monitoring:** Alerts when users get admin/dangerous permissions\n**Auto-Ban System:** Automatically bans suspicious/new accounts\n**Security Logs:** Detailed logs of all security events and actions\n**Real-time Alerts:** Instant notifications to staff channels",
-            inline=False
-        )
-        embed.set_footer(text="🟣 = Everyone • 🔴 = Main Moderator • 🛡️ = Advanced Protection")
+        embed.set_footer(text="🟣 = Everyone • 🔴 = Main Moderator")
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Advanced", style=discord.ButtonStyle.secondary, emoji="🎭", row=2)
@@ -1171,8 +1149,8 @@ class HelpView(discord.ui.View):
             inline=False
         )
         embed.add_field(
-            name="🛡️ **Advanced Moderation & Security**",
-            value="**🎫 Ticket System** - Professional support ticket system\n**🔒 Security Features** - Anti-raid, anti-nuke protection\n**⚔️ Moderation Tools** - Kick, ban, timeout, voice moderation\n**🎭 Reaction Roles** - Easy role assignment with reactions",
+            name="🛡️ **Advanced Moderation Features**",
+            value="**🎫 Ticket System** - Professional support ticket system\n**✅ Verification System** - CAPTCHA-based member verification\n**⚔️ Moderation Tools** - Kick, ban, voice moderation\n**🎭 Reaction Roles** - Easy role assignment with reactions",
             inline=False
         )
         embed.add_field(
