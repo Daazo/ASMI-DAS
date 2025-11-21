@@ -15,6 +15,7 @@ user_message_deletion_attempts = defaultdict(lambda: defaultdict(list))
 user_message_deletions_bulk = defaultdict(lambda: defaultdict(list))  # Track bulk deletes by user
 user_stored_roles = {}
 user_quarantine_info = {}
+user_violation_history = {}  # Persistent violation tracking that survives quarantine expiration
 system_role_actions = set()  # Track (guild_id, user_id) tuples for system-initiated role changes
 
 _bot_instance = None
@@ -189,8 +190,25 @@ async def apply_quarantine(member: discord.Member, reason: str, violation_type: 
     storage_key = f"{member.guild.id}_{member.id}"
     config = await get_security_config(member.guild.id)
     
-    current_violations = user_quarantine_info.get(storage_key, {}).get('violations', 0)
+    # Load violation history from MongoDB if not in memory
+    if storage_key not in user_violation_history:
+        try:
+            server_data = await _get_server_data(member.guild.id)
+            violation_history = server_data.get('violation_history', {})
+            if str(member.id) in violation_history:
+                user_violation_history[storage_key] = violation_history[str(member.id)]
+        except:
+            pass
+    
+    # Get violations from persistent history, not from temporary quarantine info
+    current_violations = user_violation_history.get(storage_key, {}).get('violations', 0)
     current_violations += 1
+    
+    # Update persistent violation history
+    user_violation_history[storage_key] = {
+        'violations': current_violations,
+        'last_violation_time': time.time()
+    }
     
     base_duration = config.get('quarantine_base_duration', 900)
     quarantine_duration = base_duration * (current_violations)
@@ -237,6 +255,15 @@ async def apply_quarantine(member: discord.Member, reason: str, violation_type: 
                 'reason': reason,
                 'quarantine_role_id': quarantine_role.id
             }
+            
+            # Save persistent violation history separately
+            if 'violation_history' not in server_data:
+                server_data['violation_history'] = {}
+            server_data['violation_history'][str(member.id)] = {
+                'violations': current_violations,
+                'last_violation_time': time.time()
+            }
+            
             await _update_server_data(member.guild.id, server_data)
         except:
             pass
@@ -360,12 +387,13 @@ async def _execute_quarantine_restoration(member: discord.Member, is_from_reload
         if storage_key in user_quarantine_info:
             del user_quarantine_info[storage_key]
         
-        # Remove from MongoDB
+        # Remove quarantine data from MongoDB but KEEP violation history for persistent tracking
         try:
             server_data = await _get_server_data(member.guild.id)
             if 'quarantine_data' in server_data and str(member.id) in server_data['quarantine_data']:
                 del server_data['quarantine_data'][str(member.id)]
                 await _update_server_data(member.guild.id, server_data)
+            # Note: We do NOT delete violation_history here - it persists across quarantine cycles
         except:
             pass
         
@@ -778,9 +806,6 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         if (before.guild.id, before.id) in system_role_actions:
             return
         
-        if await is_whitelisted(before.guild.id, before):
-            return
-        
         before_roles = set(before.roles)
         after_roles = set(after.roles)
         
@@ -817,8 +842,43 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         except Exception as e:
             pass
         
-        # If actor is trusted, skip quarantine
+        # Check if target is whitelisted
+        target_is_whitelisted = await is_whitelisted(before.guild.id, before)
+        
+        # PROTECTION: If target is whitelisted but actor is not trusted, restore roles and quarantine actor
+        if target_is_whitelisted and not actor_is_trusted:
+            if removed_roles or added_roles:
+                # Restore whitelisted user's original roles
+                system_role_actions.add((before.guild.id, before.id))
+                
+                try:
+                    # Remove any unauthorized added roles
+                    if added_roles:
+                        await before.remove_roles(*added_roles, reason="RXT Security - Unauthorized role change on whitelisted user")
+                    
+                    # Restore any removed roles
+                    if removed_roles:
+                        await before.add_roles(*removed_roles, reason="RXT Security - Restoring whitelisted user roles")
+                except:
+                    pass
+                
+                # Clean up system action marker
+                asyncio.create_task(_cleanup_system_action(before.guild.id, before.id, 3))
+                
+                # Quarantine the actor for attempting to modify a whitelisted user
+                if actor_member:
+                    role_names = ", ".join([r.name for r in (removed_roles | added_roles)])
+                    await apply_quarantine(actor_member, f"Attempted to modify roles of whitelisted user {before.name}: {role_names}", "whitelist_violation")
+                    await _log_action(before.guild.id, "security",
+                                   f"🚫 [WHITELIST PROTECTION] {actor_member} quarantined - Attempted to modify whitelisted user {before}'s roles")
+                return
+        
+        # If actor is trusted, skip remaining checks
         if actor_is_trusted:
+            return
+        
+        # If target is whitelisted, skip remaining checks (already handled above)
+        if target_is_whitelisted:
             return
         
         # ANTI-NUKE: Check for role removal (anti-nuke protection)
