@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict
 import re
 from collections import defaultdict
@@ -231,7 +231,7 @@ async def apply_quarantine(member: discord.Member, reason: str, violation_type: 
                        f"Roles have been removed. Use `/quarantine remove` to restore early.\n\n"
                        f"{VisualElements.CIRCUIT_LINE}",
             color=BrandColors.DANGER,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         embed.set_footer(text=BOT_FOOTER)
         
@@ -486,7 +486,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                 pass
             return
         
-        account_age = (datetime.utcnow() - member.created_at).days
+        account_age = (datetime.now(timezone.utc) - member.created_at).days
         
         if account_age < config.get('raid_account_age_days', 7):
             suspicious_username_patterns = ['discord', 'bot', 'fake', 'test', '^[0-9]+$']
