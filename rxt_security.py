@@ -903,6 +903,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             return
         
         if action == "remove" and user:
+            await interaction.response.defer()
             success = await remove_quarantine_manual(user)
             
             if success:
@@ -923,7 +924,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                 )
             
             embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
         
         elif action == "info" and user:
             storage_key = f"{interaction.guild.id}_{user.id}"
