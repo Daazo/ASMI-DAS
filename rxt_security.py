@@ -1089,24 +1089,64 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                             f"⛔ Security system disabled by {interaction.user}")
         
         elif action == "status":
-            status_lines = [
-                f"🔐 **Core System:** {'✅ ENABLED' if config.get('security_enabled') else '❌ DISABLED'}",
-                f"🛡️ **Anti-Raid:** {'✅ ACTIVE' if config.get('antiraid_enabled') else '❌ INACTIVE'}",
-                f"💣 **Anti-Nuke:** {'✅ ACTIVE' if config.get('antinuke_enabled') else '❌ INACTIVE'}",
-                f"🔗 **Anti-Link:** {'✅ ACTIVE' if config.get('antilink_enabled') else '❌ INACTIVE'}",
-                f"💬 **Anti-Spam:** {'✅ ACTIVE' if config.get('antispam_enabled') else '❌ INACTIVE'}",
-                f"📢 **Mass Mention:** {'✅ ACTIVE' if config.get('massmention_enabled') else '❌ INACTIVE'}",
-                f"🪝 **Webhook Guard:** {'✅ ACTIVE' if config.get('webhookguard_enabled') else '❌ INACTIVE'}",
-                f"🎭 **Anti-Role Abuse:** {'✅ ACTIVE' if config.get('antirole_enabled') else '❌ INACTIVE'}",
-                f"🗑️ **Mass Delete:** {'✅ ACTIVE' if config.get('massdelete_enabled') else '❌ INACTIVE'}",
-            ]
-            
             embed = discord.Embed(
                 title="🔐 **SECURITY SYSTEM STATUS**",
-                description=f"{VisualElements.CIRCUIT_LINE}\n\n" + "\n".join(status_lines) + f"\n\n{VisualElements.CIRCUIT_LINE}",
+                description=f"{VisualElements.CIRCUIT_LINE}\n\n**All Protection Modules:**\n\n{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.INFO,
                 timestamp=datetime.now(timezone.utc)
             )
+            
+            embed.add_field(
+                name="🔐 Core System",
+                value=f"{'✅ ENABLED' if config.get('security_enabled') else '❌ DISABLED'}",
+                inline=True
+            )
+            embed.add_field(
+                name="🛡️ Anti-Raid",
+                value=f"{'✅ ACTIVE' if config.get('antiraid_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="💣 Anti-Nuke",
+                value=f"{'✅ ACTIVE' if config.get('antinuke_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="🔗 Anti-Link",
+                value=f"{'✅ ACTIVE' if config.get('antilink_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="💬 Anti-Spam",
+                value=f"{'✅ ACTIVE' if config.get('antispam_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="📢 Mass Mention",
+                value=f"{'✅ ACTIVE' if config.get('massmention_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="🪝 Webhook Guard",
+                value=f"{'✅ ACTIVE' if config.get('webhookguard_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="🎭 Anti-Role Abuse",
+                value=f"{'✅ ACTIVE' if config.get('antirole_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name="🗑️ Mass Delete",
+                value=f"{'✅ ACTIVE' if config.get('massdelete_enabled') else '❌ INACTIVE'}",
+                inline=True
+            )
+            embed.add_field(
+                name=f"{VisualElements.CIRCUIT_LINE}",
+                value="Use `/antiraid`, `/antinuke`, etc. to toggle individual protections.",
+                inline=False
+            )
+            
             embed.set_footer(text=BOT_FOOTER)
             await interaction.response.send_message(embed=embed)
         
@@ -1221,7 +1261,9 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
     @app_commands.describe(
         action="Action to perform",
         target_type="Type of target",
-        target="User, role, or bot to whitelist"
+        user="User to whitelist",
+        role="Role to whitelist",
+        bot="Bot to whitelist"
     )
     @app_commands.choices(
         action=[
@@ -1235,7 +1277,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             app_commands.Choice(name="bot - Whitelist bot", value="bot"),
         ]
     )
-    async def whitelist_command(interaction: discord.Interaction, action: str, target_type: str = None, target: discord.Member = None):
+    async def whitelist_command(interaction: discord.Interaction, action: str, target_type: str = None, user: discord.Member = None, role: discord.Role = None, bot: discord.Member = None):
         if not await _has_permission(interaction, "junior_moderator"):
             embed = discord.Embed(
                 title="❌ **ACCESS DENIED**",
@@ -1270,125 +1312,149 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                 timestamp=datetime.now(timezone.utc)
             )
         
-        elif action == "add" and target:
-            target_id = target.id
+        elif action == "add":
+            target_id = None
+            target_mention = None
             
-            if target_type == "user":
+            if target_type == "user" and user:
+                target_id = user.id
+                target_mention = user.mention
                 if target_id not in config.get('whitelist_users', []):
                     config['whitelist_users'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"{VisualElements.CIRCUIT_LINE}\n\nAdded {target.mention} to user whitelist.\n\nUser is now **EXEMPT** from all security protections.\n\n{VisualElements.CIRCUIT_LINE}",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nAdded {user.mention} to user whitelist.\n\nUser is now **EXEMPT** from all security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] User {target.mention} added by {interaction.user}")
+                                   f"🟩 [WHITELIST] User {user.mention} added by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **ALREADY WHITELISTED**",
-                        description=f"{target.mention} is already in the user whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{user.mention} is already in the user whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
             
-            elif target_type == "role":
+            elif target_type == "role" and role:
+                target_id = role.id
+                target_mention = role.mention
                 if target_id not in config.get('whitelist_roles', []):
                     config['whitelist_roles'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Added <@&{target_id}> to role whitelist.\n\nUsers with this role are now exempt from security protections.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nAdded {role.mention} to role whitelist.\n\nUsers with this role are now **EXEMPT** from all security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] Role <@&{target_id}> added by {interaction.user}")
+                                   f"🟩 [WHITELIST] Role {role.mention} added by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **ALREADY WHITELISTED**",
-                        description=f"<@&{target_id}> is already in the role whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{role.mention} is already in the role whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
             
-            elif target_type == "bot":
+            elif target_type == "bot" and bot:
+                target_id = bot.id
+                target_mention = bot.mention
                 if target_id not in config.get('whitelist_bots', []):
                     config['whitelist_bots'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Added <@{target_id}> to bot whitelist.\n\nThis bot is now exempt from security protections.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nAdded {bot.mention} to bot whitelist.\n\nThis bot is now **EXEMPT** from all security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] Bot <@{target_id}> added by {interaction.user}")
+                                   f"🟩 [WHITELIST] Bot {bot.mention} added by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **ALREADY WHITELISTED**",
-                        description=f"<@{target_id}> is already in the bot whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{bot.mention} is already in the bot whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
-        
-        elif action == "remove" and target:
-            target_id = target.id
             
-            if target_type == "user":
+            if not embed:
+                embed = discord.Embed(
+                    title="❌ **INVALID REQUEST**",
+                    description=f"{VisualElements.CIRCUIT_LINE}\n\nPlease provide a valid target.\n\n{VisualElements.CIRCUIT_LINE}",
+                    color=BrandColors.DANGER
+                )
+        
+        elif action == "remove":
+            target_id = None
+            
+            if target_type == "user" and user:
+                target_id = user.id
                 if target_id in config.get('whitelist_users', []):
                     config['whitelist_users'].remove(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Removed {target.mention} from user whitelist.\n\nUser is now subject to security protections.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nRemoved {user.mention} from user whitelist.\n\nUser is now **SUBJECT** to security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] User {target.mention} removed by {interaction.user}")
+                                   f"🟩 [WHITELIST] User {user.mention} removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **NOT WHITELISTED**",
-                        description=f"{target.mention} is not in the user whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{user.mention} is not in the user whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
             
-            elif target_type == "role":
+            elif target_type == "role" and role:
+                target_id = role.id
                 if target_id in config.get('whitelist_roles', []):
                     config['whitelist_roles'].remove(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Removed <@&{target_id}> from role whitelist.\n\nUsers with this role are now subject to security protections.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nRemoved {role.mention} from role whitelist.\n\nUsers with this role are now **SUBJECT** to security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] Role <@&{target_id}> removed by {interaction.user}")
+                                   f"🟩 [WHITELIST] Role {role.mention} removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **NOT WHITELISTED**",
-                        description=f"<@&{target_id}> is not in the role whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{role.mention} is not in the role whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
             
-            elif target_type == "bot":
+            elif target_type == "bot" and bot:
+                target_id = bot.id
                 if target_id in config.get('whitelist_bots', []):
                     config['whitelist_bots'].remove(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Removed <@{target_id}> from bot whitelist.\n\nThis bot is now subject to security protections.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\nRemoved {bot.mention} from bot whitelist.\n\nThis bot is now **SUBJECT** to security protections.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.SUCCESS
                     )
                     await _log_action(interaction.guild.id, "security",
-                                   f"🟩 [WHITELIST] Bot <@{target_id}> removed by {interaction.user}")
+                                   f"🟩 [WHITELIST] Bot {bot.mention} removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **NOT WHITELISTED**",
-                        description=f"<@{target_id}> is not in the bot whitelist.",
+                        description=f"{VisualElements.CIRCUIT_LINE}\n\n{bot.mention} is not in the bot whitelist.\n\n{VisualElements.CIRCUIT_LINE}",
                         color=BrandColors.WARNING
                     )
+            
+            if not embed:
+                embed = discord.Embed(
+                    title="❌ **INVALID REQUEST**",
+                    description=f"{VisualElements.CIRCUIT_LINE}\n\nPlease provide a valid target.\n\n{VisualElements.CIRCUIT_LINE}",
+                    color=BrandColors.DANGER
+                )
         
         if embed:
             embed.set_footer(text=BOT_FOOTER)
