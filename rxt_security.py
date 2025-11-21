@@ -11,6 +11,9 @@ from brand_config import BrandColors, VisualElements, BOT_FOOTER
 
 user_message_timestamps = defaultdict(lambda: defaultdict(list))
 user_join_timestamps = defaultdict(list)
+user_message_deletion_attempts = defaultdict(lambda: defaultdict(list))
+user_stored_roles = {}
+user_quarantine_info = {}
 
 _bot_instance = None
 _get_server_data = None
@@ -30,9 +33,11 @@ async def get_security_config(guild_id: int) -> Dict:
         'massmention_enabled': False,
         'webhookguard_enabled': False,
         'antirole_enabled': False,
+        'massdelete_enabled': False,
         
-        'timeout_role_id': None,
-        'timeout_channel_id': None,
+        'quarantine_role_id': None,
+        'quarantine_channel_id': None,
+        'quarantine_category_id': None,
         
         'whitelist_users': [],
         'whitelist_roles': [],
@@ -48,7 +53,9 @@ async def get_security_config(guild_id: int) -> Dict:
         'allowed_domains': [],
         'blocked_domains': ['discord.gg', 'bit.ly', 't.co'],
         
-        'timeout_durations': {}
+        'quarantine_base_duration': 900,
+        'mass_delete_threshold': 5,
+        'mass_delete_time_window': 5
     }
     
     security_config = server_data.get('security_config', {})
@@ -77,158 +84,252 @@ async def is_whitelisted(guild_id: int, user: discord.Member) -> bool:
     
     return False
 
-async def get_or_create_timeout_role(guild: discord.Guild, config: Dict) -> discord.Role:
-    timeout_role_id = config.get('timeout_role_id')
+async def get_or_create_quarantine_category(guild: discord.Guild, config: Dict):
+    category_id = config.get('quarantine_category_id')
+    if category_id:
+        category = guild.get_channel(int(category_id))
+        if category:
+            return category
     
-    if timeout_role_id:
-        timeout_role = guild.get_role(int(timeout_role_id))
-        if timeout_role:
-            return timeout_role
-    
-    timeout_role = await guild.create_role(
-        name="🔒 RXT Timeout",
-        color=BrandColors.DANGER,
-        reason="RXT Security System - Auto-created timeout role"
+    category = await guild.create_category(
+        name="RXT-QUARANTINE",
+        reason="RXT Security System - Quarantine category"
     )
     
-    for channel in guild.channels:
-        try:
-            await channel.set_permissions(timeout_role, 
-                                         send_messages=False,
-                                         add_reactions=False,
-                                         speak=False,
-                                         connect=False,
-                                         send_messages_in_threads=False,
-                                         create_public_threads=False,
-                                         create_private_threads=False)
-        except:
-            pass
-    
-    config['timeout_role_id'] = timeout_role.id
+    config['quarantine_category_id'] = category.id
     await update_security_config(guild.id, config)
     
-    return timeout_role
+    return category
 
-async def get_or_create_timeout_channel(guild: discord.Guild, config: Dict, timeout_role: discord.Role) -> discord.TextChannel:
-    timeout_channel_id = config.get('timeout_channel_id')
+async def get_or_create_quarantine_role(guild: discord.Guild, config: Dict):
+    role_id = config.get('quarantine_role_id')
+    if role_id:
+        role = guild.get_role(int(role_id))
+        if role:
+            return role
     
-    if timeout_channel_id:
-        timeout_channel = guild.get_channel(int(timeout_channel_id))
-        if timeout_channel and isinstance(timeout_channel, discord.TextChannel):
-            return timeout_channel
+    perms = discord.Permissions(
+        view_channel=True,
+        send_messages=True,
+        read_message_history=True,
+        embed_links=False,
+        attach_files=False,
+        mention_everyone=False,
+        add_reactions=False,
+        voice=False
+    )
+    
+    role = await guild.create_role(
+        name="RXT-Quarantine",
+        permissions=perms,
+        color=discord.Color(0xFF4444),
+        reason="RXT Security System - Quarantine role"
+    )
+    
+    config['quarantine_role_id'] = role.id
+    await update_security_config(guild.id, config)
+    
+    return role
+
+async def get_or_create_quarantine_channel(guild: discord.Guild, config: Dict, role: discord.Role):
+    channel_id = config.get('quarantine_channel_id')
+    if channel_id:
+        channel = guild.get_channel(int(channel_id))
+        if channel:
+            return channel
+    
+    category = await get_or_create_quarantine_category(guild, config)
     
     overwrites = {
-        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        timeout_role: discord.PermissionOverwrite(
-            read_messages=True,
+        guild.default_role: discord.PermissionOverwrite(view_channel=False),
+        role: discord.PermissionOverwrite(
+            view_channel=True,
             send_messages=True,
-            read_message_history=True,
-            add_reactions=False,
-            attach_files=False,
-            embed_links=False
+            read_message_history=True
         ),
-        guild.me: discord.PermissionOverwrite(
-            read_messages=True,
-            send_messages=True,
-            manage_messages=True
-        )
+        guild.me: discord.PermissionOverwrite(view_channel=True)
     }
     
-    timeout_channel = await guild.create_text_channel(
-        name="🔒-rxt-timeout",
+    channel = await category.create_text_channel(
+        name="quarantine-zone",
         overwrites=overwrites,
-        reason="RXT Security System - Auto-created timeout channel"
+        reason="RXT Security System - Quarantine channel"
     )
     
     embed = discord.Embed(
-        title="🔒 **RXT SECURITY TIMEOUT NOTIFICATIONS**",
+        title="🔒 **RXT QUARANTINE ZONE**",
         description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                   f"⚠️ **This channel logs RXT Security timeout events.**\n\n"
-                   f"**Purpose:** Security timeout notifications and logging\n"
-                   f"**Note:** Users in Discord timeout cannot send messages anywhere\n\n"
-                   f"When a user is timed out by the security system:\n"
-                   f"• They cannot send messages, react, or join voice channels\n"
-                   f"• The timeout duration is set via Discord's native timeout\n"
-                   f"• Notifications will be posted here for moderator awareness\n\n"
+                   f"⚠️ **You have been placed in quarantine by the RXT Security System.**\n\n"
+                   f"**What is quarantine?**\n"
+                   f"• Your roles have been temporarily removed\n"
+                   f"• You can only see and chat in this channel\n"
+                   f"• Your message history is preserved\n\n"
+                   f"**What happens next?**\n"
+                   f"• Quarantine duration increases with repeated violations\n"
+                   f"• Minimum duration: 15 minutes\n"
+                   f"• Contact moderators if you believe this is a mistake\n\n"
                    f"{VisualElements.CIRCUIT_LINE}",
         color=BrandColors.DANGER
     )
     embed.set_footer(text=BOT_FOOTER)
-    await timeout_channel.send(embed=embed)
+    await channel.send(embed=embed)
     
-    config['timeout_channel_id'] = timeout_channel.id
+    config['quarantine_channel_id'] = channel.id
     await update_security_config(guild.id, config)
     
-    return timeout_channel
+    return channel
 
-async def apply_timeout(member: discord.Member, reason: str, duration_seconds: Optional[int] = None):
-    if duration_seconds is None:
-        duration_seconds = 3600
+async def apply_quarantine(member: discord.Member, reason: str, violation_type: str = "security_violation"):
+    storage_key = f"{member.guild.id}_{member.id}"
+    config = await get_security_config(member.guild.id)
     
-    timeout_duration = timedelta(seconds=min(duration_seconds, 2419200))
+    current_violations = user_quarantine_info.get(storage_key, {}).get('violations', 0)
+    current_violations += 1
+    
+    base_duration = config.get('quarantine_base_duration', 900)
+    quarantine_duration = base_duration * (current_violations)
+    quarantine_duration = max(quarantine_duration, 900)
     
     try:
-        await member.timeout(timeout_duration, reason=f"RXT Security: {reason}")
-    except discord.Forbidden:
+        current_roles = [role for role in member.roles if role != member.guild.default_role]
+        user_stored_roles[storage_key] = {
+            'roles': [role.id for role in current_roles],
+            'timestamp': time.time(),
+            'duration': quarantine_duration,
+            'violations': current_violations
+        }
+        
+        quarantine_role = await get_or_create_quarantine_role(member.guild, config)
+        quarantine_channel = await get_or_create_quarantine_channel(member.guild, config, quarantine_role)
+        
+        await member.remove_roles(*current_roles, reason=f"RXT Security Quarantine: {reason}")
+        await member.add_roles(quarantine_role, reason=f"RXT Security Quarantine: {reason}")
+        
+        user_quarantine_info[storage_key] = {
+            'quarantine_until': time.time() + quarantine_duration,
+            'violations': current_violations,
+            'reason': reason,
+            'quarantine_role_id': quarantine_role.id
+        }
+        
+        embed = discord.Embed(
+            title="🔒 **QUARANTINE APPLIED**",
+            description=f"{VisualElements.CIRCUIT_LINE}\n\n"
+                       f"**User:** {member.mention} (`{member.id}`)\n"
+                       f"**Reason:** {reason}\n"
+                       f"**Type:** {violation_type}\n"
+                       f"**Duration:** {quarantine_duration // 60} minutes\n"
+                       f"**Violations:** {current_violations}\n"
+                       f"**Channel:** {quarantine_channel.mention}\n\n"
+                       f"Roles have been removed. Use `/quarantine remove` to restore early.\n\n"
+                       f"{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.DANGER,
+            timestamp=datetime.utcnow()
+        )
+        embed.set_footer(text=BOT_FOOTER)
+        
+        try:
+            await quarantine_channel.send(f"{member.mention}", embed=embed)
+        except:
+            pass
+        
         await _log_action(member.guild.id, "security", 
-                        f"⚠️ [SECURITY TIMEOUT FAILED] Cannot timeout {member} - Missing permissions")
-        return
-    except discord.HTTPException as e:
-        await _log_action(member.guild.id, "security", 
-                        f"⚠️ [SECURITY TIMEOUT FAILED] {member} - HTTP Error: {e}")
-        return
+                        f"🔒 [QUARANTINE] {member} ({member.id}) - Reason: {reason} - Duration: {quarantine_duration}s - Violations: {current_violations}")
+        
+        asyncio.create_task(restore_roles_after_quarantine(member, quarantine_duration))
+        
     except Exception as e:
         await _log_action(member.guild.id, "security", 
-                        f"⚠️ [SECURITY TIMEOUT FAILED] {member} - Error: {e}")
+                        f"⚠️ [QUARANTINE FAILED] {member} - Error: {e}")
+
+async def restore_roles_after_quarantine(member: discord.Member, duration_seconds: int):
+    await asyncio.sleep(duration_seconds)
+    
+    storage_key = f"{member.guild.id}_{member.id}"
+    if storage_key not in user_stored_roles:
         return
     
-    config = await get_security_config(member.guild.id)
-    timeout_channel_id = config.get('timeout_channel_id')
-    
-    if timeout_channel_id:
-        timeout_channel = member.guild.get_channel(int(timeout_channel_id))
-        if timeout_channel:
-            embed = discord.Embed(
-                title="🔒 **SECURITY TIMEOUT APPLIED**",
-                description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**User:** {member.mention} (`{member.id}`)\n"
-                           f"**Reason:** {reason}\n"
-                           f"**Duration:** {duration_seconds // 60} minutes\n"
-                           f"**Status:** User timed out via Discord native timeout\n\n"
-                           f"User cannot send messages, react, join voice, or start threads until timeout expires.\n\n"
-                           f"{VisualElements.CIRCUIT_LINE}",
-                color=BrandColors.DANGER,
-                timestamp=datetime.utcnow()
-            )
-            embed.set_footer(text=BOT_FOOTER)
+    try:
+        stored_data = user_stored_roles[storage_key]
+        role_ids = stored_data['roles']
+        
+        config = await get_security_config(member.guild.id)
+        quarantine_role_id = config.get('quarantine_role_id')
+        
+        roles_to_add = []
+        for role_id in role_ids:
+            role = member.guild.get_role(role_id)
+            if role:
+                roles_to_add.append(role)
+        
+        if quarantine_role_id:
+            quarantine_role = member.guild.get_role(int(quarantine_role_id))
+            if quarantine_role:
+                try:
+                    await member.remove_roles(quarantine_role, reason="RXT Security - Quarantine expired")
+                except:
+                    pass
+        
+        if roles_to_add:
             try:
-                await timeout_channel.send(embed=embed)
+                await member.add_roles(*roles_to_add, reason="RXT Security - Quarantine expired, roles restored")
             except:
                 pass
-    
-    await _log_action(member.guild.id, "security", 
-                    f"🔒 [SECURITY TIMEOUT] {member} ({member.id}) - Reason: {reason} - Duration: {duration_seconds}s")
+        
+        del user_stored_roles[storage_key]
+        if storage_key in user_quarantine_info:
+            del user_quarantine_info[storage_key]
+        
+        await _log_action(member.guild.id, "security", 
+                        f"✅ [QUARANTINE EXPIRED] {member} ({member.id}) - Roles restored automatically")
+    except Exception as e:
+        await _log_action(member.guild.id, "security", 
+                        f"⚠️ [QUARANTINE RESTORE FAILED] {member} - Error: {e}")
 
-
-async def remove_timeout(member: discord.Member):
-    if member.timed_out_until is None:
+async def remove_quarantine_manual(member: discord.Member):
+    storage_key = f"{member.guild.id}_{member.id}"
+    if storage_key not in user_stored_roles:
         return False
     
     try:
-        await member.timeout(None, reason="RXT Security - Timeout removed manually")
-    except discord.Forbidden:
+        stored_data = user_stored_roles[storage_key]
+        role_ids = stored_data['roles']
+        
+        config = await get_security_config(member.guild.id)
+        quarantine_role_id = config.get('quarantine_role_id')
+        
+        roles_to_add = []
+        for role_id in role_ids:
+            role = member.guild.get_role(role_id)
+            if role:
+                roles_to_add.append(role)
+        
+        if quarantine_role_id:
+            quarantine_role = member.guild.get_role(int(quarantine_role_id))
+            if quarantine_role:
+                try:
+                    await member.remove_roles(quarantine_role, reason="RXT Security - Quarantine removed manually")
+                except:
+                    pass
+        
+        if roles_to_add:
+            try:
+                await member.add_roles(*roles_to_add, reason="RXT Security - Quarantine removed manually, roles restored")
+            except:
+                pass
+        
+        del user_stored_roles[storage_key]
+        if storage_key in user_quarantine_info:
+            del user_quarantine_info[storage_key]
+        
         await _log_action(member.guild.id, "security", 
-                        f"⚠️ [TIMEOUT REMOVAL FAILED] Cannot remove timeout from {member} - Missing permissions")
-        return False
+                        f"✅ [QUARANTINE REMOVED] {member} ({member.id}) - Manually removed by moderator")
+        
+        return True
     except Exception as e:
         await _log_action(member.guild.id, "security", 
-                        f"⚠️ [TIMEOUT REMOVAL FAILED] {member} - Error: {e}")
+                        f"⚠️ [QUARANTINE REMOVAL FAILED] {member} - Error: {e}")
         return False
-    
-    await _log_action(member.guild.id, "security", 
-                    f"✅ [TIMEOUT REMOVED] {member} ({member.id}) - Timeout removed manually")
-    
-    return True
 
 
 def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_action_func, has_permission_func):
@@ -268,7 +369,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                 except:
                     pass
                 
-                await apply_timeout(message.author, "Unauthorized @everyone/@here mention", 3600)
+                await apply_quarantine(message.author, "Unauthorized @everyone/@here mention", "mass_mention")
                 
                 await _log_action(message.guild.id, "security", 
                                f"🚫 [MASS MENTION BLOCKED] {message.author} attempted @everyone/@here")
@@ -292,10 +393,10 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                 except:
                     pass
                 
-                await apply_timeout(message.author, "Spam/Flood detected", 1800)
+                await apply_quarantine(message.author, "Spam/Flood detected", "anti_spam")
                 
                 await _log_action(message.guild.id, "security", 
-                               f"🚫 [ANTI-SPAM] {message.author} was timed out for spam/flood")
+                               f"🚫 [ANTI-SPAM] {message.author} placed in quarantine for spam/flood")
                 
                 user_message_timestamps[guild_id][user_id].clear()
                 return
@@ -322,10 +423,10 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                         except:
                             pass
                         
-                        await apply_timeout(message.author, f"Posted blocked link: {url}", 1800)
+                        await apply_quarantine(message.author, f"Posted blocked link: {url}", "anti_link")
                         
                         await _log_action(message.guild.id, "security", 
-                                       f"🚫 [ANTI-LINK] {message.author} posted blocked link")
+                                       f"🚫 [ANTI-LINK] {message.author} placed in quarantine for blocked link")
                         return
     
     @bot.listen('on_member_join')
@@ -361,231 +462,275 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             return
         
         account_age = (datetime.utcnow() - member.created_at).days
-        min_age = config.get('raid_account_age_days', 7)
         
-        if account_age < min_age:
-            try:
-                await member.kick(reason=f"RXT Security - Account too new ({account_age} days)")
-                await _log_action(member.guild.id, "security", 
-                               f"🚫 [ANTI-RAID] {member} kicked - Account age {account_age} days (min: {min_age})")
-            except:
-                pass
+        if account_age < config.get('raid_account_age_days', 7):
+            suspicious_username_patterns = ['discord', 'bot', 'fake', 'test', '^[0-9]+$']
+            username_lower = member.name.lower()
+            
+            for pattern in suspicious_username_patterns:
+                if re.search(pattern, username_lower):
+                    try:
+                        await member.kick(reason=f"RXT Security - Suspicious account detected: {pattern}")
+                        await _log_action(member.guild.id, "security", 
+                                       f"🚫 [ANTI-RAID] {member} kicked - Suspicious username pattern: {pattern}")
+                    except:
+                        pass
+                    return
+    
+    @bot.listen('on_bulk_message_delete')
+    async def security_on_bulk_delete(messages):
+        if not messages:
             return
         
-        suspicious_patterns = ['discord.gg', 'nitro', 'gift', 'http', 'www']
-        username_lower = member.name.lower()
-        if any(pattern in username_lower for pattern in suspicious_patterns):
-            try:
-                await member.kick(reason="RXT Security - Suspicious username")
-                await _log_action(member.guild.id, "security", 
-                               f"🚫 [ANTI-RAID] {member} kicked - Suspicious username pattern")
-            except:
-                pass
+        config = await get_security_config(messages[0].guild.id)
+        
+        if not config.get('security_enabled') or not config.get('massdelete_enabled'):
             return
+        
+        await _log_action(messages[0].guild.id, "security",
+                        f"🚫 [MASS MESSAGE DELETION] {len(messages)} messages deleted in {messages[0].channel.mention}")
+    
+    @bot.listen('on_message_delete')
+    async def security_on_message_delete(message):
+        if message.author.bot:
+            return
+        
+        if not message.guild:
+            return
+        
+        config = await get_security_config(message.guild.id)
+        
+        if not config.get('security_enabled') or not config.get('massdelete_enabled'):
+            return
+        
+        if await is_whitelisted(message.guild.id, message.author):
+            return
+        
+        user_id = message.author.id
+        guild_id = message.guild.id
+        current_time = time.time()
+        
+        user_message_deletion_attempts[guild_id][user_id].append(current_time)
+        
+        user_message_deletion_attempts[guild_id][user_id] = [
+            ts for ts in user_message_deletion_attempts[guild_id][user_id]
+            if current_time - ts < config.get('mass_delete_time_window', 5)
+        ]
+        
+        if len(user_message_deletion_attempts[guild_id][user_id]) > config.get('mass_delete_threshold', 5):
+            await apply_quarantine(message.author, "Mass message deletion detected", "mass_delete_violation")
+            
+            await _log_action(message.guild.id, "security",
+                            f"🚫 [MASS DELETE] {message.author} placed in quarantine for mass message deletion")
+    
+    @bot.listen('on_member_update')
+    async def security_on_role_change(before, after):
+        config = await get_security_config(before.guild.id)
+        
+        if not config.get('security_enabled') or not config.get('antinuke_enabled'):
+            return
+        
+        if await is_whitelisted(before.guild.id, before):
+            return
+        
+        before_roles = set(before.roles)
+        after_roles = set(after.roles)
+        
+        removed_roles = before_roles - after_roles
+        added_roles = after_roles - before_roles
+        
+        if removed_roles:
+            for role in removed_roles:
+                if role.permissions.administrator or role.permissions.manage_guild:
+                    try:
+                        await before.add_roles(role, reason="RXT Security - Anti-nuke protection")
+                    except:
+                        pass
+                    
+                    await apply_quarantine(before, f"Attempted to remove high-permission role: {role.name}", "anti_nuke")
+                    await _log_action(before.guild.id, "security",
+                                   f"🚫 [ANTI-NUKE] {before} attempted to remove role: {role.name}")
+                    return
+        
+        if added_roles:
+            for role in added_roles:
+                if role.permissions.administrator or role.permissions.manage_guild or role.permissions.ban_members:
+                    try:
+                        await before.remove_roles(role, reason="RXT Security - Anti-role abuse protection")
+                    except:
+                        pass
+                    
+                    await apply_quarantine(before, f"Attempted to gain high-permission role: {role.name}", "anti_role")
+                    await _log_action(before.guild.id, "security",
+                                   f"🚫 [ANTI-ROLE] {before} attempted to add role: {role.name}")
+                    return
     
     @bot.listen('on_guild_channel_delete')
-    async def security_on_guild_channel_delete(channel):
-        await asyncio.sleep(1)
-        
+    async def security_on_channel_delete(channel):
         config = await get_security_config(channel.guild.id)
         
         if not config.get('security_enabled') or not config.get('antinuke_enabled'):
             return
         
+        audit_log_entry = None
         try:
             async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
-                if entry.target.id == channel.id:
-                    executor = entry.user
-                    
-                    if await is_whitelisted(channel.guild.id, executor):
-                        return
-                    
-                    recent_deletes = 0
-                    async for e in channel.guild.audit_logs(limit=10, action=discord.AuditLogAction.channel_delete):
-                        if e.user.id == executor.id and (datetime.utcnow() - e.created_at).seconds < 60:
-                            recent_deletes += 1
-                    
-                    if recent_deletes >= 3:
-                        try:
-                            executor_member = channel.guild.get_member(executor.id)
-                            if executor_member:
-                                await apply_timeout(executor_member, "Anti-Nuke: Mass channel deletion", 7200)
-                                await _log_action(channel.guild.id, "security", 
-                                               f"🚫 [ANTI-NUKE] {executor} timed out - Mass channel deletion ({recent_deletes} channels)")
-                        except:
-                            pass
-                    break
+                audit_log_entry = entry
+                break
+        except:
+            return
+        
+        if not audit_log_entry or not audit_log_entry.user:
+            return
+        
+        if audit_log_entry.user.bot:
+            return
+        
+        if await is_whitelisted(channel.guild.id, audit_log_entry.user):
+            return
+        
+        try:
+            member = await channel.guild.fetch_member(audit_log_entry.user.id)
+            await apply_quarantine(member, f"Mass channel deletion detected: {channel.name}", "anti_nuke")
+            await _log_action(channel.guild.id, "security",
+                           f"🚫 [ANTI-NUKE] {member} placed in quarantine - Channel deletion: {channel.name}")
         except:
             pass
     
     @bot.listen('on_guild_role_delete')
-    async def security_on_guild_role_delete(role):
-        await asyncio.sleep(1)
-        
+    async def security_on_role_delete(role):
         config = await get_security_config(role.guild.id)
         
         if not config.get('security_enabled') or not config.get('antinuke_enabled'):
             return
         
+        audit_log_entry = None
         try:
             async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
-                if entry.target.id == role.id:
-                    executor = entry.user
-                    
-                    if await is_whitelisted(role.guild.id, executor):
-                        return
-                    
-                    recent_deletes = 0
-                    async for e in role.guild.audit_logs(limit=10, action=discord.AuditLogAction.role_delete):
-                        if e.user.id == executor.id and (datetime.utcnow() - e.created_at).seconds < 60:
-                            recent_deletes += 1
-                    
-                    if recent_deletes >= 3:
-                        try:
-                            executor_member = role.guild.get_member(executor.id)
-                            if executor_member:
-                                await apply_timeout(executor_member, "Anti-Nuke: Mass role deletion", 7200)
-                                await _log_action(role.guild.id, "security", 
-                                               f"🚫 [ANTI-NUKE] {executor} timed out - Mass role deletion ({recent_deletes} roles)")
-                        except:
-                            pass
-                    break
+                audit_log_entry = entry
+                break
         except:
-            pass
-    
-    @bot.listen('on_member_ban')
-    async def security_on_member_ban(guild, user):
-        await asyncio.sleep(1)
+            return
         
-        config = await get_security_config(guild.id)
+        if not audit_log_entry or not audit_log_entry.user:
+            return
         
-        if not config.get('security_enabled') or not config.get('antinuke_enabled'):
+        if audit_log_entry.user.bot:
+            return
+        
+        if await is_whitelisted(role.guild.id, audit_log_entry.user):
             return
         
         try:
-            async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
-                if entry.target.id == user.id:
-                    executor = entry.user
-                    
-                    if await is_whitelisted(guild.id, executor):
-                        return
-                    
-                    recent_bans = 0
-                    async for e in guild.audit_logs(limit=10, action=discord.AuditLogAction.ban):
-                        if e.user.id == executor.id and (datetime.utcnow() - e.created_at).seconds < 60:
-                            recent_bans += 1
-                    
-                    if recent_bans >= 5:
-                        try:
-                            executor_member = guild.get_member(executor.id)
-                            if executor_member:
-                                await apply_timeout(executor_member, "Anti-Nuke: Mass ban", 7200)
-                                await _log_action(guild.id, "security", 
-                                               f"🚫 [ANTI-NUKE] {executor} timed out - Mass ban ({recent_bans} bans)")
-                        except:
-                            pass
-                    break
+            member = await role.guild.fetch_member(audit_log_entry.user.id)
+            await apply_quarantine(member, f"Mass role deletion detected: {role.name}", "anti_nuke")
+            await _log_action(role.guild.id, "security",
+                           f"🚫 [ANTI-NUKE] {member} placed in quarantine - Role deletion: {role.name}")
         except:
             pass
     
     @bot.listen('on_webhooks_update')
-    async def security_on_webhooks_update(channel):
+    async def security_on_webhook_update(channel):
         config = await get_security_config(channel.guild.id)
         
         if not config.get('security_enabled') or not config.get('webhookguard_enabled'):
             return
         
+        audit_log_entry = None
         try:
-            webhooks = await channel.webhooks()
-            
             async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.webhook_create):
-                executor = entry.user
-                
-                if await is_whitelisted(channel.guild.id, executor):
-                    return
-                
-                for webhook in webhooks:
-                    if webhook.user and webhook.user.id == executor.id:
-                        try:
-                            await webhook.delete(reason="RXT Security - Webhook guard")
-                            await _log_action(channel.guild.id, "security", 
-                                           f"🚫 [WEBHOOK GUARD] Webhook created by {executor} was deleted")
-                        except:
-                            pass
-                        
-                        try:
-                            executor_member = channel.guild.get_member(executor.id)
-                            if executor_member:
-                                await apply_timeout(executor_member, "Anti-Webhook: Unauthorized webhook creation", 3600)
-                        except:
-                            pass
+                audit_log_entry = entry
                 break
         except:
-            pass
-    
-    @bot.listen('on_guild_role_create')
-    async def security_on_guild_role_create(role):
-        await asyncio.sleep(1)
+            return
         
-        config = await get_security_config(role.guild.id)
+        if not audit_log_entry or not audit_log_entry.user:
+            return
         
-        if not config.get('security_enabled') or not config.get('antirole_enabled'):
+        if audit_log_entry.user.bot:
+            return
+        
+        if await is_whitelisted(channel.guild.id, audit_log_entry.user):
             return
         
         try:
-            async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_create):
-                if entry.target.id == role.id:
-                    executor = entry.user
-                    
-                    if await is_whitelisted(role.guild.id, executor):
-                        return
-                    
-                    dangerous_perms = [
-                        'administrator',
-                        'manage_guild',
-                        'manage_roles',
-                        'manage_channels',
-                        'kick_members',
-                        'ban_members',
-                        'manage_webhooks'
-                    ]
-                    
-                    role_perms = role.permissions
-                    has_dangerous_perm = any(getattr(role_perms, perm, False) for perm in dangerous_perms)
-                    
-                    if has_dangerous_perm:
-                        try:
-                            await role.delete(reason="RXT Security - High-permission role created without authorization")
-                            await _log_action(role.guild.id, "security", 
-                                           f"🚫 [ANTI-ROLE] Role created by {executor} was deleted - Dangerous permissions")
-                        except:
-                            pass
-                        
-                        try:
-                            executor_member = role.guild.get_member(executor.id)
-                            if executor_member:
-                                await apply_timeout(executor_member, "Anti-Role: Created high-permission role", 3600)
-                        except:
-                            pass
-                    break
+            webhooks = await channel.webhooks()
+            for webhook in webhooks:
+                if webhook.user and webhook.user.id == audit_log_entry.user.id:
+                    try:
+                        await webhook.delete(reason="RXT Security - Unauthorized webhook")
+                    except:
+                        pass
+            
+            member = await channel.guild.fetch_member(audit_log_entry.user.id)
+            await apply_quarantine(member, f"Unauthorized webhook created in {channel.name}", "webhook_guard")
+            await _log_action(channel.guild.id, "security",
+                           f"🚫 [WEBHOOK GUARD] {member} placed in quarantine - Webhook created in {channel.name}")
         except:
             pass
     
+    def create_protection_toggle_command(name, title, config_key, features):
+        @bot.tree.command(name=name, description=f"{title} Toggle {title} protection")
+        async def toggle_command(interaction: discord.Interaction):
+            if not await _has_permission(interaction, "junior_moderator"):
+                embed = discord.Embed(
+                    title="❌ **ACCESS DENIED**",
+                    description="**Permission Required:** 🔵 Junior Moderator+",
+                    color=BrandColors.DANGER
+                )
+                embed.set_footer(text=BOT_FOOTER)
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            
+            config = await get_security_config(interaction.guild.id)
+            new_state = not config.get(config_key, False)
+            config[config_key] = new_state
+            await update_security_config(interaction.guild.id, config)
+            
+            status = "✅ ENABLED" if new_state else "❌ DISABLED"
+            features_text = "\n".join([f"• {feature}" for feature in features])
+            
+            embed = discord.Embed(
+                title=f"{title} **{status}**",
+                description=f"{VisualElements.CIRCUIT_LINE}\n\n"
+                           f"**Protected Against:**\n{features_text}\n\n"
+                           f"**Status:** {status}\n"
+                           f"**Enforcement:** Quarantine system active\n\n"
+                           f"{VisualElements.CIRCUIT_LINE}",
+                color=BrandColors.SUCCESS if new_state else BrandColors.WARNING
+            )
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.response.send_message(embed=embed)
+            
+            await _log_action(interaction.guild.id, "security",
+                            f"{title} [{name.upper()}] {status} by {interaction.user}")
+        
+        return toggle_command
+    
+    create_protection_toggle_command("antiraid", "🛡️", "antiraid_enabled", ["Join rate monitoring", "Account age verification", "Suspicious username detection"])
+    create_protection_toggle_command("antinuke", "💣", "antinuke_enabled", ["Mass channel deletion", "Mass role deletion", "Mass ban/kick prevention"])
+    create_protection_toggle_command("antilink", "🔗", "antilink_enabled", ["Malicious link detection", "Phishing domain blocking", "Domain whitelist support"])
+    create_protection_toggle_command("antispam", "💬", "antispam_enabled", ["Message rate limiting", "Spam flood detection", "Quarantine for violators"])
+    create_protection_toggle_command("massmention", "📢", "massmention_enabled", ["@everyone mention blocking", "@here mention blocking", "Quarantine for violators"])
+    create_protection_toggle_command("webhookguard", "🪝", "webhookguard_enabled", ["Unknown webhook detection", "Auto webhook deletion", "Quarantine for webhook creators"])
+    create_protection_toggle_command("antirole", "🎭", "antirole_enabled", ["High-permission role detection", "Permission escalation prevention", "Auto role deletion"])
+    create_protection_toggle_command("massdelete", "🗑️", "massdelete_enabled", ["Mass message deletion detection", "Auto-quarantine for violators", "Audit logging"])
+    
     @bot.tree.command(name="security", description="🔐 Configure RXT Security System")
-    @app_commands.describe(
-        action="Action to perform",
+    @app_commands.describe(action="Action to perform")
+    @app_commands.choices(
+        action=[
+            app_commands.Choice(name="enable - Enable security", value="enable"),
+            app_commands.Choice(name="disable - Disable security", value="disable"),
+            app_commands.Choice(name="status - View security status", value="status"),
+            app_commands.Choice(name="setup - Setup quarantine system", value="setup"),
+        ]
     )
-    @app_commands.choices(action=[
-        app_commands.Choice(name="enable - Turn on security system", value="enable"),
-        app_commands.Choice(name="disable - Turn off security system", value="disable"),
-        app_commands.Choice(name="status - View security status", value="status"),
-        app_commands.Choice(name="config - View configuration", value="config")
-    ])
     async def security_command(interaction: discord.Interaction, action: str):
-        if not await _has_permission(interaction, "main_moderator"):
+        if not await _has_permission(interaction, "junior_moderator"):
             embed = discord.Embed(
                 title="❌ **ACCESS DENIED**",
-                description="**Permission Required:** 🔴 Main Moderator\n\nYou don't have permission to manage security settings.",
+                description="**Permission Required:** 🔵 Junior Moderator+",
                 color=BrandColors.DANGER
             )
             embed.set_footer(text=BOT_FOOTER)
@@ -599,222 +744,156 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             await update_security_config(interaction.guild.id, config)
             
             embed = discord.Embed(
-                title="🔐 **RXT SECURITY SYSTEM ENABLED**",
+                title="🔐 **SECURITY SYSTEM ENABLED**",
                 description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"✅ **Security system is now ACTIVE**\n\n"
-                           f"**Protection Status:**\n"
-                           f"🔹 Anti-Raid: {'✅ Enabled' if config.get('antiraid_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Anti-Nuke: {'✅ Enabled' if config.get('antinuke_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Anti-Link: {'✅ Enabled' if config.get('antilink_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Anti-Spam: {'✅ Enabled' if config.get('antispam_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Mass Mention: {'✅ Enabled' if config.get('massmention_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Webhook Guard: {'✅ Enabled' if config.get('webhookguard_enabled') else '❌ Disabled'}\n"
-                           f"🔹 Anti-Role: {'✅ Enabled' if config.get('antirole_enabled') else '❌ Disabled'}\n\n"
-                           f"Use `/antiraid`, `/antinuke`, etc. to enable individual protections.\n\n"
+                           f"**Status:** ✅ All protections active\n"
+                           f"**Enforcement:** Quarantine system\n\n"
+                           f"All security features are now monitoring the server.\n"
+                           f"Configure individual protections with `/antiraid`, `/antinuke`, etc.\n\n"
                            f"{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.SUCCESS
             )
             embed.set_footer(text=BOT_FOOTER)
             await interaction.response.send_message(embed=embed)
-            await _log_action(interaction.guild.id, "security", 
-                            f"🔐 [SECURITY ENABLED] RXT Security System enabled by {interaction.user}")
             
+            await _log_action(interaction.guild.id, "security",
+                            f"🔐 Security system enabled by {interaction.user}")
+        
         elif action == "disable":
             config['security_enabled'] = False
             await update_security_config(interaction.guild.id, config)
             
             embed = discord.Embed(
-                title="🔐 **RXT SECURITY SYSTEM DISABLED**",
+                title="⛔ **SECURITY SYSTEM DISABLED**",
                 description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"⚠️ **Security system is now INACTIVE**\n\n"
-                           f"All protection features have been disabled.\n"
-                           f"Your server is no longer protected by RXT Security.\n\n"
+                           f"**Status:** ❌ All protections inactive\n\n"
+                           f"Use `/security enable` to re-enable protections.\n\n"
                            f"{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.WARNING
             )
             embed.set_footer(text=BOT_FOOTER)
             await interaction.response.send_message(embed=embed)
-            await _log_action(interaction.guild.id, "security", 
-                            f"🔐 [SECURITY DISABLED] RXT Security System disabled by {interaction.user}")
             
+            await _log_action(interaction.guild.id, "security",
+                            f"⛔ Security system disabled by {interaction.user}")
+        
         elif action == "status":
-            status_emoji = "🟢" if config.get('security_enabled') else "🔴"
-            status_text = "ACTIVE" if config.get('security_enabled') else "INACTIVE"
+            status_lines = [
+                f"🔐 Security: {'✅ Enabled' if config.get('security_enabled') else '❌ Disabled'}",
+                f"🛡️ Anti-Raid: {'✅ Enabled' if config.get('antiraid_enabled') else '❌ Disabled'}",
+                f"💣 Anti-Nuke: {'✅ Enabled' if config.get('antinuke_enabled') else '❌ Disabled'}",
+                f"🔗 Anti-Link: {'✅ Enabled' if config.get('antilink_enabled') else '❌ Disabled'}",
+                f"💬 Anti-Spam: {'✅ Enabled' if config.get('antispam_enabled') else '❌ Disabled'}",
+                f"📢 Mass Mention: {'✅ Enabled' if config.get('massmention_enabled') else '❌ Disabled'}",
+                f"🪝 Webhook Guard: {'✅ Enabled' if config.get('webhookguard_enabled') else '❌ Disabled'}",
+                f"🎭 Anti-Role: {'✅ Enabled' if config.get('antirole_enabled') else '❌ Disabled'}",
+                f"🗑️ Mass Delete: {'✅ Enabled' if config.get('massdelete_enabled') else '❌ Disabled'}",
+            ]
             
             embed = discord.Embed(
-                title="🔐 **RXT SECURITY SYSTEM STATUS**",
-                description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**System Status:** {status_emoji} {status_text}\n\n"
-                           f"**Protection Modules:**\n"
-                           f"{'🟢' if config.get('antiraid_enabled') else '🔴'} Anti-Raid System\n"
-                           f"{'🟢' if config.get('antinuke_enabled') else '🔴'} Anti-Nuke System\n"
-                           f"{'🟢' if config.get('antilink_enabled') else '🔴'} Anti-Link Protection\n"
-                           f"{'🟢' if config.get('antispam_enabled') else '🔴'} Anti-Spam & Flood\n"
-                           f"{'🟢' if config.get('massmention_enabled') else '🔴'} Mass Mention Guard\n"
-                           f"{'🟢' if config.get('webhookguard_enabled') else '🔴'} Webhook Guard\n"
-                           f"{'🟢' if config.get('antirole_enabled') else '🔴'} Anti-Role Abuse\n\n"
-                           f"**Whitelist:**\n"
-                           f"👤 Users: {len(config.get('whitelist_users', []))}\n"
-                           f"🎭 Roles: {len(config.get('whitelist_roles', []))}\n"
-                           f"🤖 Bots: {len(config.get('whitelist_bots', []))}\n\n"
-                           f"{VisualElements.CIRCUIT_LINE}",
-                color=BrandColors.PRIMARY
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed)
-            
-        elif action == "config":
-            embed = discord.Embed(
-                title="⚙️ **RXT SECURITY CONFIGURATION**",
-                description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**Anti-Raid Settings:**\n"
-                           f"• Join Threshold: {config.get('raid_join_threshold', 10)} joins\n"
-                           f"• Time Window: {config.get('raid_time_window', 10)} seconds\n"
-                           f"• Min Account Age: {config.get('raid_account_age_days', 7)} days\n\n"
-                           f"**Anti-Spam Settings:**\n"
-                           f"• Message Threshold: {config.get('spam_message_threshold', 5)} messages\n"
-                           f"• Time Window: {config.get('spam_time_window', 5)} seconds\n\n"
-                           f"**Anti-Link Settings:**\n"
-                           f"• Blocked Domains: {len(config.get('blocked_domains', []))}\n"
-                           f"• Allowed Domains: {len(config.get('allowed_domains', []))}\n\n"
-                           f"**Timeout Settings:**\n"
-                           f"• Timeout Role: {'✅ Configured' if config.get('timeout_role_id') else '❌ Not set'}\n"
-                           f"• Timeout Channel: {'✅ Configured' if config.get('timeout_channel_id') else '❌ Not set'}\n\n"
-                           f"{VisualElements.CIRCUIT_LINE}",
+                title="🔐 **SECURITY STATUS**",
+                description=f"{VisualElements.CIRCUIT_LINE}\n\n" + "\n".join(status_lines) + f"\n\n{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.INFO
             )
             embed.set_footer(text=BOT_FOOTER)
             await interaction.response.send_message(embed=embed)
-    
-    def create_protection_toggle_command(name: str, title: str, protection_key: str, features: list):
-        @bot.tree.command(name=name, description=f"{title} Toggle {title} protection")
-        @app_commands.describe(state="Enable or disable")
-        @app_commands.choices(state=[
-            app_commands.Choice(name="on - Enable protection", value="on"),
-            app_commands.Choice(name="off - Disable protection", value="off")
-        ])
-        async def toggle_command(interaction: discord.Interaction, state: str):
-            if not await _has_permission(interaction, "main_moderator"):
-                embed = discord.Embed(
-                    title="❌ **ACCESS DENIED**",
-                    description="**Permission Required:** 🔴 Main Moderator",
-                    color=BrandColors.DANGER
-                )
-                embed.set_footer(text=BOT_FOOTER)
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-            
-            config = await get_security_config(interaction.guild.id)
-            config[protection_key] = (state == "on")
-            await update_security_config(interaction.guild.id, config)
-            
-            status = "ENABLED" if state == "on" else "DISABLED"
-            emoji = "🟢" if state == "on" else "🔴"
-            color = BrandColors.SUCCESS if state == "on" else BrandColors.WARNING
-            
-            features_text = "\n".join([f"• {feature}" for feature in features])
+        
+        elif action == "setup":
+            await interaction.response.defer()
+            await get_or_create_quarantine_role(interaction.guild, config)
+            await get_or_create_quarantine_channel(interaction.guild, config, await get_or_create_quarantine_role(interaction.guild, config))
             
             embed = discord.Embed(
-                title=f"{title} **{name.upper()} {status}**",
+                title="✅ **QUARANTINE SYSTEM SETUP**",
                 description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**Status:** {emoji} {title} protection is now {status}\n\n"
-                           f"**Protection includes:**\n"
-                           f"{features_text}\n\n"
-                           f"{VisualElements.CIRCUIT_LINE}",
-                color=color
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed)
-            await _log_action(interaction.guild.id, "security", 
-                            f"{title} [{name.upper()}] {status} by {interaction.user}")
-        
-        return toggle_command
-    
-    create_protection_toggle_command("antiraid", "🛡️", "antiraid_enabled", ["Join rate monitoring", "Account age verification", "Suspicious username detection"])
-    create_protection_toggle_command("antinuke", "💣", "antinuke_enabled", ["Mass channel deletion", "Mass role deletion", "Mass ban/kick prevention"])
-    create_protection_toggle_command("antilink", "🔗", "antilink_enabled", ["Malicious link detection", "Phishing domain blocking", "Domain whitelist support"])
-    create_protection_toggle_command("antispam", "💬", "antispam_enabled", ["Message rate limiting", "Spam flood detection", "Auto timeout for violators"])
-    create_protection_toggle_command("massmention", "📢", "massmention_enabled", ["@everyone mention blocking", "@here mention blocking", "Auto timeout for violators"])
-    create_protection_toggle_command("webhookguard", "🪝", "webhookguard_enabled", ["Unknown webhook detection", "Auto webhook deletion", "Timeout for webhook creators"])
-    create_protection_toggle_command("antirole", "🎭", "antirole_enabled", ["High-permission role detection", "Permission escalation prevention", "Auto role deletion"])
-    
-    @bot.tree.command(name="timeout", description="⏱️ Manually timeout a user")
-    @app_commands.describe(
-        user="User to timeout",
-        duration="Duration in minutes",
-        reason="Reason for timeout"
-    )
-    async def timeout_add_command(interaction: discord.Interaction, user: discord.Member, duration: int, reason: str = "Manual timeout"):
-        if not await _has_permission(interaction, "junior_moderator"):
-            embed = discord.Embed(
-                title="❌ **ACCESS DENIED**",
-                description="**Permission Required:** 🔵 Junior Moderator+",
-                color=BrandColors.DANGER
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        
-        if user.guild_permissions.administrator:
-            embed = discord.Embed(
-                title="❌ **CANNOT TIMEOUT ADMIN**",
-                description="Cannot timeout users with administrator permissions.",
-                color=BrandColors.DANGER
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        
-        await apply_timeout(user, reason, duration * 60)
-        
-        embed = discord.Embed(
-            title="⏱️ **TIMEOUT APPLIED**",
-            description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                       f"**User:** {user.mention}\n"
-                       f"**Duration:** {duration} minutes\n"
-                       f"**Reason:** {reason}\n"
-                       f"**Applied by:** {interaction.user.mention}\n\n"
-                       f"User cannot send messages, react, join voice channels, or start threads.\n\n"
-                       f"{VisualElements.CIRCUIT_LINE}",
-            color=BrandColors.WARNING
-        )
-        embed.set_footer(text=BOT_FOOTER)
-        await interaction.response.send_message(embed=embed)
-    
-    @bot.tree.command(name="untimeout", description="✅ Remove timeout from a user")
-    @app_commands.describe(user="User to remove timeout from")
-    async def timeout_remove_command(interaction: discord.Interaction, user: discord.Member):
-        if not await _has_permission(interaction, "junior_moderator"):
-            embed = discord.Embed(
-                title="❌ **ACCESS DENIED**",
-                description="**Permission Required:** 🔵 Junior Moderator+",
-                color=BrandColors.DANGER
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        
-        success = await remove_timeout(user)
-        
-        if success:
-            embed = discord.Embed(
-                title="✅ **TIMEOUT REMOVED**",
-                description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**User:** {user.mention}\n"
-                           f"**Action:** Timeout removed, user can now interact normally\n"
-                           f"**Removed by:** {interaction.user.mention}\n\n"
+                           f"**Created:**\n"
+                           f"• 🔴 Quarantine Role\n"
+                           f"• 📁 Quarantine Category\n"
+                           f"• 💬 Quarantine Channel\n\n"
+                           f"**Features:**\n"
+                           f"• Automatic role storage and restoration\n"
+                           f"• Escalating quarantine durations\n"
+                           f"• Minimum 15 minute quarantine\n\n"
                            f"{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.SUCCESS
             )
-        else:
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.followup.send(embed=embed)
+            
+            await _log_action(interaction.guild.id, "security",
+                            f"✅ Quarantine system setup by {interaction.user}")
+    
+    @bot.tree.command(name="quarantine", description="⚠️ Manage user quarantine")
+    @app_commands.describe(
+        action="Action to perform",
+        user="User to quarantine/unquarantine"
+    )
+    @app_commands.choices(
+        action=[
+            app_commands.Choice(name="remove - Remove user from quarantine", value="remove"),
+            app_commands.Choice(name="info - Show quarantine info", value="info"),
+        ]
+    )
+    async def quarantine_command(interaction: discord.Interaction, action: str, user: discord.Member = None):
+        if not await _has_permission(interaction, "junior_moderator"):
             embed = discord.Embed(
-                title="❌ **NOT IN TIMEOUT**",
-                description=f"{user.mention} is not currently in timeout.",
+                title="❌ **ACCESS DENIED**",
+                description="**Permission Required:** 🔵 Junior Moderator+",
                 color=BrandColors.DANGER
             )
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
         
-        embed.set_footer(text=BOT_FOOTER)
-        await interaction.response.send_message(embed=embed)
+        if action == "remove" and user:
+            success = await remove_quarantine_manual(user)
+            
+            if success:
+                embed = discord.Embed(
+                    title="✅ **QUARANTINE REMOVED**",
+                    description=f"{VisualElements.CIRCUIT_LINE}\n\n"
+                               f"**User:** {user.mention}\n"
+                               f"**Status:** Quarantine removed, roles restored\n"
+                               f"**Removed by:** {interaction.user.mention}\n\n"
+                               f"{VisualElements.CIRCUIT_LINE}",
+                    color=BrandColors.SUCCESS
+                )
+            else:
+                embed = discord.Embed(
+                    title="❌ **NOT IN QUARANTINE**",
+                    description=f"{user.mention} is not currently in quarantine.",
+                    color=BrandColors.DANGER
+                )
+            
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.response.send_message(embed=embed)
+        
+        elif action == "info" and user:
+            storage_key = f"{interaction.guild.id}_{user.id}"
+            quarantine_data = user_quarantine_info.get(storage_key)
+            
+            if quarantine_data:
+                time_remaining = max(0, quarantine_data['quarantine_until'] - time.time())
+                embed = discord.Embed(
+                    title="⚠️ **QUARANTINE INFO**",
+                    description=f"{VisualElements.CIRCUIT_LINE}\n\n"
+                               f"**User:** {user.mention}\n"
+                               f"**Reason:** {quarantine_data['reason']}\n"
+                               f"**Violations:** {quarantine_data['violations']}\n"
+                               f"**Time Remaining:** {int(time_remaining // 60)} minutes\n"
+                               f"**Expires:** <t:{int(quarantine_data['quarantine_until'])}:R>\n\n"
+                               f"{VisualElements.CIRCUIT_LINE}",
+                    color=BrandColors.WARNING
+                )
+            else:
+                embed = discord.Embed(
+                    title="ℹ️ **NOT QUARANTINED**",
+                    description=f"{user.mention} is not in quarantine.",
+                    color=BrandColors.INFO
+                )
+            
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.response.send_message(embed=embed)
     
     @bot.tree.command(name="whitelist", description="🟩 Manage security whitelist")
     @app_commands.describe(
@@ -826,19 +905,19 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
         action=[
             app_commands.Choice(name="add - Add to whitelist", value="add"),
             app_commands.Choice(name="remove - Remove from whitelist", value="remove"),
-            app_commands.Choice(name="list - View whitelist", value="list")
+            app_commands.Choice(name="list - Show whitelist", value="list"),
         ],
         target_type=[
-            app_commands.Choice(name="user", value="user"),
-            app_commands.Choice(name="role", value="role"),
-            app_commands.Choice(name="bot", value="bot")
+            app_commands.Choice(name="user - Whitelist user", value="user"),
+            app_commands.Choice(name="role - Whitelist role", value="role"),
+            app_commands.Choice(name="bot - Whitelist bot", value="bot"),
         ]
     )
-    async def whitelist_command(interaction: discord.Interaction, action: str, target_type: str = None, target: str = None):
-        if not await _has_permission(interaction, "main_moderator"):
+    async def whitelist_command(interaction: discord.Interaction, action: str, target_type: str = None, target: discord.Member = None):
+        if not await _has_permission(interaction, "junior_moderator"):
             embed = discord.Embed(
                 title="❌ **ACCESS DENIED**",
-                description="**Permission Required:** 🔴 Main Moderator",
+                description="**Permission Required:** 🔵 Junior Moderator+",
                 color=BrandColors.DANGER
             )
             embed.set_footer(text=BOT_FOOTER)
@@ -846,78 +925,61 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             return
         
         config = await get_security_config(interaction.guild.id)
+        embed = None
         
         if action == "list":
             whitelist_users = config.get('whitelist_users', [])
             whitelist_roles = config.get('whitelist_roles', [])
             whitelist_bots = config.get('whitelist_bots', [])
             
-            users_text = "\n".join([f"<@{uid}>" for uid in whitelist_users[:10]]) if whitelist_users else "None"
-            roles_text = "\n".join([f"<@&{rid}>" for rid in whitelist_roles[:10]]) if whitelist_roles else "None"
-            bots_text = "\n".join([f"<@{bid}>" for bid in whitelist_bots[:10]]) if whitelist_bots else "None"
+            user_mentions = [f"<@{uid}>" for uid in whitelist_users]
+            role_mentions = [f"<@&{rid}>" for rid in whitelist_roles]
+            bot_mentions = [f"<@{bid}>" for bid in whitelist_bots]
             
             embed = discord.Embed(
-                title="🟩 **SECURITY WHITELIST**",
+                title="🟩 **WHITELIST**",
                 description=f"{VisualElements.CIRCUIT_LINE}\n\n"
-                           f"**Whitelisted Users ({len(whitelist_users)}):**\n{users_text}\n\n"
-                           f"**Whitelisted Roles ({len(whitelist_roles)}):**\n{roles_text}\n\n"
-                           f"**Whitelisted Bots ({len(whitelist_bots)}):**\n{bots_text}\n\n"
+                           f"**Users:** {', '.join(user_mentions) if user_mentions else 'None'}\n"
+                           f"**Roles:** {', '.join(role_mentions) if role_mentions else 'None'}\n"
+                           f"**Bots:** {', '.join(bot_mentions) if bot_mentions else 'None'}\n\n"
+                           f"*(Server owner is always whitelisted)*\n\n"
                            f"{VisualElements.CIRCUIT_LINE}",
                 color=BrandColors.SUCCESS
             )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed)
-            return
         
-        if not target:
-            embed = discord.Embed(
-                title="❌ **MISSING TARGET**",
-                description="Please provide a target (user, role, or bot mention/ID).",
-                color=BrandColors.DANGER
-            )
-            embed.set_footer(text=BOT_FOOTER)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        
-        target_id = int(re.sub(r'[<@&!>]', '', target))
-        
-        embed = discord.Embed(title="⚠️ **ERROR**", description="An error occurred.", color=BrandColors.DANGER)
-        
-        if action == "add":
+        elif action == "add" and target:
+            target_id = target.id
+            
             if target_type == "user":
                 if target_id not in config.get('whitelist_users', []):
-                    if 'whitelist_users' not in config:
-                        config['whitelist_users'] = []
                     config['whitelist_users'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Added <@{target_id}> to user whitelist.\n\nThey will bypass all security protections.",
+                        description=f"Added {target.mention} to user whitelist.\n\nUser is now exempt from security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
-                                   f"🟩 [WHITELIST] User <@{target_id}> added by {interaction.user}")
+                    await _log_action(interaction.guild.id, "security",
+                                   f"🟩 [WHITELIST] User {target.mention} added by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **ALREADY WHITELISTED**",
-                        description=f"<@{target_id}> is already in the user whitelist.",
+                        description=f"{target.mention} is already in the user whitelist.",
                         color=BrandColors.WARNING
                     )
             
             elif target_type == "role":
                 if target_id not in config.get('whitelist_roles', []):
-                    if 'whitelist_roles' not in config:
-                        config['whitelist_roles'] = []
                     config['whitelist_roles'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Added <@&{target_id}> to role whitelist.\n\nUsers with this role will bypass all security protections.",
+                        description=f"Added <@&{target_id}> to role whitelist.\n\nUsers with this role are now exempt from security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
+                    await _log_action(interaction.guild.id, "security",
                                    f"🟩 [WHITELIST] Role <@&{target_id}> added by {interaction.user}")
                 else:
                     embed = discord.Embed(
@@ -928,17 +990,15 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
             
             elif target_type == "bot":
                 if target_id not in config.get('whitelist_bots', []):
-                    if 'whitelist_bots' not in config:
-                        config['whitelist_bots'] = []
                     config['whitelist_bots'].append(target_id)
                     await update_security_config(interaction.guild.id, config)
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Added <@{target_id}> to bot whitelist.\n\nThis bot will bypass all security protections.",
+                        description=f"Added <@{target_id}> to bot whitelist.\n\nThis bot is now exempt from security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
+                    await _log_action(interaction.guild.id, "security",
                                    f"🟩 [WHITELIST] Bot <@{target_id}> added by {interaction.user}")
                 else:
                     embed = discord.Embed(
@@ -947,7 +1007,9 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                         color=BrandColors.WARNING
                     )
         
-        elif action == "remove":
+        elif action == "remove" and target:
+            target_id = target.id
+            
             if target_type == "user":
                 if target_id in config.get('whitelist_users', []):
                     config['whitelist_users'].remove(target_id)
@@ -955,15 +1017,15 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                     
                     embed = discord.Embed(
                         title="✅ **WHITELIST UPDATED**",
-                        description=f"Removed <@{target_id}> from user whitelist.\n\nThey are now subject to security protections.",
+                        description=f"Removed {target.mention} from user whitelist.\n\nUser is now subject to security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
-                                   f"🟩 [WHITELIST] User <@{target_id}> removed by {interaction.user}")
+                    await _log_action(interaction.guild.id, "security",
+                                   f"🟩 [WHITELIST] User {target.mention} removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
                         title="⚠️ **NOT WHITELISTED**",
-                        description=f"<@{target_id}> is not in the user whitelist.",
+                        description=f"{target.mention} is not in the user whitelist.",
                         color=BrandColors.WARNING
                     )
             
@@ -977,7 +1039,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                         description=f"Removed <@&{target_id}> from role whitelist.\n\nUsers with this role are now subject to security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
+                    await _log_action(interaction.guild.id, "security",
                                    f"🟩 [WHITELIST] Role <@&{target_id}> removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
@@ -996,7 +1058,7 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                         description=f"Removed <@{target_id}> from bot whitelist.\n\nThis bot is now subject to security protections.",
                         color=BrandColors.SUCCESS
                     )
-                    await _log_action(interaction.guild.id, "security", 
+                    await _log_action(interaction.guild.id, "security",
                                    f"🟩 [WHITELIST] Bot <@{target_id}> removed by {interaction.user}")
                 else:
                     embed = discord.Embed(
@@ -1005,7 +1067,8 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
                         color=BrandColors.WARNING
                     )
         
-        embed.set_footer(text=BOT_FOOTER)
-        await interaction.response.send_message(embed=embed)
+        if embed:
+            embed.set_footer(text=BOT_FOOTER)
+            await interaction.response.send_message(embed=embed)
     
     print("✅ RXT Security System setup complete - event listeners and commands registered")
