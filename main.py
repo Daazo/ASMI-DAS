@@ -101,7 +101,7 @@ async def log_action(guild_id, log_type, message):
             "welcome": "welcome",
             "voice": "voice",
             "timed_roles": "timed",
-            "security": "moderation",  # Route CAPTCHA verification logs to moderation
+            "security": "moderation",  # Route RXT Security System logs to moderation
             "profile": "general",  # Route profile logs to general
             "utility": "general"   # Route utility logs to general
         }
@@ -122,7 +122,7 @@ async def log_action(guild_id, log_type, message):
                     "welcome": BrandColors.SUCCESS,
                     "voice": BrandColors.PRIMARY,
                     "timed_roles": BrandColors.WARNING,
-                    "security": BrandColors.SUCCESS  # CAPTCHA verification logs
+                    "security": BrandColors.DANGER  # RXT Security System logs
                 }
 
                 embed = discord.Embed(
@@ -1537,6 +1537,16 @@ try:
     print("✅ Profile cards system loaded")
 except ImportError as e:
     print(f"⚠️ Profile cards module not found: {e}")
+
+# Import and setup RXT Security System
+try:
+    import rxt_security
+    rxt_security.setup(bot, get_server_data, update_server_data, log_action, has_permission)
+    print("✅ RXT Security System loaded and configured")
+except ImportError as e:
+    print(f"⚠️ RXT Security System not found: {e}")
+except Exception as e:
+    print(f"⚠️ RXT Security System setup failed: {e}")
 
 # Import global logging system
 try:
