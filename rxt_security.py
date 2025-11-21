@@ -415,30 +415,6 @@ def setup(bot: commands.Bot, get_server_data_func, update_server_data_func, log_
     _has_permission = has_permission_func
     _setup_complete = True
     
-    # Load persisted quarantine data from MongoDB on startup
-    async def load_quarantine_data():
-        try:
-            from main import bot as main_bot
-            for guild in main_bot.guilds:
-                try:
-                    server_data = await _get_server_data(guild.id)
-                    quarantine_data = server_data.get('quarantine_data', {})
-                    for user_id_str, q_data in quarantine_data.items():
-                        storage_key = f"{guild.id}_{user_id_str}"
-                        user_stored_roles[storage_key] = {
-                            'roles': q_data.get('roles', []),
-                            'timestamp': time.time(),
-                            'duration': 0,
-                            'violations': q_data.get('violations', 0)
-                        }
-                        user_quarantine_info[storage_key] = q_data
-                except:
-                    pass
-        except:
-            pass
-    
-    asyncio.create_task(load_quarantine_data())
-    
     @bot.listen('on_message')
     async def security_on_message(message):
         if message.author.bot:
