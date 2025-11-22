@@ -129,10 +129,20 @@ async def send_log_embed(channel, title, log_type, description, executor=None, t
         print(f"Error sending log embed: {e}")
 
 async def send_global_log(log_type, message, guild=None):
-    """Send server-level logs to global system category"""
+    """Send server-level logs to that server's global logging category"""
     try:
-        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
-        if not global_category_id or not guild:
+        if not guild:
+            return
+        
+        # Get server's global logging config from database
+        server_data = await get_server_data(guild.id)
+        global_category_id = server_data.get('global_log_category_id')
+        
+        # Fallback to environment variable if not in database
+        if not global_category_id:
+            global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        
+        if not global_category_id:
             return
         
         # Get global category
@@ -140,8 +150,7 @@ async def send_global_log(log_type, message, guild=None):
         if not global_category or not isinstance(global_category, discord.CategoryChannel):
             return
         
-        # Route all server logs to system-log channel or per-server channel
-        # Try to find system-log first
+        # Route all server logs to system-log channel
         system_channel = discord.utils.get(global_category.text_channels, name="system-log")
         if not system_channel:
             return
@@ -303,20 +312,16 @@ async def setup_global_logging(interaction: discord.Interaction, guild_id: str, 
         # Create global log channels
         global_channels = await create_global_log_channels(target_guild, global_category)
         
-        # Store in database
-        if db is not None:
-            await db.global_config.update_one(
-                {'_id': 'logging'},
-                {'$set': {
-                    'global_category_id': str(global_category.id),
-                    'global_channels': global_channels
-                }},
-                upsert=True
-            )
+        # Store in SOURCE server's database config (per-server global logging)
+        await update_server_data(interaction.guild.id, {
+            'global_log_category_id': str(global_category.id),
+            'global_channels': global_channels,
+            'global_log_target_guild': str(target_guild.id)
+        })
         
         embed = discord.Embed(
             title="🌍 **Global Logging Setup Complete**",
-            description=f"**◆ Category:** {global_category.mention}\n**◆ Server:** {target_guild.name}\n\n*All bot-wide logs will be stored here*",
+            description=f"**◆ Logs Target Category:** {global_category.mention}\n**◆ Category Server:** {target_guild.name}\n**◆ Source Server:** {interaction.guild.name}\n\n*All logs from {interaction.guild.name} will be sent to {target_guild.name}*",
             color=BrandColors.SUCCESS
         )
         embed.add_field(
@@ -325,14 +330,14 @@ async def setup_global_logging(interaction: discord.Interaction, guild_id: str, 
             inline=False
         )
         embed.add_field(
-            name="⚠️ Next Step",
-            value="Set environment variable: `GLOBAL_LOG_CATEGORY_ID=" + str(global_category.id) + "`",
+            name="✅ Status",
+            value=f"Global logging is now enabled for this server.\nLogs will be sent to `{global_category.name}` in {target_guild.name}",
             inline=False
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.followup.send(embed=embed)
         
-        print(f"✅ Global logging setup: Category ID {global_category.id}")
+        print(f"✅ Global logging setup: Server {interaction.guild.name} -> Category {global_category.id} in {target_guild.name}")
         
     except Exception as e:
         await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
