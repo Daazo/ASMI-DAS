@@ -118,16 +118,46 @@ def queue_console_output(message):
 async def get_or_create_server_channel(global_category, guild):
     """Get or create per-server channel in global category"""
     try:
-        server_channel_name = f"server-{guild.name[:25]}".lower().replace(" ", "-")
-        server_channel = discord.utils.get(global_category.text_channels, name=server_channel_name)
+        # Check if we already have this channel stored in database
+        if db:
+            server_data = await db.global_logging.find_one({'guild_id': str(guild.id)})
+            if server_data and server_data.get('log_channel_id'):
+                try:
+                    channel = bot.get_channel(int(server_data['log_channel_id']))
+                    if channel:
+                        return channel
+                except:
+                    pass
         
-        if not server_channel:
-            server_channel = await global_category.create_text_channel(
-                name=server_channel_name,
-                topic=f"Logs for {guild.name} (ID: {guild.id})"
+        server_channel_name = f"server-{guild.name[:25]}".lower().replace(" ", "-").replace("'", "").replace("ᴀ", "a").replace("ᴡ", "w").replace("ᴅ", "d").replace("ᴇ", "e").replace("ɴ", "n").replace("'", "")
+        
+        # Look for any existing channel with similar name
+        for ch in global_category.text_channels:
+            if ch.topic and str(guild.id) in ch.topic:
+                # Found existing channel for this server
+                if db:
+                    await db.global_logging.update_one(
+                        {'guild_id': str(guild.id)},
+                        {'$set': {'log_channel_id': str(ch.id), 'guild_name': guild.name}},
+                        upsert=True
+                    )
+                return ch
+        
+        # Create new channel if doesn't exist
+        server_channel = await global_category.create_text_channel(
+            name=server_channel_name,
+            topic=f"Logs for {guild.name} (ID: {guild.id})"
+        )
+        
+        # Store in database
+        if db:
+            await db.global_logging.update_one(
+                {'guild_id': str(guild.id)},
+                {'$set': {'log_channel_id': str(server_channel.id), 'guild_name': guild.name}},
+                upsert=True
             )
-            print(f"✅ Created global per-server channel: {server_channel_name}")
         
+        print(f"✅ Created global per-server channel: {server_channel_name}")
         return server_channel
     except Exception as e:
         print(f"❌ Error getting/creating server channel: {e}")
@@ -237,11 +267,12 @@ async def log_dm_sent(recipient, message_content, guild=None):
             if server_channel:
                 embed = discord.Embed(
                     title="💬 **DM Sent**",
-                    description=f"```{message_content[:1000]}```",
+                    description=message_content[:1000] if message_content else "*No content*",
                     color=BrandColors.SUCCESS,
                     timestamp=datetime.now()
                 )
-                embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=False)
+                embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=True)
+                embed.add_field(name="📝 Message", value=f"```{message_content[:500]}```" if message_content else "No message content", inline=False)
                 embed.set_footer(text=f"{BOT_FOOTER} • DM Sent", icon_url=bot.user.display_avatar.url)
                 
                 try:
