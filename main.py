@@ -283,6 +283,14 @@ async def on_ready():
         print("✅ Global logging system initialized")
     except Exception as e:
         print(f"⚠️ Failed to initialize global logging: {e}")
+    
+    # Enable console output capture for live console logging
+    try:
+        if not isinstance(sys.stdout, ConsoleCapture):
+            sys.stdout = ConsoleCapture(sys.stdout)
+            print("✅ Console output capture enabled - live console logging active")
+    except Exception as e:
+        print(f"⚠️ Failed to enable console capture: {e}")
 
 @bot.event
 async def on_guild_join(guild):
@@ -1727,19 +1735,26 @@ async def ping_mongodb():
             print(f"❌ MongoDB ping failed: {e}")
         await asyncio.sleep(300)  # Ping every 5 minutes
 
-# Setup console output logging
-class ConsoleLogHandler:
-    """Captures print statements for live console logging"""
-    def __init__(self):
-        self.original_stdout = sys.stdout
+# Console output capture class
+class ConsoleCapture:
+    """Captures print output for live console logging"""
+    def __init__(self, original):
+        self.original = original
+        self.buffer = []
     
-    async def log_output(self, message):
-        """Send console output to live-console channel"""
-        try:
-            from advanced_logging import log_console_output
-            await log_console_output(message)
-        except Exception as e:
-            self.original_stdout.write(f"Failed to log console: {e}\n")
+    def write(self, message):
+        """Capture and forward output"""
+        self.original.write(message)
+        if message and message.strip():
+            try:
+                from advanced_logging import queue_console_output
+                queue_console_output(message.strip())
+            except Exception:
+                pass
+    
+    def flush(self):
+        """Flush the original stdout"""
+        self.original.flush()
 
 # Import command modules
 from setup_commands import *

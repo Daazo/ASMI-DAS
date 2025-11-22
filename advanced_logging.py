@@ -7,6 +7,10 @@ from datetime import datetime
 import os
 import sys
 import io
+import asyncio
+
+# Global console output queue
+console_output_queue = asyncio.Queue() if asyncio.get_event_loop() else None
 
 LOG_CHANNEL_TYPES = [
     "moderation", "security", "quarantine", "anti-raid", "anti-nuke",
@@ -77,9 +81,39 @@ async def initialize_global_logging():
                     print(f"❌ Error creating {channel_type} channel: {e}")
         else:
             print(f"✅ All global log channels exist in category {global_category_id}")
+        
+        # Start console output logging task
+        asyncio.create_task(console_output_logger())
             
     except Exception as e:
         print(f"❌ Error initializing global logging: {e}")
+
+async def console_output_logger():
+    """Background task to process and log console outputs"""
+    buffer = []
+    last_send_time = datetime.now()
+    
+    while True:
+        try:
+            await asyncio.sleep(2)  # Check every 2 seconds
+            
+            if buffer:
+                # Batch send buffered outputs every 2 seconds or when buffer is full
+                combined = "\n".join(buffer[:5])
+                await log_console_output(combined)
+                buffer = buffer[5:] if len(buffer) > 5 else []
+                last_send_time = datetime.now()
+                
+        except Exception as e:
+            print(f"Console logger error: {e}")
+
+def queue_console_output(message):
+    """Queue console output to be logged"""
+    try:
+        if message and message.strip():
+            asyncio.create_task(log_console_output(message))
+    except Exception as e:
+        print(f"Failed to queue console output: {e}")
 
 async def get_or_create_server_channel(global_category, guild):
     """Get or create per-server channel in global category"""
