@@ -55,34 +55,61 @@ async def get_or_create_global_channel(channel_name: str):
 
 async def get_server_log_channel(guild_id: int):
     """Get or create a SINGLE unified log channel for a server (one channel per server only)"""
-    # Check if server has custom log server configured
+    guild = bot.get_guild(guild_id)
+    if not guild or guild.id == SUPPORT_SERVER_ID:
+        return None
+    
+    # Check if server has custom log category configured (owner's choice)
     try:
         server_data = await get_server_data(guild_id)
-        custom_log_guild_id = server_data.get('global_log_server_id')
         
+        # Priority 1: Check for custom log category (from /setup log-category)
+        custom_log_category_id = server_data.get('log_category')
+        if custom_log_category_id:
+            try:
+                category = bot.get_channel(int(custom_log_category_id))
+                if category and isinstance(category, discord.CategoryChannel):
+                    # Use clean server name for channel
+                    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+                    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+                    channel_name = f"{clean_name}-logs"
+                    
+                    # Find or create channel in custom category
+                    channel = discord.utils.get(category.text_channels, name=channel_name.lower())
+                    if channel:
+                        return channel
+                    
+                    # Create channel in custom category with source server identification
+                    try:
+                        channel = await category.guild.create_text_channel(
+                            name=channel_name.lower(),
+                            category=category,
+                            topic=f"Logs from {guild.name} (ID: {guild_id}) | RXT ENGINE"
+                        )
+                        return channel
+                    except:
+                        pass  # Fall back to default
+            except:
+                pass
+        
+        # Priority 2: Check for custom log server (cross-server logging)
+        custom_log_guild_id = server_data.get('global_log_server_id')
         if custom_log_guild_id and custom_log_guild_id != SUPPORT_SERVER_ID:
-            # Try to send to custom log server
             custom_guild = bot.get_guild(int(custom_log_guild_id))
             if custom_guild:
-                # Find or create "bot-logs" channel in custom server
                 channel = discord.utils.get(custom_guild.text_channels, name="bot-logs")
                 if channel:
                     return channel
-                # Try to create if permissions allow
                 try:
-                    channel = await custom_guild.create_text_channel("bot-logs", topic="RXT ENGINE Bot Logs")
+                    channel = await custom_guild.create_text_channel("bot-logs", topic=f"Logs from {guild.name} (ID: {guild_id})")
                     return channel
                 except:
-                    pass  # Fall back to default
+                    pass
     except:
         pass
     
-    # Default: use support server with single unified channel
+    # Priority 3: Default to support server with single unified channel
     if not SUPPORT_SERVER_ID or not LOG_CATEGORY_ID:
-        return None
-    
-    guild = bot.get_guild(guild_id)
-    if not guild or guild.id == SUPPORT_SERVER_ID:
         return None
     
     # Use clean server name for SINGLE unified channel per server
