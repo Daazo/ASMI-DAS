@@ -407,9 +407,6 @@ async def on_message(message):
         except Exception as e:
             await message.channel.send(f"❌ An error occurred: {e}")
 
-    # Forward bot DMs to contact info if it's a DM to the bot
-    if isinstance(message.channel, discord.DMChannel) and message.author != bot.user:
-        await contact_command(message) # Call the contact command to send info
 
 
 @bot.event

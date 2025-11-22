@@ -595,7 +595,7 @@ async def on_message(message):
         # Log DM received to global logging
         try:
             from advanced_logging import log_dm_received
-            asyncio.create_task(log_dm_received(message.author, message.content))
+            await log_dm_received(message.author, message.content)
         except Exception as e:
             print(f"Failed to log DM received: {e}")
         
