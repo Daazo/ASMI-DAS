@@ -563,8 +563,8 @@ async def on_member_join(member):
             embed.set_footer(text=f"{BOT_FOOTER} • Member #{member.guild.member_count}", icon_url=member.guild.icon.url if member.guild.icon else None)
             await welcome_channel.send(embed=embed)
 
-    # Log member joining
-    await log_action(member.guild.id, "welcome", f"🎊 [MEMBER JOIN] {member} ({member.id}) joined the server - Member #{member.guild.member_count}")
+    # Log member joining to join-leave channel
+    await log_action(member.guild.id, "join-leave", f"🎊 [MEMBER JOIN] {member} ({member.id}) joined the server - Member #{member.guild.member_count}")
 
     # Send DM to new member (combine server welcome + bot message)
     try:
@@ -821,8 +821,8 @@ async def on_voice_state_update(member, before, after):
 @bot.event
 async def on_member_remove(member):
     """Send goodbye DM and log"""
-    # Log member leaving
-    await log_action(member.guild.id, "welcome", f"👋 [MEMBER LEAVE] {member} ({member.id}) left the server")
+    # Log member leaving to join-leave channel
+    await log_action(member.guild.id, "join-leave", f"👋 [MEMBER LEAVE] {member} ({member.id}) left the server")
 
     # Log to global system
     try:
@@ -855,6 +855,64 @@ async def on_member_remove(member):
             pass
     except:
         pass  # User has DMs disabled
+
+@bot.event
+async def on_member_ban(guild, user):
+    """Log member ban to member-ban channel"""
+    await log_action(guild.id, "member-ban", f"🔨 [MEMBER BAN] {user} ({user.id}) was banned from {guild.name}")
+
+@bot.event
+async def on_guild_role_create(role):
+    """Log role creation to role-update channel"""
+    await log_action(role.guild.id, "role-update", f"✨ [ROLE CREATE] {role.name} role created with permissions")
+
+@bot.event
+async def on_guild_role_delete(role):
+    """Log role deletion to role-update channel"""
+    await log_action(role.guild.id, "role-update", f"🗑️ [ROLE DELETE] {role.name} role was deleted")
+
+@bot.event
+async def on_guild_role_update(before, after):
+    """Log role updates to role-update channel"""
+    changes = []
+    if before.name != after.name:
+        changes.append(f"Name: {before.name} → {after.name}")
+    if before.color != after.color:
+        changes.append(f"Color: {before.color} → {after.color}")
+    if before.permissions != after.permissions:
+        changes.append(f"Permissions changed")
+    
+    if changes:
+        change_text = " | ".join(changes)
+        await log_action(after.guild.id, "role-update", f"📝 [ROLE UPDATE] {after.name} role updated: {change_text}")
+
+@bot.event
+async def on_guild_channel_create(channel):
+    """Log channel creation to channel-update channel"""
+    channel_type = "Category" if isinstance(channel, discord.CategoryChannel) else "Text" if isinstance(channel, discord.TextChannel) else "Voice"
+    await log_action(channel.guild.id, "channel-update", f"✨ [CHANNEL CREATE] {channel_type} channel {channel.mention} created")
+
+@bot.event
+async def on_guild_channel_delete(channel):
+    """Log channel deletion to channel-update channel"""
+    channel_type = "Category" if isinstance(channel, discord.CategoryChannel) else "Text" if isinstance(channel, discord.TextChannel) else "Voice"
+    await log_action(channel.guild.id, "channel-update", f"🗑️ [CHANNEL DELETE] {channel_type} channel {channel.name} was deleted")
+
+@bot.event
+async def on_guild_channel_update(before, after):
+    """Log channel updates to channel-update channel"""
+    changes = []
+    if before.name != after.name:
+        changes.append(f"Name: {before.name} → {after.name}")
+    if isinstance(before, discord.TextChannel) and isinstance(after, discord.TextChannel):
+        if before.topic != after.topic:
+            changes.append("Topic changed")
+        if before.slowmode_delay != after.slowmode_delay:
+            changes.append(f"Slowmode: {before.slowmode_delay}s → {after.slowmode_delay}s")
+    
+    if changes:
+        change_text = " | ".join(changes)
+        await log_action(after.guild.id, "channel-update", f"📝 [CHANNEL UPDATE] {after.name} updated: {change_text}")
 
 # Help Command Callback
 async def help_command_callback(interaction):

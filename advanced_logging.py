@@ -10,7 +10,7 @@ LOG_CHANNEL_TYPES = [
     "moderation", "security", "quarantine", "anti-raid", "anti-nuke",
     "automod", "join-leave", "role-update", "channel-update", "message-delete",
     "message-edit", "member-ban", "member-kick", "voice-log", "ticket-log",
-    "economy-log", "music-log", "command-log", "error-log", "karma", "system"
+    "command-log", "error-log", "karma", "system"
 ]
 
 GLOBAL_LOG_TYPES = ["live-console", "dm-received", "dm-sent", "command-errors", "system-log"]
