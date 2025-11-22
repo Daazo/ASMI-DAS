@@ -236,7 +236,7 @@ async def log_dm_received(user, message_content, guild=None):
         print(f"DM received logging error: {e}")
 
 async def log_dm_sent(recipient, message_content, guild=None):
-    """Log DM sent by bot to user - always to dm-sent channel, optionally to server channel"""
+    """Log DM sent by bot to user - always to dm-sent channel, and to per-server channel if guild provided"""
     try:
         global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
         if not global_category_id:
@@ -263,8 +263,29 @@ async def log_dm_sent(recipient, message_content, guild=None):
             except Exception as e:
                 print(f"Error logging DM sent to dm-sent channel: {e}")
         
-        # Also log to server channel if guild is provided
+        # Log to server channel if guild is provided
         if guild:
+            # First try per-server communication channel from /log-category
+            server_data = await get_server_data(guild.id)
+            organized_logs = server_data.get('organized_log_channels', {})
+            if organized_logs and 'communication' in organized_logs:
+                try:
+                    comm_channel = bot.get_channel(int(organized_logs['communication']))
+                    if comm_channel:
+                        embed = discord.Embed(
+                            title="💬 **DM Sent**",
+                            description=f"```{message_content[:1000]}```",
+                            color=BrandColors.SUCCESS,
+                            timestamp=datetime.now()
+                        )
+                        embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=False)
+                        embed.add_field(name="📝 Server Context", value=f"{guild.mention}\n`{guild.id}`", inline=True)
+                        embed.set_footer(text=f"{BOT_FOOTER} • DM Sent", icon_url=bot.user.display_avatar.url)
+                        await comm_channel.send(embed=embed)
+                except Exception as e:
+                    print(f"Error logging DM sent to per-server communication channel: {e}")
+            
+            # Also log to global server channel for redundancy
             server_channel = await get_or_create_server_channel(global_category, guild)
             if server_channel:
                 embed = discord.Embed(
@@ -280,7 +301,7 @@ async def log_dm_sent(recipient, message_content, guild=None):
                 try:
                     await server_channel.send(embed=embed)
                 except Exception as e:
-                    print(f"Error logging DM sent to server channel: {e}")
+                    print(f"Error logging DM sent to global server channel: {e}")
             
     except Exception as e:
         print(f"DM sent logging error: {e}")
