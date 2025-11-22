@@ -278,9 +278,11 @@ async def log_dm_sent(recipient, message_content, guild=None):
                             color=BrandColors.SUCCESS,
                             timestamp=datetime.now()
                         )
-                        embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=False)
-                        embed.add_field(name="📝 Server Context", value=f"{guild.mention}\n`{guild.id}`", inline=True)
-                        embed.set_footer(text=f"{BOT_FOOTER} • DM Sent", icon_url=bot.user.display_avatar.url)
+                        embed.add_field(name="📨 Sent By", value=f"{bot.user.mention}\n`{bot.user.name}`", inline=True)
+                        embed.add_field(name="👤 Sent To", value=f"{recipient.mention}\n`{recipient.id}`", inline=True)
+                        embed.add_field(name="📝 Message Content", value=f"```{message_content[:500]}```" if message_content else "No message content", inline=False)
+                        embed.add_field(name="🏢 Server", value=f"{guild.mention}\n`{guild.id}`", inline=True)
+                        embed.set_footer(text=f"{BOT_FOOTER} • DM Sent from Server", icon_url=bot.user.display_avatar.url)
                         await comm_channel.send(embed=embed)
                 except Exception as e:
                     print(f"Error logging DM sent to per-server communication channel: {e}")
