@@ -19,7 +19,6 @@ from main import has_permission, get_server_data, update_server_data, log_action
     app_commands.Choice(name="welcome", value="welcome"),
     app_commands.Choice(name="welcome_title", value="welcome_title"),
     app_commands.Choice(name="welcome_image", value="welcome_image"),
-    app_commands.Choice(name="logs", value="logs"),
     app_commands.Choice(name="karma_channel", value="karma_channel"),
     app_commands.Choice(name="ticket_support_role", value="ticket_support_role"),
     app_commands.Choice(name="auto_role", value="auto_role")
@@ -168,30 +167,6 @@ async def setup(
         )
         await interaction.response.send_message(embed=embed)
         await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] Prefix set to '{value}' by {interaction.user}")
-
-    elif action == "logs":
-        if not value or not channel:
-            await interaction.response.send_message("❌ Please specify log type and channel!\n**Log types:** all, moderation, xp, communication", ephemeral=True)
-            return
-
-        valid_log_types = ["all", "moderation", "karma", "communication", "tickets"]
-        if value not in valid_log_types:
-            await interaction.response.send_message(f"❌ Invalid log type! Valid types: {', '.join(valid_log_types)}", ephemeral=True)
-            return
-
-        log_channels = server_data.get('log_channels', {})
-        log_channels[value] = str(channel.id)
-
-        await update_server_data(interaction.guild.id, {'log_channels': log_channels})
-
-        embed = discord.Embed(
-            title="⚡ **Log Channel Set**",
-            description=f"**◆ Log Type:** {value}\n**◆ Channel:** {channel.mention}\n**◆ Set by:** {interaction.user.mention}",
-            color=BrandColors.PRIMARY
-        )
-        embed.set_footer(text=BOT_FOOTER)
-        await interaction.response.send_message(embed=embed)
-        await log_action(interaction.guild.id, "setup", f"⚙️ [SETUP] {value} log channel set to {channel.name} by {interaction.user}")
 
     elif action == "karma_channel":
         if not channel:

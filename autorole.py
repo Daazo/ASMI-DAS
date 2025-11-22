@@ -61,10 +61,3 @@ async def autorole_setup(
         )
         embed.set_footer(text=BOT_FOOTER)
         await interaction.response.send_message(embed=embed)
-    
-    # Log to global system directly
-    try:
-        from global_logging import log_bot_command_activity
-        await log_bot_command_activity(interaction.guild.id, "autorole", interaction.user, f"🎭 [AUTO ROLE] {action} - Role: {role.name if role else 'Removed'}")
-    except:
-        pass
