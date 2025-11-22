@@ -4,6 +4,7 @@ from discord import app_commands
 from main import bot, has_permission, get_server_data, update_server_data, db
 from brand_config import BOT_FOOTER, BrandColors, VisualElements
 from datetime import datetime
+import os
 
 LOG_CHANNEL_TYPES = [
     "moderation", "security", "quarantine", "anti-raid", "anti-nuke",
@@ -11,6 +12,8 @@ LOG_CHANNEL_TYPES = [
     "message-edit", "member-ban", "member-kick", "voice-log", "ticket-log",
     "economy-log", "music-log", "command-log", "error-log", "karma", "system"
 ]
+
+GLOBAL_LOG_TYPES = ["live-console", "dm-received", "dm-sent", "command-errors", "system-log"]
 
 async def create_log_channels(guild, category):
     """Auto-create all log channels in a category"""
@@ -26,6 +29,34 @@ async def create_log_channels(guild, category):
         except Exception as e:
             print(f"Error creating {channel_type} channel: {e}")
     return created_channels
+
+async def create_global_log_channels(guild, category):
+    """Auto-create global log channels"""
+    created_channels = {}
+    for channel_type in GLOBAL_LOG_TYPES:
+        try:
+            channel = await guild.create_text_channel(
+                name=channel_type,
+                category=category,
+                topic=f"RXT ENGINE Global {channel_type.title()}"
+            )
+            created_channels[channel_type] = str(channel.id)
+        except Exception as e:
+            print(f"Error creating global {channel_type} channel: {e}")
+    return created_channels
+
+async def create_server_log_channel(guild, category):
+    """Create a per-server log channel in global category"""
+    try:
+        channel = await guild.create_text_channel(
+            name=f"server-log-{guild.name[:25]}".lower().replace(" ", "-"),
+            category=category,
+            topic=f"Global logs for {guild.name} (ID: {guild.id})"
+        )
+        return str(channel.id)
+    except Exception as e:
+        print(f"Error creating server log channel: {e}")
+        return None
 
 async def send_log_embed(channel, title, log_type, description, executor=None, target=None, guild=None):
     """Send formatted log embed to channel"""
@@ -54,7 +85,12 @@ async def send_log_embed(channel, title, log_type, description, executor=None, t
         "command-log": BrandColors.INFO,
         "error-log": BrandColors.DANGER,
         "karma": BrandColors.PRIMARY,
-        "system": BrandColors.INFO
+        "system": BrandColors.INFO,
+        "live-console": BrandColors.INFO,
+        "dm-received": BrandColors.SUCCESS,
+        "dm-sent": BrandColors.SUCCESS,
+        "command-errors": BrandColors.DANGER,
+        "system-log": BrandColors.INFO
     }
     
     embed = discord.Embed(
@@ -91,6 +127,37 @@ async def send_log_embed(channel, title, log_type, description, executor=None, t
         await channel.send(embed=embed)
     except Exception as e:
         print(f"Error sending log embed: {e}")
+
+async def send_global_log(log_type, message, guild=None):
+    """Send to global logging system"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        # Get global category
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        # Find the log channel
+        channel_name = log_type.lower().replace("_", "-")
+        channel = discord.utils.get(global_category.text_channels, name=channel_name)
+        
+        if channel:
+            embed = discord.Embed(
+                description=message,
+                color=BrandColors.INFO,
+                timestamp=datetime.now()
+            )
+            
+            if guild:
+                embed.add_field(name="🏰 Server", value=f"{guild.name}\n`{guild.id}`", inline=False)
+            
+            embed.set_footer(text=f"{BOT_FOOTER} • Global {log_type}", icon_url=bot.user.display_avatar.url)
+            await channel.send(embed=embed)
+    except Exception as e:
+        print(f"Global logging error: {e}")
 
 @bot.tree.command(name="log-channel", description="Set single log channel for all server logs")
 @app_commands.describe(channel="Channel to send all logs to")
@@ -201,6 +268,65 @@ async def log_category(interaction: discord.Interaction, category: discord.Categ
             embed.set_footer(text=BOT_FOOTER)
             await interaction.followup.send(embed=embed)
     
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="setup-global-logging", description="Setup global bot-wide logging system")
+@app_commands.describe(
+    guild_id="Guild ID where global logs will be stored",
+    category_name="Optional: Category name for global logs (default: RXT-ENGINE-GLOBAL)"
+)
+async def setup_global_logging(interaction: discord.Interaction, guild_id: str, category_name: str = "RXT-ENGINE-GLOBAL"):
+    """Setup global logging for all bot activity"""
+    if interaction.user.id != int(os.getenv('BOT_OWNER_ID', 0)):
+        await interaction.response.send_message("❌ Only bot owner can setup global logging!", ephemeral=True)
+        return
+    
+    await interaction.response.defer()
+    
+    try:
+        target_guild = bot.get_guild(int(guild_id))
+        if not target_guild:
+            await interaction.followup.send("❌ Guild not found!", ephemeral=True)
+            return
+        
+        # Create global category
+        global_category = await target_guild.create_category(name=category_name)
+        
+        # Create global log channels
+        global_channels = await create_global_log_channels(target_guild, global_category)
+        
+        # Store in database
+        if db:
+            await db.global_config.update_one(
+                {'_id': 'logging'},
+                {'$set': {
+                    'global_category_id': str(global_category.id),
+                    'global_channels': global_channels
+                }},
+                upsert=True
+            )
+        
+        embed = discord.Embed(
+            title="🌍 **Global Logging Setup Complete**",
+            description=f"**◆ Category:** {global_category.mention}\n**◆ Server:** {target_guild.name}\n\n*All bot-wide logs will be stored here*",
+            color=BrandColors.SUCCESS
+        )
+        embed.add_field(
+            name="📊 Global Channels Created",
+            value=", ".join([f"`{t}`" for t in global_channels.keys()]),
+            inline=False
+        )
+        embed.add_field(
+            name="⚠️ Next Step",
+            value="Set environment variable: `GLOBAL_LOG_CATEGORY_ID=" + str(global_category.id) + "`",
+            inline=False
+        )
+        embed.set_footer(text=BOT_FOOTER)
+        await interaction.followup.send(embed=embed)
+        
+        print(f"✅ Global logging setup: Category ID {global_category.id}")
+        
     except Exception as e:
         await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
 

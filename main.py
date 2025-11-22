@@ -66,8 +66,17 @@ async def update_server_data(guild_id, data):
     server_cache[guild_id].update(data)
 
 async def log_action(guild_id, log_type, message):
-    """Log actions to appropriate channels with support for single channel, organized, and cross-server logging"""
+    """Log actions to appropriate channels with support for single channel, organized, cross-server, and global logging"""
     server_data = await get_server_data(guild_id)
+    
+    # Try global logging first (async fire-and-forget)
+    try:
+        guild = bot.get_guild(int(guild_id))
+        if guild:
+            from advanced_logging import send_global_log
+            asyncio.create_task(send_global_log(log_type, message, guild))
+    except Exception as e:
+        print(f"Global logging attempt error: {e}")
     
     # Determine target color based on log type
     color_map = {
