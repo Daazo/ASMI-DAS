@@ -1050,30 +1050,40 @@ class HelpSelect(discord.ui.Select):
     async def show_ticket_help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="🎫 **Tickets & Support System**",
-            description=f"*Advanced support protocol for private staff assistance and issue resolution.*\n\n{VisualElements.CIRCUIT_LINE}",
+            description=f"*Advanced support protocol with custom categories and dynamic form fields.*\n\n{VisualElements.CIRCUIT_LINE}",
             color=BrandColors.PRIMARY
         )
         embed.add_field(
-            name="🔴 `/ticketsetup action category channel description`",
-            value="**Usage:** `/ticketsetup action:open category:#tickets channel:#support description:\"Need help?\"`\n**Description:** Setup professional ticket system with clickable buttons\n**Actions:** open, close\n**Example:** `/ticketsetup action:open category:#tickets channel:#support`",
+            name="📋 **Main Setup Commands**",
+            value="**🔴 `/ticketpanel`** - Create ticket selection panel with dropdown menu\n**🔴 `/ticketcategory category_number`** - Configure ticket category (1-7 options available)\n**🔴 `/ticketfields category_number`** - Set custom form fields for each category\n**🔴 `/setup ticket_support_role role:@support`** - Set support role to mention on ticket creation",
             inline=False
         )
         embed.add_field(
-            name="🎯 **What Users Get**",
-            value="🟢 **Anyone can create tickets** - Click button to open\n✅ **Professional forms** - Name, issue description, urgency level\n✅ **Private channels** - Only user and staff can see\n✅ **10-minute cooldown** - Prevents ticket spam\n✅ **Easy controls** - Close/reopen with buttons",
+            name="🎯 **Multi-Category System**",
+            value="**Up to 7 Categories:** Support, Billing, Bug Reports, Suggestions, Appeals, Custom 1, Custom 2\n**Custom Names & Emojis:** Each category has unique icon and description\n**Category Controls:** Enable/disable categories per server\n**Automatic Counters:** Ticket numbers tracked per category\n**Dynamic Routing:** Users select category before filling form",
             inline=False
         )
         embed.add_field(
-            name="📝 **Complete Ticket Flow**",
-            value="**1.** User clicks \"🎫 Open Support Ticket\" button\n**2.** Fills detailed form: Name, Issue, Urgency (Low/Medium/High)\n**3.** Private channel created instantly with staff access\n**4.** Staff can close/reopen tickets with buttons\n**5.** Full logging to ticket logs channel for tracking",
+            name="📝 **Custom Form Fields**",
+            value="**Up to 5 Fields Per Category:** Configure custom questions for each ticket type\n**Field Types:** Short text or long text format\n**Customizable Labels:** Name each field specifically (e.g., 'Account Email', 'Error Code')\n**Field Emojis:** Add visual indicators for each form field\n**Validation:** Required/optional fields with character limits",
             inline=False
         )
         embed.add_field(
-            name="🔧 **Quick Setup Guide**",
-            value="**Step 1:** `/ticketsetup action:open category:#open-tickets channel:#support`\n**Step 2:** `/ticketsetup action:close category:#closed-tickets`\n**Step 3:** `/setup logs value:tickets channel:#ticket-logs`\n**Step 4:** `/setup ticket_support_role role:@support` (optional)\n**Done!** Users can now create tickets!",
+            name="🎫 **Complete Ticket Flow**",
+            value="**1.** User clicks ticket panel → selects category via dropdown menu\n**2.** Modal form appears with category-specific custom fields\n**3.** Private ticket channel created automatically\n**4.** Support role mentioned (if configured)\n**5.** Staff can close/reopen/delete tickets with control buttons\n**6.** 10-minute cooldown between ticket creation\n**7.** Ticket naming: `category-username-ticketnumber`",
             inline=False
         )
-        embed.set_footer(text="🟣 = Everyone • 🟡 = Junior Moderator • 🔴 = Main Moderator • 👑 = Server Owner")
+        embed.add_field(
+            name="🔧 **Ticket Control Panel**",
+            value="**✅ Close** - Archive ticket (staff only)\n**🔄 Reopen** - Reopen closed ticket\n**🗑️ Delete** - Permanently delete ticket\n**📝 Rename** - Use `/tnamechange` to rename ticket channel\n**Permissions:** User + Staff roles can see ticket channel",
+            inline=False
+        )
+        embed.add_field(
+            name="⚡ **Quick Setup Steps**",
+            value="**Step 1:** `/ticketcategory 1 name:Support emoji:🛟 description:\"General support\"`\n**Step 2:** `/ticketfields 1` - Add custom form fields\n**Step 3:** `/setup ticket_support_role role:@support`\n**Step 4:** `/ticketpanel` - Post ticket panel to channel\n**Done!** Users can now create tickets with custom forms!",
+            inline=False
+        )
+        embed.set_footer(text="🟣 = Everyone • 🔴 = Main Moderator • 👑 = Server Owner")
         await interaction.response.edit_message(embed=embed, view=HelpView())
 
     async def show_verification_help(self, interaction: discord.Interaction):
