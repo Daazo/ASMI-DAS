@@ -28,6 +28,13 @@ async def mute(interaction: discord.Interaction, user: discord.Member):
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🔇 [MUTE] {user} muted by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔇 Mute**\n**User:** {user}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to mute this user!", ephemeral=True)
@@ -56,6 +63,13 @@ async def unmute(interaction: discord.Interaction, user: discord.Member):
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🔊 [UNMUTE] {user} unmuted by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔊 Unmute**\n**User:** {user}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to unmute this user!", ephemeral=True)
@@ -84,6 +98,13 @@ async def movevc(interaction: discord.Interaction, user: discord.Member, channel
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🛡 [MOVE VC] {user} moved to {channel.name} by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔀 Move VC**\n**User:** {user}\n**Moved to:** {channel.mention}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to move this user!", ephemeral=True)
@@ -112,6 +133,13 @@ async def vckick(interaction: discord.Interaction, user: discord.Member):
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🛡 [VC KICK] {user} kicked from voice by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**👢 VC Kick**\n**User:** {user}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to disconnect this user!", ephemeral=True)
@@ -141,6 +169,13 @@ async def vclock(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🛡 [VC LOCK] {channel.name} locked by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔒 VC Lock**\n**Channel:** {channel.mention}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to modify this channel!", ephemeral=True)
@@ -170,6 +205,13 @@ async def vcunlock(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed)
         
         await log_action(interaction.guild.id, "moderation", f"🛡 [VC UNLOCK] {channel.name} unlocked by {interaction.user}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔓 VC Unlock**\n**Channel:** {channel.mention}\n**Moderator:** {interaction.user}", interaction.guild)
+        except:
+            pass
     
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to modify this channel!", ephemeral=True)

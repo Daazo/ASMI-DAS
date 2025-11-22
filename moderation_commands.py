@@ -41,6 +41,13 @@ async def kick(interaction: discord.Interaction, user: discord.Member, reason: s
         await interaction.response.send_message(embed=embed)
 
         await log_action(interaction.guild.id, "moderation", f"⚔️ [KICK] {user} kicked by {interaction.user} - Reason: {reason}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**⚔️ Kick**\n**User:** {user}\n**Moderator:** {interaction.user}\n**Reason:** {reason}", interaction.guild)
+        except:
+            pass
 
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to kick this user!", ephemeral=True)
@@ -80,6 +87,13 @@ async def ban(interaction: discord.Interaction, user: discord.Member, reason: st
         await interaction.response.send_message(embed=embed)
 
         await log_action(interaction.guild.id, "moderation", f"🔨 [BAN] {user} banned by {interaction.user} - Reason: {reason}")
+        
+        # Log to global per-server channel
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("moderation", f"**🔨 Ban**\n**User:** {user}\n**Moderator:** {interaction.user}\n**Reason:** {reason}", interaction.guild)
+        except:
+            pass
 
     except discord.Forbidden:
         await interaction.response.send_message("❌ I don't have permission to ban this user!", ephemeral=True)
@@ -143,6 +157,13 @@ class NukeConfirmView(discord.ui.View):
             await new_channel.send(embed=embed)
 
             await log_action(interaction.guild.id, "moderation", f"💥 [NUKE] Channel #{channel_name} nuked by {interaction.user}")
+            
+            # Log to global per-server channel
+            try:
+                from advanced_logging import send_global_log
+                await send_global_log("moderation", f"**💥 Channel Nuke**\n**Channel:** #{channel_name}\n**Moderator:** {interaction.user}", interaction.guild)
+            except:
+                pass
 
         except Exception as e:
             print(f"Nuke error: {e}")
