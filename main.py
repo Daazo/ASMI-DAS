@@ -762,9 +762,49 @@ async def help_command_callback(interaction):
 class HelpView(discord.ui.View):
     def __init__(self):
         super().__init__()
+        self.add_item(HelpSelect())
 
-    @discord.ui.button(label="General", style=discord.ButtonStyle.primary, emoji="🏠", row=0)
-    async def general_help(self, interaction: discord.Interaction, button: discord.ui.Button):
+class HelpSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label="General", value="general", emoji="🏠", description="Core utilities and info commands"),
+            discord.SelectOption(label="Moderation", value="moderation", emoji="⚔️", description="Security and enforcement tools"),
+            discord.SelectOption(label="Setup", value="setup", emoji="⚙️", description="Configuration and customization"),
+            discord.SelectOption(label="Messages", value="messages", emoji="💬", description="Communication and announcements"),
+            discord.SelectOption(label="Karma", value="karma", emoji="⭐", description="Community recognition system"),
+            discord.SelectOption(label="Tickets", value="tickets", emoji="🎫", description="Support and issue tracking"),
+            discord.SelectOption(label="Verification", value="verification", emoji="✅", description="CAPTCHA verification system"),
+            discord.SelectOption(label="Advanced", value="advanced", emoji="🎭", description="Reaction roles and automation"),
+            discord.SelectOption(label="About", value="about", emoji="ℹ️", description="Bot info and specifications"),
+            discord.SelectOption(label="Updates", value="updates", emoji="🆕", description="Recent changes and updates"),
+        ]
+        super().__init__(placeholder="Select a help category...", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        selection = self.values[0]
+        
+        if selection == "general":
+            await self.show_general_help(interaction)
+        elif selection == "moderation":
+            await self.show_moderation_help(interaction)
+        elif selection == "setup":
+            await self.show_setup_help(interaction)
+        elif selection == "messages":
+            await self.show_communication_help(interaction)
+        elif selection == "karma":
+            await self.show_karma_help(interaction)
+        elif selection == "tickets":
+            await self.show_ticket_help(interaction)
+        elif selection == "verification":
+            await self.show_verification_help(interaction)
+        elif selection == "advanced":
+            await self.show_advanced_help(interaction)
+        elif selection == "about":
+            await self.show_bot_info_help(interaction)
+        elif selection == "updates":
+            await self.show_recent_updates_help(interaction)
+
+    async def show_general_help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="💠 **General Commands**",
             description=f"*Core system utilities for user/server information, diagnostics, and statistics.*\n\n{VisualElements.CIRCUIT_LINE}",
