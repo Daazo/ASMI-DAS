@@ -80,7 +80,7 @@ async def initialize_global_logging():
         print(f"❌ Error initializing global logging: {e}")
 
 async def send_global_log(log_type, message, guild=None):
-    """Send ALL server logs to bot owner's central global logging category"""
+    """Send ALL server logs to bot owner's central global logging category - creates per-server channels"""
     try:
         if not guild or db is None:
             return
@@ -93,25 +93,36 @@ async def send_global_log(log_type, message, guild=None):
         if not global_category or not isinstance(global_category, discord.CategoryChannel):
             return
         
-        system_channel = discord.utils.get(global_category.text_channels, name="system-log")
-        if not system_channel:
-            return
+        # Create or get per-server channel
+        server_channel_name = f"server-{guild.name[:25]}".lower().replace(" ", "-")
+        server_channel = discord.utils.get(global_category.text_channels, name=server_channel_name)
+        
+        # Create channel if it doesn't exist
+        if not server_channel:
+            try:
+                server_channel = await global_category.create_text_channel(
+                    name=server_channel_name,
+                    topic=f"Logs for {guild.name} (ID: {guild.id})"
+                )
+                print(f"✅ Created global per-server channel: {server_channel_name}")
+            except Exception as e:
+                print(f"❌ Error creating per-server channel: {e}")
+                return
         
         embed = discord.Embed(
-            title=f"📋 **{log_type.title()} - {guild.name}**",
+            title=f"📋 **{log_type.title()}**",
             description=message,
             color=BrandColors.INFO,
             timestamp=datetime.now()
         )
         
-        embed.add_field(name="🏰 Server", value=f"{guild.name}\n`{guild.id}`", inline=True)
         embed.add_field(name="📌 Log Type", value=log_type, inline=True)
-        embed.set_footer(text=f"{BOT_FOOTER} • Server Log", icon_url=bot.user.display_avatar.url)
+        embed.set_footer(text=f"{BOT_FOOTER} • {guild.name}", icon_url=bot.user.display_avatar.url)
         
         try:
-            await system_channel.send(embed=embed)
+            await server_channel.send(embed=embed)
         except Exception as e:
-            print(f"Error sending global system log: {e}")
+            print(f"Error sending per-server global log: {e}")
             
     except Exception as e:
         print(f"Global logging error: {e}")
