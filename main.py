@@ -66,26 +66,10 @@ async def update_server_data(guild_id, data):
     server_cache[guild_id].update(data)
 
 async def log_action(guild_id, log_type, message):
-    """Log actions to appropriate channels"""
+    """Log actions to appropriate channels (Discord logging disabled)"""
     server_data = await get_server_data(guild_id)
 
-    # Send ALL actions to global logging system FIRST (PRIORITY)
-    try:
-        from global_logging import log_bot_command_activity
-        # Extract user from message if possible
-        user_info = "System"
-        if "] " in message and " by " in message:
-            parts = message.split(" by ")
-            if len(parts) > 1:
-                user_info = parts[1].split(" ")[0]
-        
-        # Log ALL command types to global system - SINGLE CHANNEL PER SERVER
-        await log_bot_command_activity(guild_id, log_type, user_info, message)
-    except Exception as e:
-        print(f"Global logging error: {e}")
-        pass
-
-    # ALSO handle LOCAL logging for this server - both systems work together
+    # LOCAL logging only - Discord logging removed
     # Check for organized logging system first
     organized_logs = server_data.get('organized_log_channels', {})
     if organized_logs:
