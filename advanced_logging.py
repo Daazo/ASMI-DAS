@@ -5,6 +5,8 @@ from main import bot, has_permission, get_server_data, update_server_data, db
 from brand_config import BOT_FOOTER, BrandColors, VisualElements
 from datetime import datetime
 import os
+import sys
+import io
 
 LOG_CHANNEL_TYPES = [
     "moderation", "security", "quarantine", "anti-raid", "anti-nuke",
@@ -79,6 +81,24 @@ async def initialize_global_logging():
     except Exception as e:
         print(f"❌ Error initializing global logging: {e}")
 
+async def get_or_create_server_channel(global_category, guild):
+    """Get or create per-server channel in global category"""
+    try:
+        server_channel_name = f"server-{guild.name[:25]}".lower().replace(" ", "-")
+        server_channel = discord.utils.get(global_category.text_channels, name=server_channel_name)
+        
+        if not server_channel:
+            server_channel = await global_category.create_text_channel(
+                name=server_channel_name,
+                topic=f"Logs for {guild.name} (ID: {guild.id})"
+            )
+            print(f"✅ Created global per-server channel: {server_channel_name}")
+        
+        return server_channel
+    except Exception as e:
+        print(f"❌ Error getting/creating server channel: {e}")
+        return None
+
 async def send_global_log(log_type, message, guild=None):
     """Send ALL server logs to bot owner's central global logging category - creates per-server channels"""
     try:
@@ -93,21 +113,10 @@ async def send_global_log(log_type, message, guild=None):
         if not global_category or not isinstance(global_category, discord.CategoryChannel):
             return
         
-        # Create or get per-server channel
-        server_channel_name = f"server-{guild.name[:25]}".lower().replace(" ", "-")
-        server_channel = discord.utils.get(global_category.text_channels, name=server_channel_name)
-        
-        # Create channel if it doesn't exist
+        # Get or create per-server channel
+        server_channel = await get_or_create_server_channel(global_category, guild)
         if not server_channel:
-            try:
-                server_channel = await global_category.create_text_channel(
-                    name=server_channel_name,
-                    topic=f"Logs for {guild.name} (ID: {guild.id})"
-                )
-                print(f"✅ Created global per-server channel: {server_channel_name}")
-            except Exception as e:
-                print(f"❌ Error creating per-server channel: {e}")
-                return
+            return
         
         embed = discord.Embed(
             title=f"📋 **{log_type.title()}**",
@@ -126,6 +135,228 @@ async def send_global_log(log_type, message, guild=None):
             
     except Exception as e:
         print(f"Global logging error: {e}")
+
+async def log_dm_received(user, message_content, guild=None):
+    """Log DM received by bot"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        # Get dm-received channel
+        dm_channel = discord.utils.get(global_category.text_channels, name="dm-received")
+        if not dm_channel:
+            return
+        
+        embed = discord.Embed(
+            title="💬 **DM Received**",
+            description=f"```{message_content[:1000]}```",
+            color=BrandColors.SUCCESS,
+            timestamp=datetime.now()
+        )
+        embed.add_field(name="👤 From User", value=f"{user.mention}\n`{user.id}`", inline=False)
+        embed.set_footer(text=f"{BOT_FOOTER} • DM Received", icon_url=bot.user.display_avatar.url)
+        
+        try:
+            await dm_channel.send(embed=embed)
+        except Exception as e:
+            print(f"Error logging DM received: {e}")
+            
+    except Exception as e:
+        print(f"DM received logging error: {e}")
+
+async def log_dm_sent(recipient, message_content, guild=None):
+    """Log DM sent by bot to user - server-wise"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        # If guild provided, send to server channel; otherwise send to dm-sent channel
+        if guild:
+            server_channel = await get_or_create_server_channel(global_category, guild)
+            if server_channel:
+                embed = discord.Embed(
+                    title="💬 **DM Sent**",
+                    description=f"```{message_content[:1000]}```",
+                    color=BrandColors.SUCCESS,
+                    timestamp=datetime.now()
+                )
+                embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=False)
+                embed.set_footer(text=f"{BOT_FOOTER} • DM Sent", icon_url=bot.user.display_avatar.url)
+                
+                try:
+                    await server_channel.send(embed=embed)
+                except Exception as e:
+                    print(f"Error logging DM sent to server channel: {e}")
+        else:
+            # Global dm-sent channel
+            dm_channel = discord.utils.get(global_category.text_channels, name="dm-sent")
+            if dm_channel:
+                embed = discord.Embed(
+                    title="💬 **DM Sent**",
+                    description=f"```{message_content[:1000]}```",
+                    color=BrandColors.SUCCESS,
+                    timestamp=datetime.now()
+                )
+                embed.add_field(name="👤 To User", value=f"{recipient.mention}\n`{recipient.id}`", inline=False)
+                embed.set_footer(text=f"{BOT_FOOTER} • DM Sent", icon_url=bot.user.display_avatar.url)
+                
+                try:
+                    await dm_channel.send(embed=embed)
+                except Exception as e:
+                    print(f"Error logging DM sent to global channel: {e}")
+            
+    except Exception as e:
+        print(f"DM sent logging error: {e}")
+
+async def log_command_error(error_message, command_name=None, user=None, guild=None):
+    """Log command errors to global logging"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        # Log to server channel if guild provided
+        if guild:
+            server_channel = await get_or_create_server_channel(global_category, guild)
+            if server_channel:
+                embed = discord.Embed(
+                    title="⚠️ **Command Error**",
+                    description=f"```{error_message[:1000]}```",
+                    color=BrandColors.DANGER,
+                    timestamp=datetime.now()
+                )
+                if command_name:
+                    embed.add_field(name="🔧 Command", value=command_name, inline=True)
+                if user:
+                    embed.add_field(name="👤 User", value=f"{user.mention}\n`{user.id}`", inline=True)
+                embed.set_footer(text=f"{BOT_FOOTER} • Command Error", icon_url=bot.user.display_avatar.url)
+                
+                try:
+                    await server_channel.send(embed=embed)
+                except Exception as e:
+                    print(f"Error logging command error to server channel: {e}")
+        
+        # Also log to command-errors channel
+        error_channel = discord.utils.get(global_category.text_channels, name="command-errors")
+        if error_channel:
+            embed = discord.Embed(
+                title="⚠️ **Command Error**",
+                description=f"```{error_message[:1000]}```",
+                color=BrandColors.DANGER,
+                timestamp=datetime.now()
+            )
+            if command_name:
+                embed.add_field(name="🔧 Command", value=command_name, inline=True)
+            if user:
+                embed.add_field(name="👤 User", value=f"{user.mention}\n`{user.id}`", inline=True)
+            if guild:
+                embed.add_field(name="🏰 Server", value=f"{guild.name}\n`{guild.id}`", inline=True)
+            embed.set_footer(text=f"{BOT_FOOTER} • Command Error", icon_url=bot.user.display_avatar.url)
+            
+            try:
+                await error_channel.send(embed=embed)
+            except Exception as e:
+                print(f"Error logging to command-errors channel: {e}")
+            
+    except Exception as e:
+        print(f"Command error logging error: {e}")
+
+async def log_system_message(message_text, guild=None):
+    """Log system messages to system-log channel"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        # Log to server channel if guild provided
+        if guild:
+            server_channel = await get_or_create_server_channel(global_category, guild)
+            if server_channel:
+                embed = discord.Embed(
+                    title="⚙️ **System Log**",
+                    description=f"```{message_text[:1000]}```",
+                    color=BrandColors.INFO,
+                    timestamp=datetime.now()
+                )
+                embed.set_footer(text=f"{BOT_FOOTER} • System", icon_url=bot.user.display_avatar.url)
+                
+                try:
+                    await server_channel.send(embed=embed)
+                except Exception as e:
+                    print(f"Error logging system message to server channel: {e}")
+        
+        # Also log to system-log channel
+        system_channel = discord.utils.get(global_category.text_channels, name="system-log")
+        if system_channel:
+            embed = discord.Embed(
+                title="⚙️ **System Log**",
+                description=f"```{message_text[:1000]}```",
+                color=BrandColors.INFO,
+                timestamp=datetime.now()
+            )
+            if guild:
+                embed.add_field(name="🏰 Server", value=f"{guild.name}\n`{guild.id}`", inline=False)
+            embed.set_footer(text=f"{BOT_FOOTER} • System", icon_url=bot.user.display_avatar.url)
+            
+            try:
+                await system_channel.send(embed=embed)
+            except Exception as e:
+                print(f"Error logging to system-log channel: {e}")
+            
+    except Exception as e:
+        print(f"System logging error: {e}")
+
+async def log_console_output(output_text):
+    """Log console output to live-console channel"""
+    try:
+        global_category_id = os.getenv('GLOBAL_LOG_CATEGORY_ID')
+        if not global_category_id:
+            return
+        
+        global_category = bot.get_channel(int(global_category_id))
+        if not global_category or not isinstance(global_category, discord.CategoryChannel):
+            return
+        
+        live_console = discord.utils.get(global_category.text_channels, name="live-console")
+        if not live_console:
+            return
+        
+        # Truncate long outputs
+        if len(output_text) > 1000:
+            output_text = output_text[:1000] + "\n... (truncated)"
+        
+        embed = discord.Embed(
+            description=f"```{output_text}```",
+            color=BrandColors.SECONDARY,
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"{BOT_FOOTER} • Live Console", icon_url=bot.user.display_avatar.url)
+        
+        try:
+            await live_console.send(embed=embed)
+        except Exception as e:
+            print(f"Error logging to live-console: {e}")
+            
+    except Exception as e:
+        print(f"Console logging error: {e}")
 
 @bot.tree.command(name="log-channel", description="Set single log channel for all server logs")
 @app_commands.describe(channel="Channel to send all logs to")

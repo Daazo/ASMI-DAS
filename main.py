@@ -353,6 +353,14 @@ async def has_permission_user(member, guild, permission_level):
 @bot.event
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     """Handle slash command errors and provide help"""
+    # Log command error to global logging
+    try:
+        from advanced_logging import log_command_error
+        error_msg = f"{type(error).__name__}: {str(error)}"
+        asyncio.create_task(log_command_error(error_msg, interaction.command.name if interaction.command else "unknown", interaction.user, interaction.guild))
+    except Exception as e:
+        print(f"Failed to log command error: {e}")
+    
     if isinstance(error, app_commands.MissingPermissions):
         embed = discord.Embed(
             title="❌ **Access Denied**",
@@ -576,6 +584,13 @@ async def on_message(message):
     
     # Handle DM mentions
     if not message.guild:  # This is a DM
+        # Log DM received to global logging
+        try:
+            from advanced_logging import log_dm_received
+            asyncio.create_task(log_dm_received(message.author, message.content))
+        except Exception as e:
+            print(f"Failed to log DM received: {e}")
+        
         # Check for bot mention in DMs - Send contact info
         if (bot.user in message.mentions or
             f"<@{bot.user.id}>" in message.content or
@@ -608,18 +623,12 @@ async def on_message(message):
 
             sent_message = await message.channel.send(embed=embed, view=view)
 
-            # Log DM interaction globally
+            # Log DM sent globally
             try:
-                from global_logging import log_to_global
-                log_embed = discord.Embed(
-                    title="◆ Quantum Core Contact Request",
-                    description=f"**User:** {message.author} ({message.author.id})\n**Protocol:** Direct mention trigger\n**Action:** Contact protocols transmitted",
-                    color=BrandColors.PRIMARY,
-                    timestamp=datetime.now()
-                )
-                await log_to_global("dm-logs", log_embed)
-            except:
-                pass
+                from advanced_logging import log_dm_sent
+                asyncio.create_task(log_dm_sent(message.author, "Contact information sent - Bot mention detected"))
+            except Exception as e:
+                print(f"Failed to log DM sent: {e}")
 
             # Auto delete after 1 minute
             await asyncio.sleep(60)
@@ -643,6 +652,14 @@ async def on_message(message):
             embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
             embed.set_thumbnail(url=bot.user.display_avatar.url)
             sent_message = await message.channel.send(embed=embed)
+            
+            # Log DM sent globally
+            try:
+                from advanced_logging import log_dm_sent
+                asyncio.create_task(log_dm_sent(message.author, "Developer information sent - Owner mention detected"))
+            except Exception as e:
+                print(f"Failed to log DM sent: {e}")
+            
             # Auto delete after 1 minute
             await asyncio.sleep(60)
             try:
@@ -1709,6 +1726,20 @@ async def ping_mongodb():
         except Exception as e:
             print(f"❌ MongoDB ping failed: {e}")
         await asyncio.sleep(300)  # Ping every 5 minutes
+
+# Setup console output logging
+class ConsoleLogHandler:
+    """Captures print statements for live console logging"""
+    def __init__(self):
+        self.original_stdout = sys.stdout
+    
+    async def log_output(self, message):
+        """Send console output to live-console channel"""
+        try:
+            from advanced_logging import log_console_output
+            await log_console_output(message)
+        except Exception as e:
+            self.original_stdout.write(f"Failed to log console: {e}\n")
 
 # Import command modules
 from setup_commands import *
