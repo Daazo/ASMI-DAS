@@ -53,6 +53,45 @@ async def get_or_create_global_channel(channel_name: str):
         print(f"Error creating global log channel {channel_name}: {e}")
         return None
 
+async def get_server_log_channel(guild_id: int):
+    """Get or create a SINGLE unified log channel for a server (one channel per server only)"""
+    # Check if server has custom log server configured
+    try:
+        server_data = await get_server_data(guild_id)
+        custom_log_guild_id = server_data.get('global_log_server_id')
+        
+        if custom_log_guild_id and custom_log_guild_id != SUPPORT_SERVER_ID:
+            # Try to send to custom log server
+            custom_guild = bot.get_guild(int(custom_log_guild_id))
+            if custom_guild:
+                # Find or create "bot-logs" channel in custom server
+                channel = discord.utils.get(custom_guild.text_channels, name="bot-logs")
+                if channel:
+                    return channel
+                # Try to create if permissions allow
+                try:
+                    channel = await custom_guild.create_text_channel("bot-logs", topic="RXT ENGINE Bot Logs")
+                    return channel
+                except:
+                    pass  # Fall back to default
+    except:
+        pass
+    
+    # Default: use support server with single unified channel
+    if not SUPPORT_SERVER_ID or not LOG_CATEGORY_ID:
+        return None
+    
+    guild = bot.get_guild(guild_id)
+    if not guild or guild.id == SUPPORT_SERVER_ID:
+        return None
+    
+    # Use clean server name for SINGLE unified channel per server
+    clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
+    clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
+    channel_name = f"{clean_name}-logs"
+    
+    return await get_or_create_global_channel(channel_name)
+
 async def log_to_global(channel_name: str, embed: discord.Embed):
     """Send log message to global logging channel"""
     try:
@@ -68,7 +107,7 @@ async def setup_global_channels():
         print("⚠️ Global logging disabled - SUPPORT_SERVER_ID and LOG_CATEGORY_ID not configured")
         return
     
-    # Global channels to create
+    # Global channels to create (unified channels only)
     global_channels = [
         "dm-logs",
         "bot-dm-send-logs", 
@@ -81,17 +120,12 @@ async def setup_global_channels():
     for channel_name in global_channels:
         await get_or_create_global_channel(channel_name)
     
-    # Create per-server channels for existing guilds
+    # Pre-create one channel per server (all server activity goes to ONE channel)
     for guild in bot.guilds:
-        if guild.id != SUPPORT_SERVER_ID:  # Don't create logs for support server itself
-            # Clean server name for channel naming
-            clean_name = guild.name.lower().replace(" ", "-").replace("_", "-")
-            # Remove special characters and limit length
-            clean_name = ''.join(c for c in clean_name if c.isalnum() or c == '-')[:45]
-            channel_name = f"{clean_name}-logs"
-            await get_or_create_global_channel(channel_name)
+        if guild.id != SUPPORT_SERVER_ID:
+            await get_server_log_channel(guild.id)
     
-    print(f"✅ Global logging system initialized with {len(global_log_channels)} channels")
+    print(f"✅ Global logging system initialized with {len(global_log_channels)} unified channels (one per server)")
 
 # Global logging functions
 async def log_dm_received(message):
