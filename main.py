@@ -1809,6 +1809,13 @@ try:
 except ImportError as e:
     print(f"⚠️ Server list module not found: {e}")
 
+# Import role commands
+try:
+    from role_commands import *
+    print("✅ Role commands system loaded")
+except ImportError as e:
+    print(f"⚠️ Role commands module not found: {e}")
+
 # Music system removed due to compatibility issues
 
 @bot.event

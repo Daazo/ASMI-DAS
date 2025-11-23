@@ -1,0 +1,162 @@
+import discord
+from discord.ext import commands
+from discord import app_commands
+import asyncio
+from main import bot, has_permission, log_action
+from brand_config import BOT_FOOTER, BrandColors, VisualElements
+from datetime import datetime
+
+@bot.tree.command(name="listrole", description="📋 Show all users in a role with beautiful embed")
+@app_commands.describe(role="Role to list members from")
+async def listrole(interaction: discord.Interaction, role: discord.Role):
+    """List all members in a role"""
+    
+    # Check permission: junior moderator, main moderator, or server owner
+    if interaction.user.id != interaction.guild.owner_id:
+        if not await has_permission(interaction, "junior_moderator"):
+            await interaction.response.send_message("❌ You need Junior Moderator or higher permissions to use this command!", ephemeral=True)
+            return
+    
+    await interaction.response.defer()
+    
+    try:
+        # Get members with this role
+        members = [m for m in interaction.guild.members if role in m.roles]
+        
+        # Create paginated embeds if there are many members
+        if not members:
+            embed = discord.Embed(
+                title=f"📋 Role: {role.name}",
+                description="No members found with this role",
+                color=BrandColors.INFO,
+                timestamp=datetime.now()
+            )
+            embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+            await interaction.followup.send(embed=embed)
+        else:
+            # Split members into chunks of 25 per embed
+            chunk_size = 25
+            chunks = [members[i:i + chunk_size] for i in range(0, len(members), chunk_size)]
+            
+            for page_num, chunk in enumerate(chunks, 1):
+                embed = discord.Embed(
+                    title=f"📋 Role: {role.name}",
+                    description=f"**Total Members:** {len(members)}\n**Page:** {page_num}/{len(chunks)}\n\n{VisualElements.CIRCUIT_LINE}",
+                    color=BrandColors.PRIMARY,
+                    timestamp=datetime.now()
+                )
+                
+                member_list = []
+                for idx, member in enumerate(chunk, 1):
+                    status = "🟣 Online" if member.status == discord.Status.online else "⚪ Offline"
+                    member_list.append(f"**{idx}.** {member.mention} • {status}")
+                
+                embed.add_field(
+                    name=f"👥 Members ({len(chunk)})",
+                    value="\n".join(member_list),
+                    inline=False
+                )
+                
+                embed.set_footer(text=f"{BOT_FOOTER} • Role ID: {role.id}", icon_url=interaction.client.user.display_avatar.url)
+                await interaction.followup.send(embed=embed)
+        
+        # Log action
+        await log_action(interaction.guild.id, "general", f"📋 [LISTROLE] {interaction.user.mention} listed {len(members)} members in role {role.mention}")
+        
+        # Log to global logging
+        try:
+            from advanced_logging import send_global_log
+            await send_global_log("general", f"**📋 List Role**\n**Role:** {role.name}\n**Members:** {len(members)}\n**User:** {interaction.user}", interaction.guild)
+        except:
+            pass
+        
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
+        await log_action(interaction.guild.id, "error-log", f"⚠️ [LISTROLE ERROR] {interaction.user}: {str(e)}")
+
+@bot.tree.command(name="dm-role", description="📧 Send DM to all users in a role")
+@app_commands.describe(role="Role to send DM to", message="Message to send", image_url="Optional image URL")
+async def dm_role(interaction: discord.Interaction, role: discord.Role, message: str, image_url: str = None):
+    """Send DM to all members in a role"""
+    
+    # Check permission: main moderator or server owner only
+    if interaction.user.id != interaction.guild.owner_id:
+        if not await has_permission(interaction, "main_moderator"):
+            await interaction.response.send_message("❌ You need Main Moderator or higher permissions to use this command!", ephemeral=True)
+            return
+    
+    await interaction.response.defer()
+    
+    try:
+        # Get members with this role
+        members = [m for m in interaction.guild.members if role in m.roles and not m.bot]
+        
+        if not members:
+            await interaction.followup.send("❌ No members found in this role!", ephemeral=True)
+            return
+        
+        # Create DM embed
+        dm_embed = discord.Embed(
+            title=f"📧 Message from {interaction.guild.name}",
+            description=message,
+            color=BrandColors.PRIMARY,
+            timestamp=datetime.now()
+        )
+        
+        # Add image if URL provided
+        if image_url:
+            try:
+                dm_embed.set_image(url=image_url)
+            except:
+                pass
+        
+        dm_embed.set_footer(text=f"{BOT_FOOTER} • {role.name}", icon_url=interaction.client.user.display_avatar.url)
+        dm_embed.add_field(
+            name="Sent by",
+            value=f"{interaction.user.mention}",
+            inline=True
+        )
+        
+        # Send DMs
+        sent_count = 0
+        failed_count = 0
+        
+        for member in members:
+            try:
+                await member.send(embed=dm_embed)
+                sent_count += 1
+            except:
+                failed_count += 1
+        
+        # Send confirmation
+        result_embed = discord.Embed(
+            title="📧 DM Sending Complete",
+            description=f"**Role:** {role.mention}\n**Sent:** {sent_count}/{len(members)}\n**Failed:** {failed_count}",
+            color=BrandColors.SUCCESS if failed_count == 0 else BrandColors.WARNING,
+            timestamp=datetime.now()
+        )
+        result_embed.add_field(
+            name="Message Preview",
+            value=message[:100] + "..." if len(message) > 100 else message,
+            inline=False
+        )
+        result_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+        await interaction.followup.send(embed=result_embed)
+        
+        # Log action
+        log_msg = f"📧 [DM-ROLE] {interaction.user.mention} sent DM to {sent_count} members in {role.mention}"
+        if image_url:
+            log_msg += f" (with image)"
+        await log_action(interaction.guild.id, "communication", log_msg)
+        
+        # Log to global logging
+        try:
+            from advanced_logging import send_global_log
+            global_log_msg = f"**📧 DM Sent to Role**\n**Role:** {role.name}\n**Members Sent:** {sent_count}/{len(members)}\n**User:** {interaction.user}\n**Image:** {'Yes' if image_url else 'No'}"
+            await send_global_log("communication", global_log_msg, interaction.guild)
+        except:
+            pass
+        
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
+        await log_action(interaction.guild.id, "error-log", f"⚠️ [DM-ROLE ERROR] {interaction.user}: {str(e)}")
