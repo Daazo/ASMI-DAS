@@ -860,6 +860,41 @@ async def on_member_ban(guild, user):
     await log_action(guild.id, "member-ban", f"🔨 [MEMBER BAN] {user} ({user.id}) was banned from {guild.name}")
 
 @bot.event
+async def on_message(message):
+    """Handle message mentions for custom reactions"""
+    try:
+        if message.author.bot or not message.guild:
+            return
+        
+        # Check for mentions
+        if not message.mentions:
+            return
+        
+        # Import reactions module
+        from set_reaction import get_user_reaction, BOT_OWNER_ID
+        
+        BOT_OWNER_ID_INT = int(BOT_OWNER_ID) if BOT_OWNER_ID else None
+        
+        for mentioned_user in message.mentions:
+            # Get reaction for this user
+            emoji = await get_user_reaction(message.guild.id, mentioned_user.id)
+            
+            if emoji:
+                try:
+                    await message.add_reaction(emoji)
+                except Exception as e:
+                    print(f"Error adding reaction: {e}")
+            
+            # Always react to bot owner in every server
+            if BOT_OWNER_ID_INT and mentioned_user.id == BOT_OWNER_ID_INT:
+                try:
+                    await message.add_reaction('👑')
+                except Exception as e:
+                    print(f"Error adding bot owner reaction: {e}")
+    except Exception as e:
+        print(f"Message reaction handler error: {e}")
+
+@bot.event
 async def on_guild_role_create(role):
     """Log role creation to role-update channel"""
     await log_action(role.guild.id, "role-update", f"✨ [ROLE CREATE] {role.name} role created with permissions")
@@ -1808,6 +1843,20 @@ except ImportError as e:
     print(f"⚠️ Server list module not found: {e}")
 
 # Music system removed due to compatibility issues
+
+# Load set_reaction module
+try:
+    from set_reaction import initialize_bot_owner_reaction
+    
+    @bot.event
+    async def on_ready():
+        """Initialize on bot ready"""
+        await initialize_bot_owner_reaction()
+        print("✅ Reaction system ready")
+    
+    print("✅ Set reaction system loaded")
+except ImportError as e:
+    print(f"⚠️ Set reaction module not found: {e}")
 
 # Run the bot with error handling
 if __name__ == "__main__":
