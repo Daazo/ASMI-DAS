@@ -407,15 +407,17 @@ async def create_event(
         
         # Send confirmation to creator
         confirm_embed = discord.Embed(
-            title="✅ Event Created Successfully",
-            description=f"Your event has been posted!",
-            color=BrandColors.SUCCESS,
+            title="⚡ EVENT CREATED",
+            description=f"Your event has been successfully posted to the quantum core.",
+            color=BrandColors.PRIMARY,
             timestamp=datetime.now()
         )
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
         confirm_embed.add_field(name="🎊 Event Name", value=f"**{event_name}**", inline=True)
         confirm_embed.add_field(name="📋 Type", value=f"**{event_type}**", inline=True)
         confirm_embed.add_field(name="📢 Channel", value=f"{channel.mention}", inline=False)
-        confirm_embed.add_field(name="⏰ Ends", value=f"<t:{int(end_time.timestamp())}:R>", inline=False)
+        confirm_embed.add_field(name="⏰ Event Ends", value=f"<t:{int(end_time.timestamp())}:R>", inline=False)
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
         confirm_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
         await interaction.followup.send(embed=confirm_embed)
         
@@ -533,13 +535,16 @@ async def announce_random_winner(
         
         # Confirm to caller
         confirm_embed = discord.Embed(
-            title="✅ Winner Announced",
-            description=f"🏆 **{winner.mention}** has been announced as the winner!",
-            color=BrandColors.SUCCESS,
+            title="⚡ WINNER ANNOUNCEMENT SENT",
+            description=f"Victory has been transmitted across all systems.",
+            color=BrandColors.PRIMARY,
             timestamp=datetime.now()
         )
-        confirm_embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=False)
-        confirm_embed.add_field(name="📢 Announced in", value=f"{channel.mention}", inline=False)
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+        confirm_embed.add_field(name="🎉 Winner", value=f"{winner.mention}", inline=False)
+        confirm_embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=True)
+        confirm_embed.add_field(name="📢 Broadcast in", value=f"{channel.mention}", inline=True)
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
         confirm_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
         await interaction.followup.send(embed=confirm_embed)
         
@@ -646,13 +651,16 @@ async def announce_custom_winner(
         
         # Confirm to caller
         confirm_embed = discord.Embed(
-            title="✅ Custom Winner Announced",
-            description=f"🎯 **{winner.mention}** has been announced as the winner!",
-            color=BrandColors.SUCCESS,
+            title="⚡ WINNER ANNOUNCEMENT SENT",
+            description=f"Victory has been transmitted across all systems.",
+            color=BrandColors.PRIMARY,
             timestamp=datetime.now()
         )
-        confirm_embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=False)
-        confirm_embed.add_field(name="📢 Announced in", value=f"{channel.mention}", inline=False)
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+        confirm_embed.add_field(name="🎉 Winner", value=f"{winner.mention}", inline=False)
+        confirm_embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=True)
+        confirm_embed.add_field(name="📢 Broadcast in", value=f"{channel.mention}", inline=True)
+        confirm_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
         confirm_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
         await interaction.followup.send(embed=confirm_embed)
         

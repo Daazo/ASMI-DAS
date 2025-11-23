@@ -136,16 +136,21 @@ async def dm_role(interaction: discord.Interaction, role: discord.Role, message:
         
         # Send confirmation
         result_embed = discord.Embed(
-            title="📧 DM Sending Complete",
-            description=f"**Role:** {role.mention}\n**Sent:** {sent_count}/{len(members)}\n**Failed:** {failed_count}",
-            color=BrandColors.SUCCESS if failed_count == 0 else BrandColors.WARNING,
+            title="⚡ DM TRANSMISSION COMPLETE",
+            description=f"Messages have been delivered via quantum channels.",
+            color=BrandColors.PRIMARY,
             timestamp=datetime.now()
         )
+        result_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+        result_embed.add_field(name="🎯 Target Role", value=f"{role.mention}", inline=True)
+        result_embed.add_field(name="✓ Delivered", value=f"**{sent_count}/{len(members)}**", inline=True)
+        result_embed.add_field(name="✗ Failed", value=f"**{failed_count}**", inline=True)
         result_embed.add_field(
-            name="Message Preview",
+            name="📝 Message Preview",
             value=message[:100] + "..." if len(message) > 100 else message,
             inline=False
         )
+        result_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
         result_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
         await interaction.followup.send(embed=result_embed)
         
