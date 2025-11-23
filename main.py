@@ -40,6 +40,7 @@ server_cache = {}
 
 # Bot setup
 intents = discord.Intents.all()
+intents.message_content = True  # Explicitly enable message content intent
 bot = commands.Bot(command_prefix='!', intents=intents, case_insensitive=True)
 bot.remove_command('help')
 bot.start_time = time.time()
@@ -859,46 +860,57 @@ async def on_member_ban(guild, user):
     """Log member ban to member-ban channel"""
     await log_action(guild.id, "member-ban", f"🔨 [MEMBER BAN] {user} ({user.id}) was banned from {guild.name}")
 
+_set_reaction_module = None
+
+async def _load_set_reaction_module():
+    """Lazy load set_reaction module"""
+    global _set_reaction_module
+    if _set_reaction_module is None:
+        try:
+            import set_reaction
+            _set_reaction_module = set_reaction
+        except ImportError:
+            pass
+    return _set_reaction_module
+
 @bot.event
 async def on_message(message):
     """Handle message mentions for custom reactions"""
     try:
-        if message.author.bot or not message.guild:
+        # Skip bot messages and DMs
+        if message.author.bot:
+            return
+        if not message.guild:
             return
         
-        # Check for mentions
+        # Skip if no mentions
         if not message.mentions:
             return
         
-        # Import reactions module
-        from set_reaction import get_user_reaction
+        # Load set_reaction module
+        set_reaction = await _load_set_reaction_module()
+        if not set_reaction:
+            return
         
         BOT_OWNER_ID_INT = int(BOT_OWNER_ID) if BOT_OWNER_ID else None
         
-        print(f"📨 Message from {message.author} in {message.guild.name}: mentions={[m.name for m in message.mentions]}")
-        print(f"BOT_OWNER_ID_INT: {BOT_OWNER_ID_INT}")
-        
         for mentioned_user in message.mentions:
-            print(f"  → Checking mention: {mentioned_user.name} (ID: {mentioned_user.id})")
-            # Always react to bot owner in every server first
+            # Always react to bot owner in every server
             if BOT_OWNER_ID_INT and mentioned_user.id == BOT_OWNER_ID_INT:
                 try:
                     await message.add_reaction('👑')
-                    print(f"✨ Reacted with 👑 to bot owner mention in {message.guild.name}")
-                except Exception as e:
-                    print(f"Error adding bot owner reaction: {e}")
+                except:
+                    pass
             else:
                 # Get reaction for other users
-                emoji = await get_user_reaction(message.guild.id, mentioned_user.id)
-                
-                if emoji:
-                    try:
+                try:
+                    emoji = await set_reaction.get_user_reaction(message.guild.id, mentioned_user.id)
+                    if emoji:
                         await message.add_reaction(emoji)
-                        print(f"✨ Reacted with {emoji} to {mentioned_user.name} in {message.guild.name}")
-                    except Exception as e:
-                        print(f"Error adding reaction: {e}")
-    except Exception as e:
-        print(f"Message reaction handler error: {e}")
+                except:
+                    pass
+    except:
+        pass
 
 @bot.event
 async def on_guild_role_create(role):
