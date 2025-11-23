@@ -241,7 +241,15 @@ async def event_role(interaction: discord.Interaction, role: discord.Role):
     """Set the event role - only server owner can use"""
     
     if interaction.user.id != interaction.guild.owner_id:
-        await interaction.response.send_message("❌ Only server owner can set the event role!", ephemeral=True)
+        error_embed = discord.Embed(
+            title="◆ OWNER ONLY",
+            description="Only the server owner can configure the event role.",
+            color=BrandColors.DANGER,
+            timestamp=datetime.now()
+        )
+        error_embed.add_field(name=f"{VisualElements.CIRCUIT_LINE}", value="", inline=False)
+        error_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
         return
     
     await interaction.response.defer()
@@ -304,7 +312,15 @@ async def create_event(
     # Check permissions
     if interaction.user.id != interaction.guild.owner_id:
         if not await has_event_role_permission(interaction):
-            await interaction.response.send_message("❌ You don't have permission to create events!", ephemeral=True)
+            error_embed = discord.Embed(
+                title="◆ ACCESS DENIED",
+                description="You don't have permission to create events.\n**Required:** Owner, Main Moderator, or Event Role",
+                color=BrandColors.DANGER,
+                timestamp=datetime.now()
+            )
+            error_embed.add_field(name=f"{VisualElements.CIRCUIT_LINE}", value="", inline=False)
+            error_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
             return
     
     await interaction.response.defer()
@@ -434,7 +450,15 @@ async def announce_random_winner(
     
     if interaction.user.id != interaction.guild.owner_id:
         if not await has_permission(interaction, "main_moderator"):
-            await interaction.response.send_message("❌ You don't have permission! Only Owner or Main Moderator can announce winners.", ephemeral=True)
+            error_embed = discord.Embed(
+                title="◆ ACCESS DENIED",
+                description="You don't have permission to announce winners.\n**Required:** Owner or Main Moderator",
+                color=BrandColors.DANGER,
+                timestamp=datetime.now()
+            )
+            error_embed.add_field(name=f"{VisualElements.CIRCUIT_LINE}", value="", inline=False)
+            error_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
             return
     
     await interaction.response.defer()
@@ -458,25 +482,41 @@ async def announce_random_winner(
             await interaction.followup.send("❌ Could not find winner member!", ephemeral=True)
             return
         
-        # Create beautiful winner announcement
+        # Create beautiful RXT ENGINE themed winner announcement
         embed = discord.Embed(
-            title="🏆 WINNER ANNOUNCED! 🏆",
-            description=description,
-            color=BrandColors.PRIMARY,
+            title="⚡ WINNER ANNOUNCED ⚡",
+            description=f"{description}",
+            color=BrandColors.SECONDARY,
             timestamp=datetime.now()
         )
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
-        embed.add_field(name="🎉 WINNER", value=f">>> # {winner.mention}", inline=False)
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
-        embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=True)
-        embed.add_field(name="👥 Participants", value=f"**{len(event['participants'])}**", inline=True)
-        embed.add_field(name="🎯 Method", value="**Random Selection**", inline=True)
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
+        embed.add_field(
+            name="🎉 VICTORIOUS PLAYER",
+            value=f">>> # {winner.mention}\n**Congratulations!**",
+            inline=False
+        )
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
+        embed.add_field(name="📋 Event Name", value=f"**{event_name}**", inline=True)
+        embed.add_field(name="👥 Total Participants", value=f"**{len(event['participants'])}**", inline=True)
+        embed.add_field(name="⚡ System Status", value="**QUANTUM WINNER VERIFIED**", inline=True)
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
         
         if image_url:
             embed.set_image(url=image_url)
         
-        embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+        embed.set_footer(text=f"{BOT_FOOTER} • Announced by {interaction.user.name}", icon_url=interaction.client.user.display_avatar.url)
         
         # Send announcement
         await channel.send(embed=embed)
@@ -536,7 +576,15 @@ async def announce_custom_winner(
     
     if interaction.user.id != interaction.guild.owner_id:
         if not await has_permission(interaction, "main_moderator"):
-            await interaction.response.send_message("❌ You don't have permission! Only Owner or Main Moderator can announce winners.", ephemeral=True)
+            error_embed = discord.Embed(
+                title="◆ ACCESS DENIED",
+                description="You don't have permission to announce winners.\n**Required:** Owner or Main Moderator",
+                color=BrandColors.DANGER,
+                timestamp=datetime.now()
+            )
+            error_embed.add_field(name=f"{VisualElements.CIRCUIT_LINE}", value="", inline=False)
+            error_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
             return
     
     await interaction.response.defer()
@@ -548,24 +596,40 @@ async def announce_custom_winner(
             await interaction.followup.send(f"❌ Event **{event_name}** not found!", ephemeral=True)
             return
         
-        # Create beautiful winner announcement
+        # Create beautiful RXT ENGINE themed winner announcement (no custom mention)
         embed = discord.Embed(
-            title="🎯 WINNER ANNOUNCED! 🎯",
-            description=description,
-            color=BrandColors.PRIMARY,
+            title="⚡ WINNER ANNOUNCED ⚡",
+            description=f"{description}",
+            color=BrandColors.SECONDARY,
             timestamp=datetime.now()
         )
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
-        embed.add_field(name="🎉 WINNER", value=f">>> # {winner.mention}", inline=False)
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
-        embed.add_field(name="📋 Event", value=f"**{event_name}**", inline=True)
-        embed.add_field(name="🎯 Method", value="**Custom Selection**", inline=True)
-        embed.add_field(name="━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
+        embed.add_field(
+            name="🎉 VICTORIOUS PLAYER",
+            value=f">>> # {winner.mention}\n**Congratulations!**",
+            inline=False
+        )
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
+        embed.add_field(name="📋 Event Name", value=f"**{event_name}**", inline=True)
+        embed.add_field(name="⚡ System Status", value="**QUANTUM WINNER VERIFIED**", inline=True)
+        embed.add_field(
+            name="━━━━━━━━━━━━━━━━━━━━━━━━━",
+            value=f"{VisualElements.CIRCUIT_LINE}",
+            inline=False
+        )
         
         if image_url:
             embed.set_image(url=image_url)
         
-        embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+        embed.set_footer(text=f"{BOT_FOOTER} • Announced by {interaction.user.name}", icon_url=interaction.client.user.display_avatar.url)
         
         # Send announcement
         await channel.send(embed=embed)
