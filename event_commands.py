@@ -11,10 +11,20 @@ print("✅ Event system module loading...")
 
 # Event Entry View with Button
 class EventEntryView(discord.ui.View):
-    def __init__(self, event_name: str, guild_id: int):
+    def __init__(self, event_name: str, guild_id: int, end_time: datetime = None):
         super().__init__(timeout=None)
         self.event_name = event_name
         self.guild_id = guild_id
+        self.end_time = end_time
+        
+        # Disable button if event has already ended
+        if end_time and datetime.now() > end_time:
+            for item in self.children:
+                item.disabled = True
+    
+    async def on_timeout(self):
+        """Called when view times out"""
+        pass
     
     @discord.ui.button(label="👑 Enter Event", style=discord.ButtonStyle.primary, custom_id="event_entry_button")
     async def enter_event(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -34,6 +44,19 @@ class EventEntryView(discord.ui.View):
             
             if not event:
                 await interaction.followup.send("❌ Event not found!", ephemeral=True)
+                return
+            
+            # Check if event has ended
+            if datetime.now() > event.get('end_time', datetime.now()):
+                ended_embed = discord.Embed(
+                    title="❌ Event Ended",
+                    description=f"This event has already ended and is no longer accepting entries.",
+                    color=BrandColors.DANGER,
+                    timestamp=datetime.now()
+                )
+                ended_embed.add_field(name="📋 Event", value=f"**{self.event_name}**", inline=False)
+                ended_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
+                await interaction.followup.send(embed=ended_embed, ephemeral=True)
                 return
             
             # Check if user already entered
@@ -92,10 +115,8 @@ async def has_event_role_permission(interaction):
         if event_role and event_role in interaction.user.roles:
             return True
     
-    # Check if user is main moderator or junior moderator
+    # Check if user is main moderator ONLY (not junior moderator)
     if await has_permission(interaction, "main_moderator"):
-        return True
-    if await has_permission(interaction, "junior_moderator"):
         return True
     
     return False
@@ -294,7 +315,7 @@ async def create_event(
         embed.set_footer(text=f"{BOT_FOOTER} • Event: {event_name}", icon_url=interaction.client.user.display_avatar.url)
         
         # Create view and send announcement
-        view = EventEntryView(event_name, interaction.guild.id)
+        view = EventEntryView(event_name, interaction.guild.id, end_time)
         event_msg = await channel.send(embed=embed, view=view)
         
         # Add persistent view to bot
@@ -351,11 +372,11 @@ async def announce_random_winner(
     description: str,
     image_url: str = None
 ):
-    """Announce random winner - Server owner, main moderator, junior moderator only"""
+    """Announce random winner - Server owner or main moderator only"""
     
     if interaction.user.id != interaction.guild.owner_id:
         if not await has_permission(interaction, "main_moderator"):
-            await interaction.response.send_message("❌ You don't have permission!", ephemeral=True)
+            await interaction.response.send_message("❌ You don't have permission! Only Owner or Main Moderator can announce winners.", ephemeral=True)
             return
     
     await interaction.response.defer()
@@ -453,11 +474,11 @@ async def announce_custom_winner(
     description: str,
     image_url: str = None
 ):
-    """Announce custom winner - Server owner, main moderator, junior moderator only (HIDDEN FROM HELP)"""
+    """Announce custom winner - Server owner or main moderator only (HIDDEN FROM HELP)"""
     
     if interaction.user.id != interaction.guild.owner_id:
         if not await has_permission(interaction, "main_moderator"):
-            await interaction.response.send_message("❌ You don't have permission!", ephemeral=True)
+            await interaction.response.send_message("❌ You don't have permission! Only Owner or Main Moderator can announce winners.", ephemeral=True)
             return
     
     await interaction.response.defer()
