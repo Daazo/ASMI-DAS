@@ -104,15 +104,18 @@ class EventEntryView(discord.ui.View):
             updated_event = await db.events.find_one({'_id': event['_id']})
             participant_count = len(updated_event.get('participants', []))
             
-            # Create success embed
+            # Create RXT ENGINE themed entry confirmation
             success_embed = discord.Embed(
-                title="✅ Event Entry Confirmed",
-                description=f"**Event:** {self.event_name}",
-                color=BrandColors.SUCCESS,
+                title="⚡ EVENT ENTRY CONFIRMED",
+                description=f"Your participation has been registered in the quantum core.",
+                color=BrandColors.PRIMARY,
                 timestamp=datetime.now()
             )
+            success_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
+            success_embed.add_field(name="🎊 Event", value=f"**{self.event_name}**", inline=False)
             success_embed.add_field(name="📋 Type", value=updated_event.get('event_type', 'Unknown'), inline=True)
-            success_embed.add_field(name="👥 Total Participants", value=str(participant_count), inline=True)
+            success_embed.add_field(name="👥 Participants", value=str(participant_count), inline=True)
+            success_embed.add_field(name="━━━━━━━━━━━━━━━━━━━━━━", value=f"{VisualElements.CIRCUIT_LINE}", inline=False)
             success_embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
             
             await interaction.followup.send(embed=success_embed, ephemeral=True)
