@@ -11,6 +11,34 @@ RXT ENGINE is a multi-functional Discord bot designed for community management a
 
 ## Recent Changes
 
+### November 24, 2025 - AI CHAT FEATURE WITH GEMINI INTEGRATION (PRODUCTION-READY)
+- 🤖 **GEMINI AI CHAT SYSTEM**
+  - **Integration**: Uses Replit's python_gemini blueprint with google-genai package
+  - **AI Models**: Gemini 2.5 Flash for text responses, Gemini 2.0 Flash for image generation
+  - **Channel-Based**: AI only responds in designated channels (set via `/set-ai-channel`)
+  - **Smart Detection**: Auto-detects image generation requests from natural language
+  - **No Circular Imports**: Uses setup() pattern to avoid bot initialization issues
+  
+- 💬 **FEATURES**:
+  - **Channel Setup**: `/set-ai-channel` command (Owner/Main Moderator only)
+  - **Natural Conversations**: Just type normally, no special commands needed
+  - **Image Generation**: Auto-detects keywords like "create", "generate", "draw", "design"
+  - **Dual Logging**: Logs to both global and per-server channels
+  - **Graceful Degradation**: Works without API key (shows error message to users)
+  
+- 🔧 **TECHNICAL IMPLEMENTATION**:
+  - **Module**: ai_chat.py with setup() function pattern
+  - **No Circular Imports**: Fixed circular dependency between main.py and ai_chat.py
+  - **Idempotent Setup**: Guard prevents double command registration
+  - **Database Storage**: AI channel settings stored in MongoDB `ai_settings` collection
+  - **Command Count**: 68 commands total (up from 67)
+  
+- 🎨 **UI/UX**:
+  - RXT ENGINE Quantum Purple theme for embeds
+  - Clean error messages when API key missing
+  - Setup confirmation with usage instructions
+  - Image detection requires 2+ keywords for accuracy
+
 ### November 22, 2025 - GLOBAL LOGGING SYSTEM FIXED & COMPLETE (PRODUCTION-READY)
 - 🌍 **DUAL LOGGING ARCHITECTURE (FIXED)**
   - **Two Separate Logging Systems**:
@@ -153,6 +181,7 @@ The bot's functionalities are organized into distinct modules:
 - **autorole.py**: Handles auto-role assignment for new members.
 - **voice_commands.py**: Voice channel moderation commands.
 - **advanced_logging.py**: Dual logging system with single-channel, organized multi-channel, cross-server, and global logging modes.
+- **ai_chat.py**: Gemini-powered AI chat with image generation and channel-based responses.
 
 **Visual Systems:**
 - **profile_cards.py**: Generates futuristic profile cards using PIL.
@@ -166,6 +195,7 @@ The bot's functionalities are organized into distinct modules:
 - **Consistent Branding**: All branding elements are centralized in `brand_config.py`.
 
 **Key Features:**
+- **AI Chat with Gemini**: Natural AI conversations in designated channels with automatic image generation detection. Powered by Gemini 2.5 Flash for text and Gemini 2.0 Flash for images. Supports dual logging to global and per-server channels.
 - **RXT Security System**: Production-ready comprehensive server protection with 9 modules: anti-raid, anti-nuke, anti-spam, anti-link, webhook guard, anti-role abuse, Discord native timeout, mass mention protection, and whitelist system. ToS-compliant and architect-verified.
 - **Advanced Logging System**: Dual logging with single-channel, organized multi-channel, cross-server, and global bot-wide modes. Automatic message delete/edit logging.
 - **Message Logging**: Auto-logs all deleted and edited messages with content snapshots for audit trails.
