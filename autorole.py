@@ -40,7 +40,8 @@ async def autorole_setup(
         
         embed = discord.Embed(
             title="✅ Auto Role Set",
-            description=f"**Auto Role:** {role.mention}\n**Action:** New members will automatically receive this role\n**Set by:** {interaction.user.mention}",
+            description=f"**Auto Role:** {role.mention}
+**Action:** New members will automatically receive this role\n**Set by:** {interaction.user.mention}",
             color=BrandColors.SUCCESS
         )
         embed.set_footer(text=BOT_FOOTER)
@@ -56,7 +57,8 @@ async def autorole_setup(
         
         embed = discord.Embed(
             title="✅ Auto Role Removed",
-            description=f"**Action:** Auto role has been disabled\n**Removed by:** {interaction.user.mention}",
+            description=f"**Action:** Auto role has been disabled
+**Removed by:** {interaction.user.mention}",
             color=BrandColors.WARNING
         )
         embed.set_footer(text=BOT_FOOTER)

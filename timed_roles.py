@@ -161,7 +161,8 @@ async def give_timed_role(
             # Send confirmation for permanent role
             embed = discord.Embed(
                 title="✅ **Permanent Role Assigned**",
-                description=f"**User:** {user.mention}\n**Role:** {role.mention}\n**Type:** `Permanent`\n**Assigned by:** {interaction.user.mention}\n\n*This role will remain until manually removed.*",
+                description=f"**User:** {user.mention}
+**Role:** {role.mention}\n**Type:** `Permanent`\n**Assigned by:** {interaction.user.mention}\n\n*This role will remain until manually removed.*",
                 color=BrandColors.SUCCESS
             )
             embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
@@ -171,7 +172,8 @@ async def give_timed_role(
             try:
                 dm_embed = discord.Embed(
                     title="🎭 **You've been given a permanent role!**",
-                    description=f"**Server:** {interaction.guild.name}\n**Role:** {role.name}\n**Type:** Permanent\n\n*This role will remain until a moderator removes it.*",
+                    description=f"**Server:** {interaction.guild.name}
+**Role:** {role.name}\n**Type:** Permanent\n\n*This role will remain until a moderator removes it.*",
                     color=BrandColors.SUCCESS
                 )
                 dm_embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
@@ -203,7 +205,8 @@ async def give_timed_role(
             # Send confirmation for timed role
             embed = discord.Embed(
                 title="✅ **Timed Role Assigned**",
-                description=f"**User:** {user.mention}\n**Role:** {role.mention}\n**Duration:** `{format_duration(duration_seconds)}`\n**Expires:** {discord.utils.format_dt(expires_at, style='R')}\n**Assigned by:** {interaction.user.mention}",
+                description=f"**User:** {user.mention}
+**Role:** {role.mention}\n**Duration:** `{format_duration(duration_seconds)}`\n**Expires:** {discord.utils.format_dt(expires_at, style='R')}\n**Assigned by:** {interaction.user.mention}",
                 color=BrandColors.SUCCESS
             )
             embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
@@ -274,7 +277,8 @@ async def remove_role(
         # Send confirmation
         embed = discord.Embed(
             title="✅ **Role Removed**",
-            description=f"**User:** {user.mention}\n**Role:** {role.mention}\n**Removed by:** {interaction.user.mention}" + (f"\n**Note:** This was a timed role that has been cancelled." if was_timed else ""),\n            color=BrandColors.WARNING\n        )\n        embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)\n        await interaction.response.send_message(embed=embed)\n\n        # Send DM to user\n        try:\n            dm_content = f"Your **{role.name}** role has been removed from **{interaction.guild.name}**" + (f" (timed role cancelled)" if was_timed else "") + f".\n\n**Removed by:** {interaction.user}"
+            description=f"**User:** {user.mention}
+**Role:** {role.mention}\n**Removed by:** {interaction.user.mention}" + (f"\n**Note:** This was a timed role that has been cancelled." if was_timed else ""),\n            color=BrandColors.WARNING\n        )\n        embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)\n        await interaction.response.send_message(embed=embed)\n\n        # Send DM to user\n        try:\n            dm_content = f"Your **{role.name}** role has been removed from **{interaction.guild.name}**" + (f" (timed role cancelled)" if was_timed else "") + f".\n\n**Removed by:** {interaction.user}"
             dm_embed = discord.Embed(
                 title="🗑️ **Role Removed**",
                 description=dm_content,
@@ -325,7 +329,8 @@ async def view_timed_roles(interaction: discord.Interaction):
         # Create embed with timed roles
         embed = discord.Embed(
             title="📋 **Active Timed Roles**",
-            description=f"*Showing {len(timed_roles)} active timed role(s)*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            description=f"*Showing {len(timed_roles)} active timed role(s)*
+\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             color=BrandColors.INFO
         )
 

@@ -22,7 +22,8 @@ async def mute(interaction: discord.Interaction, user: discord.Member):
         
         embed = discord.Embed(
             title="🔇 User Muted",
-            description=f"**User:** {user.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**User:** {user.mention}
+**Moderator:** {interaction.user.mention}",
             color=BrandColors.WARNING
         )
         await interaction.response.send_message(embed=embed)
@@ -57,7 +58,8 @@ async def unmute(interaction: discord.Interaction, user: discord.Member):
         
         embed = discord.Embed(
             title="🔊 User Unmuted",
-            description=f"**User:** {user.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**User:** {user.mention}
+**Moderator:** {interaction.user.mention}",
             color=BrandColors.SUCCESS
         )
         await interaction.response.send_message(embed=embed)
@@ -92,7 +94,8 @@ async def movevc(interaction: discord.Interaction, user: discord.Member, channel
         
         embed = discord.Embed(
             title="🔀 User Moved",
-            description=f"**User:** {user.mention}\n**Moved to:** {channel.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**User:** {user.mention}
+**Moved to:** {channel.mention}\n**Moderator:** {interaction.user.mention}",
             color=BrandColors.SUCCESS
         )
         await interaction.response.send_message(embed=embed)
@@ -127,7 +130,8 @@ async def vckick(interaction: discord.Interaction, user: discord.Member):
         
         embed = discord.Embed(
             title="👢 User Kicked from VC",
-            description=f"**User:** {user.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**User:** {user.mention}
+**Moderator:** {interaction.user.mention}",
             color=BrandColors.WARNING
         )
         await interaction.response.send_message(embed=embed)
@@ -163,7 +167,8 @@ async def vclock(interaction: discord.Interaction):
         
         embed = discord.Embed(
             title="🔒 Voice Channel Locked",
-            description=f"**Channel:** {channel.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**Channel:** {channel.mention}
+**Moderator:** {interaction.user.mention}",
             color=BrandColors.DANGER
         )
         await interaction.response.send_message(embed=embed)
@@ -199,7 +204,8 @@ async def vcunlock(interaction: discord.Interaction):
         
         embed = discord.Embed(
             title="🔓 Voice Channel Unlocked",
-            description=f"**Channel:** {channel.mention}\n**Moderator:** {interaction.user.mention}",
+            description=f"**Channel:** {channel.mention}
+**Moderator:** {interaction.user.mention}",
             color=BrandColors.SUCCESS
         )
         await interaction.response.send_message(embed=embed)
@@ -241,7 +247,8 @@ async def vclimit(interaction: discord.Interaction, limit: int):
         limit_text = "Unlimited" if limit == 0 else str(limit)
         embed = discord.Embed(
             title="🔢 Voice Channel Limit Set",
-            description=f"**Channel:** {channel.mention}\n**Limit:** {limit_text} users\n**Moderator:** {interaction.user.mention}",
+            description=f"**Channel:** {channel.mention}
+**Limit:** {limit_text} users\n**Moderator:** {interaction.user.mention}",
             color=BrandColors.INFO
         )
         await interaction.response.send_message(embed=embed)

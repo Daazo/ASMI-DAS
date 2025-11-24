@@ -22,7 +22,8 @@ async def kick(interaction: discord.Interaction, user: discord.Member, reason: s
         try:
             dm_embed = discord.Embed(
                 title=f"⚔️ You were kicked from {interaction.guild.name}",
-                description=f"**Reason:** {reason}\n**Moderator:** {interaction.user}",
+                description=f"**Reason:** {reason}
+**Moderator:** {interaction.user}",
                 color=BrandColors.WARNING
             )
             dm_embed.set_footer(text=BOT_FOOTER)
@@ -34,7 +35,8 @@ async def kick(interaction: discord.Interaction, user: discord.Member, reason: s
 
         embed = discord.Embed(
             title="⚔️ User Kicked",
-            description=f"**User:** {user.mention}\n**Moderator:** {interaction.user.mention}\n**Reason:** {reason}",
+            description=f"**User:** {user.mention}
+**Moderator:** {interaction.user.mention}\n**Reason:** {reason}",
             color=BrandColors.WARNING
         )
         embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
@@ -70,7 +72,8 @@ async def ban(interaction: discord.Interaction, user: discord.Member, reason: st
         try:
             dm_embed = discord.Embed(
                 title=f"🔨 You were banned from {interaction.guild.name}",
-                description=f"**Reason:** {reason}\n**Moderator:** {interaction.user}",
+                description=f"**Reason:** {reason}
+**Moderator:** {interaction.user}",
                 color=BrandColors.DANGER
             )
             await user.send(embed=dm_embed)
@@ -81,7 +84,8 @@ async def ban(interaction: discord.Interaction, user: discord.Member, reason: st
 
         embed = discord.Embed(
             title="🔨 User Banned",
-            description=f"**User:** {user.mention}\n**Moderator:** {interaction.user.mention}\n**Reason:** {reason}",
+            description=f"**User:** {user.mention}
+**Moderator:** {interaction.user.mention}\n**Reason:** {reason}",
             color=BrandColors.DANGER
         )
         await interaction.response.send_message(embed=embed)
@@ -109,7 +113,8 @@ async def nuke(interaction: discord.Interaction):
     # Confirmation embed
     embed = discord.Embed(
         title="⚠️ **DANGER: CHANNEL NUKE** ⚠️",
-        description=f"**This will DELETE ALL messages in {interaction.channel.mention}!**\n\n**❌ This action CANNOT be undone!**\n**💀 All chat history will be permanently lost!**\n\n**Are you absolutely sure?**",
+        description=f"**This will DELETE ALL messages in {interaction.channel.mention}!**
+\n**❌ This action CANNOT be undone!**\n**💀 All chat history will be permanently lost!**\n\n**Are you absolutely sure?**",
         color=BrandColors.DANGER
     )
 
@@ -149,7 +154,8 @@ class NukeConfirmView(discord.ui.View):
             # Send confirmation in new channel
             embed = discord.Embed(
                 title="💥 **Channel Nuked Successfully** 💥",
-                description=f"**All messages have been deleted!**\n\n**Moderator:** {interaction.user.mention}\n**Time:** {discord.utils.format_dt(discord.utils.utcnow())}\n\n*This channel has been completely reset.*",
+                description=f"**All messages have been deleted!**
+\n**Moderator:** {interaction.user.mention}\n**Time:** {discord.utils.format_dt(discord.utils.utcnow())}\n\n*This channel has been completely reset.*",
                 color=BrandColors.DANGER
             )
             embed.set_footer(text=BOT_FOOTER, icon_url=interaction.client.user.display_avatar.url)
