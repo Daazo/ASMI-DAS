@@ -1833,17 +1833,6 @@ except ImportError as e:
 
 # Music system removed due to compatibility issues
 
-@bot.event
-async def on_ready():
-    """Bot ready event - sync commands"""
-    print(f"✅ Bot connected as {bot.user.name} (ID: {bot.user.id})")
-    print(f"📊 Syncing {len(bot.tree._get_all_commands())} commands...")
-    
-    try:
-        await bot.tree.sync()
-        print(f"✅ Commands synced to Discord")
-    except Exception as e:
-        print(f"❌ Error syncing commands: {e}")
 
 # Run the bot with error handling
 if __name__ == "__main__":
