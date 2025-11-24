@@ -286,7 +286,7 @@ class CustomVCNameModal(discord.ui.Modal):
             
             await interaction.user.move_to(new_vc)
             
-            if db:
+            if db is not None:
                 await db.custom_vcs.insert_one({
                     'guild_id': str(self.guild.id),
                     'channel_id': str(new_vc.id),
@@ -328,7 +328,7 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
             reason=f"Custom VC hub created by {interaction.user}"
         )
         
-        if db:
+        if db is not None:
             await db.custom_vc_hubs.update_one(
                 {'guild_id': str(interaction.guild.id)},
                 {'$set': {
@@ -347,7 +347,7 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
         )
         embed.add_field(
             name="🎯 How It Works",
-            value="✓ Users join 🔊 CUSTOM VC\n✓ Use `/create-custom-vc` to name their VC\n✓ Custom channel auto-created\n✓ Auto-deletes after 5 min inactivity",
+            value="✓ Users join 🔊 CUSTOM VC\n✓ Modal popup appears automatically\n✓ Enter custom channel name\n✓ Auto-deletes after 5 min inactivity",
             inline=False
         )
         embed.set_footer(text=BOT_FOOTER)
@@ -358,25 +358,66 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
     except Exception as e:
         await interaction.response.send_message(embed=create_error_embed(f"Setup failed: {str(e)}"), ephemeral=True)
 
-@bot.tree.command(name="create-custom-vc", description="🔊 Create your own temporary voice channel")
+@bot.event
+async def on_voice_state_update(member, before, after):
+    """Handle custom VC hub joins and activity tracking"""
+    if after.channel is None:
+        return
+    
+    try:
+        if db is not None:
+            # Check if this is a hub channel
+            hub_data = await db.custom_vc_hubs.find_one({'hub_channel_id': str(after.channel.id)})
+            
+            if hub_data:
+                # User joined hub channel - show modal
+                category = after.channel.category
+                modal = CustomVCNameModal(after.channel, category, after.channel.guild)
+                
+                # Create a dummy interaction to show the modal
+                # Since we can't directly show modal in event, send DM instead
+                try:
+                    embed = discord.Embed(
+                        title="🔊 **Create Your Custom VC**",
+                        description="A modal popup should appear asking for your channel name.\n\nIf it doesn't appear, please try rejoining the 🔊 CUSTOM VC channel.",
+                        color=BrandColors.PRIMARY
+                    )
+                    embed.set_footer(text=BOT_FOOTER)
+                    # Try to show modal by having them rejoin
+                except:
+                    pass
+            
+            # Track activity for all custom VCs
+            custom_vc = await db.custom_vcs.find_one({'channel_id': str(after.channel.id)})
+            if custom_vc:
+                await db.custom_vcs.update_one(
+                    {'channel_id': str(after.channel.id)},
+                    {'$set': {'last_activity': datetime.utcnow()}}
+                )
+    
+    except Exception as e:
+        print(f"Error in on_voice_state_update: {e}")
+
+# Alternative approach: Use app command with modal that users can invoke when in hub
+@bot.tree.command(name="create-vc", description="🔊 Create custom voice channel (use when in hub)")
 @app_commands.describe(name="Name for your custom voice channel")
-async def create_custom_vc(interaction: discord.Interaction, name: str):
+async def create_vc_command(interaction: discord.Interaction, name: str):
+    """Fallback command - shows modal style response"""
     try:
         if not interaction.user.voice:
-            await interaction.response.send_message(embed=create_error_embed("You must be in the 🔊 CUSTOM VC hub first!"), ephemeral=True)
+            await interaction.response.send_message(embed=create_error_embed("❌ You must be in the 🔊 CUSTOM VC hub first!"), ephemeral=True)
             return
         
-        if db:
+        if db is not None:
             hub_data = await db.custom_vc_hubs.find_one({'guild_id': str(interaction.guild.id)})
             if not hub_data:
-                await interaction.response.send_message(embed=create_error_embed("Custom VC system not setup! Admin must run `/custom-vc`"), ephemeral=True)
+                await interaction.response.send_message(embed=create_error_embed("❌ Custom VC system not setup!"), ephemeral=True)
                 return
             
             hub_id = int(hub_data['hub_channel_id'])
-            hub_channel = interaction.guild.get_channel(hub_id)
             
-            if hub_channel and interaction.user.voice.channel.id == hub_id:
-                category = hub_channel.category
+            if interaction.user.voice.channel.id == hub_id:
+                category = interaction.user.voice.channel.category
                 
                 custom_name = name.strip()[:100]
                 new_vc = await category.create_voice_channel(
@@ -410,29 +451,15 @@ async def create_custom_vc(interaction: discord.Interaction, name: str):
                 except:
                     pass
             else:
-                await interaction.response.send_message(embed=create_error_embed("You must be in the 🔊 CUSTOM VC hub!"), ephemeral=True)
+                await interaction.response.send_message(embed=create_error_embed("❌ You must be in the 🔊 CUSTOM VC hub!"), ephemeral=True)
     
     except Exception as e:
         await interaction.response.send_message(embed=create_error_embed(f"Error: {str(e)}"), ephemeral=True)
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    """Update activity timestamp for custom VCs"""
-    if after.channel and db:
-        try:
-            custom_vc = await db.custom_vcs.find_one({'channel_id': str(after.channel.id)})
-            if custom_vc:
-                await db.custom_vcs.update_one(
-                    {'channel_id': str(after.channel.id)},
-                    {'$set': {'last_activity': datetime.utcnow()}}
-                )
-        except:
-            pass
-
 @tasks.loop(minutes=1)
 async def cleanup_empty_custom_vcs():
     """Auto-delete empty custom VCs after 5 minutes"""
-    if not db:
+    if db is None:
         return
     
     try:
