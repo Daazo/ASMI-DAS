@@ -62,8 +62,7 @@ async def verification_setup(
 • Full server channel access
 • Participation in community
 • Complete member privileges
-
-🔒 Complete CAPTCHA to verify",
+\n🔒 Complete CAPTCHA to verify",
         color=BrandColors.PRIMARY
     )
     embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
@@ -151,8 +150,7 @@ class CaptchaModal(discord.ui.Modal, title='🔐 CAPTCHA Verification'):
 
 **You entered:** `{user_input}`
 
-⚡ Click the **Verify Me** button to get a new CAPTCHA
-💠 Each attempt generates a unique code",
+⚡ Click the **Verify Me** button to get a new CAPTCHA\n💠 Each attempt generates a unique code",
                 color=BrandColors.DANGER
             )
             embed.set_footer(text="◆ Quantum security active", icon_url=bot.user.display_avatar.url)
