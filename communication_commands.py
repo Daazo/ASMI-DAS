@@ -564,88 +564,92 @@ async def dm_command(interaction: discord.Interaction, user: discord.Member, mes
 
 # Help and contact commands are handled in main.py to avoid duplicates
 
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
+# IMPORTANT: This on_message handler was OVERRIDING the main one in main.py
+# causing the bot to ignore all messages except "reaction role setup"
+# Commented out to fix AI chat and all other message handling
 
-    # Reaction Role Setup Command
-    if message.content.startswith("reaction role setup"):
-        if not await has_permission(message, "main_moderator"):
-            await message.channel.send("Main Moderator")
-            return
-
-        await message.channel.send("Please provide the message, emoji, role, and channel for the reaction role.")
-        await message.channel.send("Optional: Specify if 'remove role' should be enabled and the role to remove.")
-
-        def check(m):
-            return m.author == message.author and m.channel == message.channel
-
-        try:
-            # Get message
-            msg_prompt = await bot.wait_for("message", check=check, timeout=60)
-            message_content = msg_prompt.content
-            message_to_react = await bot.get_channel(message.channel.id).fetch_message(int(message_content.split(' ')[0])) # Assuming message ID is first
-
-            # Get emoji
-            emoji_prompt = await bot.wait_for("message", check=check, timeout=60)
-            emoji_str = emoji_prompt.content
-
-            # Get role
-            role_prompt = await bot.wait_for("message", check=check, timeout=60)
-            role_name = role_prompt.content
-            guild = message.guild
-            role = discord.utils.get(guild.roles, name=role_name)
-            if not role:
-                await message.channel.send(f"❌ Role '{role_name}' not found.")
-                return
-
-            # Get channel
-            channel_prompt = await bot.wait_for("message", check=check, timeout=60)
-            channel_name = channel_prompt.content
-            target_channel = discord.utils.get(guild.text_channels, name=channel_name)
-            if not target_channel:
-                await message.channel.send(f"❌ Channel '{channel_name}' not found.")
-                return
-
-            # Get remove role option
-            remove_role_prompt = await bot.wait_for("message", check=check, timeout=60)
-            remove_role_enabled = remove_role_prompt.content.lower() == 'yes'
-            role_to_remove = None
-
-            if remove_role_enabled:
-                remove_role_prompt_2 = await bot.wait_for("message", check=check, timeout=60)
-                role_to_remove_name = remove_role_prompt_2.content
-                role_to_remove = discord.utils.get(guild.roles, name=role_to_remove_name)
-                if not role_to_remove:
-                    await message.channel.send(f"❌ Role to remove '{role_to_remove_name}' not found.")
-                    return
-
-            # Add reaction to the message
-            try:
-                await message_to_react.add_reaction(emoji_str)
-            except discord.HTTPException:
-                await message.channel.send("❌ Invalid emoji provided.")
-                return
-
-            # Store reaction role data (you'll need a persistent storage for this)
-            # For now, we'll just log it
-            log_data = {
-                "message_id": message_to_react.id,
-                "emoji": emoji_str,
-                "role_id": role.id,
-                "channel_id": target_channel.id,
-                "remove_role_enabled": remove_role_enabled,
-                "role_to_remove_id": role_to_remove.id if role_to_remove else None
-            }
-            print(f"Reaction role setup: {log_data}") # Replace with actual storage
-
-            await message.channel.send("Reaction role setup complete!")
-
-        except asyncio.TimeoutError:
-            await message.channel.send("❌ Timeout. Please try the command again.")
-        except Exception as e:
-            await message.channel.send(f"❌ An error occurred: {e}")
+# @bot.event
+# async def on_message(message):
+#     if message.author == bot.user:
+#         return
+#
+#     # Reaction Role Setup Command
+#     if message.content.startswith("reaction role setup"):
+#         if not await has_permission(message, "main_moderator"):
+#             await message.channel.send("Main Moderator")
+#             return
+#
+#         await message.channel.send("Please provide the message, emoji, role, and channel for the reaction role.")
+#         await message.channel.send("Optional: Specify if 'remove role' should be enabled and the role to remove.")
+#
+#         def check(m):
+#             return m.author == message.author and m.channel == message.channel
+#
+#         try:
+#             # Get message
+#             msg_prompt = await bot.wait_for("message", check=check, timeout=60)
+#             message_content = msg_prompt.content
+#             message_to_react = await bot.get_channel(message.channel.id).fetch_message(int(message_content.split(' ')[0])) # Assuming message ID is first
+#
+#             # Get emoji
+#             emoji_prompt = await bot.wait_for("message", check=check, timeout=60)
+#             emoji_str = emoji_prompt.content
+#
+#             # Get role
+#             role_prompt = await bot.wait_for("message", check=check, timeout=60)
+#             role_name = role_prompt.content
+#             guild = message.guild
+#             role = discord.utils.get(guild.roles, name=role_name)
+#             if not role:
+#                 await message.channel.send(f"❌ Role '{role_name}' not found.")
+#                 return
+#
+#             # Get channel
+#             channel_prompt = await bot.wait_for("message", check=check, timeout=60)
+#             channel_name = channel_prompt.content
+#             target_channel = discord.utils.get(guild.text_channels, name=channel_name)
+#             if not target_channel:
+#                 await message.channel.send(f"❌ Channel '{channel_name}' not found.")
+#                 return
+#
+#             # Get remove role option
+#             remove_role_prompt = await bot.wait_for("message", check=check, timeout=60)
+#             remove_role_enabled = remove_role_prompt.content.lower() == 'yes'
+#             role_to_remove = None
+#
+#             if remove_role_enabled:
+#                 remove_role_prompt_2 = await bot.wait_for("message", check=check, timeout=60)
+#                 role_to_remove_name = remove_role_prompt_2.content
+#                 role_to_remove = discord.utils.get(guild.roles, name=role_to_remove_name)
+#                 if not role_to_remove:
+#                     await message.channel.send(f"❌ Role to remove '{role_to_remove_name}' not found.")
+#                     return
+#
+#             # Add reaction to the message
+#             try:
+#                 await message_to_react.add_reaction(emoji_str)
+#             except discord.HTTPException:
+#                 await message.channel.send("❌ Invalid emoji provided.")
+#                 return
+#
+#             # Store reaction role data (you'll need a persistent storage for this)
+#             # For now, we'll just log it
+#             log_data = {
+#                 "message_id": message_to_react.id,
+#                 "emoji": emoji_str,
+#                 "role_id": role.id,
+#                 "channel_id": target_channel.id,
+#                 "remove_role_enabled": remove_role_enabled,
+#                 "role_to_remove_id": role_to_remove.id if role_to_remove else None
+#             }
+#             print(f"Reaction role setup: {log_data}") # Replace with actual storage
+#
+#             await message.channel.send("Reaction role setup complete!")
+#
+#         except asyncio.TimeoutError:
+#             await message.channel.send("❌ Timeout. Please try the command again.")
+#         except Exception as e:
+#             await message.channel.send(f"❌ An error occurred: {e}")
 
 
 

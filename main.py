@@ -646,11 +646,14 @@ async def on_member_join(member):
 @bot.event
 async def on_message(message):
     """Handle all message events including DMs and security checks"""
+    print(f"🟢 [DEBUG] on_message triggered! Author: {message.author}, Bot: {message.author.bot}")
+    
     # Process commands first
     await bot.process_commands(message)
     
     # Skip bot messages
     if message.author.bot:
+        print(f"🤖 [DEBUG] Skipping bot message from {message.author}")
         return
     
     print(f"🔍 [ON_MESSAGE] Message from {message.author} in {message.guild.name if message.guild else 'DM'}: {message.content[:100]}")
