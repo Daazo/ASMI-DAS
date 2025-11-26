@@ -2016,7 +2016,16 @@ except Exception as e:
 try:
     import invite_tracker
     invite_tracker.setup(bot, db, get_server_data, update_server_data, log_action, has_permission, create_error_embed)
-    await bot.add_cog(invite_tracker.InviteTrackerCog(bot))
+    
+    @bot.event
+    async def on_ready():
+        """Add cog after bot is ready"""
+        try:
+            if not any(isinstance(cog, invite_tracker.InviteTrackerCog) for cog in bot.cogs.values()):
+                await bot.add_cog(invite_tracker.InviteTrackerCog(bot))
+        except Exception as e:
+            print(f"⚠️ Failed to add invite tracker cog: {e}")
+    
     print("✅ Invite tracker system loaded")
 except ImportError as e:
     print(f"⚠️ Invite tracker module not found: {e}")
