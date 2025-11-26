@@ -553,6 +553,13 @@ async def on_member_join(member):
 
     server_data = await get_server_data(member.guild.id)
 
+    # Track previous invites before processing
+    try:
+        from invite_tracker import track_invites
+        await track_invites(member, member)
+    except Exception as e:
+        print(f"⚠️ Failed to track invites: {e}")
+
     # Auto role assignment
     auto_role_id = server_data.get('auto_role')
     if auto_role_id:
@@ -595,6 +602,50 @@ async def on_member_join(member):
 
     # Log member joining to join-leave channel
     await log_action(member.guild.id, "join-leave", f"🎊 [MEMBER JOIN] {member} ({member.id}) joined the server - Member #{member.guild.member_count}")
+
+    # Send invite tracker message
+    try:
+        from invite_tracker import (
+            get_invite_tracker, get_previous_invites, find_inviter, 
+            render_tracker_message, check_rejoin, record_member_join
+        )
+        
+        tracker_config = await get_invite_tracker(member.guild.id)
+        
+        if tracker_config.get('enabled'):
+            channel_id = tracker_config.get('channel_id')
+            tracker_channel = bot.get_channel(int(channel_id)) if channel_id else None
+            
+            if tracker_channel:
+                # Check if rejoin
+                is_rejoin = await check_rejoin(member.guild.id, member.id)
+                
+                # Record the join
+                await record_member_join(member.guild.id, member.id)
+                
+                # Get previous invites and find inviter
+                before_invites = await get_previous_invites(str(member.guild.id))
+                inviter, invite = await find_inviter(str(member.guild.id), before_invites)
+                
+                # Get inviter's total invite count
+                invite_count = invite.uses if invite else 0
+                
+                # Render and send tracker message
+                tracker_embed = await render_tracker_message(member, inviter, invite_count, tracker_config)
+                
+                if tracker_embed:
+                    rejoin_tag = " **(REJOIN)**" if is_rejoin else ""
+                    await tracker_channel.send(
+                        content=f"{member.mention} joined{rejoin_tag}" + (f" (Invited by {inviter.mention})" if inviter else ""),
+                        embed=tracker_embed
+                    )
+                    
+                    # Log the tracker event
+                    rejoin_text = " (REJOIN)" if is_rejoin else ""
+                    inviter_text = f"by {inviter}" if inviter else "source unknown"
+                    await log_action(member.guild.id, "join-leave", f"📊 [INVITE TRACKER] {member} joined {inviter_text}{rejoin_text}")
+    except Exception as e:
+        print(f"❌ [INVITE TRACKER ERROR] {e}")
 
     # Send DM to new member (combine server welcome + bot message)
     try:
@@ -1960,6 +2011,17 @@ except Exception as e:
     print(f"⚠️ AI Chat setup failed: {e}")
     print(f"Exception details: {type(e).__name__}: {e}")
     handle_ai_message = None
+
+# Import and setup invite tracker system
+try:
+    import invite_tracker
+    invite_tracker.setup(bot, db, get_server_data, update_server_data, log_action, has_permission, create_error_embed)
+    await bot.add_cog(invite_tracker.InviteTrackerCog(bot))
+    print("✅ Invite tracker system loaded")
+except ImportError as e:
+    print(f"⚠️ Invite tracker module not found: {e}")
+except Exception as e:
+    print(f"⚠️ Invite tracker setup failed: {e}")
 
 # Music system removed due to compatibility issues
 
