@@ -553,13 +553,6 @@ async def on_member_join(member):
 
     server_data = await get_server_data(member.guild.id)
 
-    # Track previous invites before processing
-    try:
-        from invite_tracker import track_invites
-        await track_invites(member, member)
-    except Exception as e:
-        print(f"⚠️ Failed to track invites: {e}")
-
     # Auto role assignment
     auto_role_id = server_data.get('auto_role')
     if auto_role_id:
