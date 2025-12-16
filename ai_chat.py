@@ -262,20 +262,14 @@ async def handle_ai_message(message):
             # Check if this is an image generation request
             if is_image_request(message.content):
                 print(f"🎨 [AI CHAT] Detected image request: {message.content[:50]}")
-                # Image generation disabled - show themed message
+                # Image generation disabled - show simple themed message
                 embed = discord.Embed(
                     title="◆ IMAGE GENERATION UNAVAILABLE",
-                    description=f"**Requested:** {message.content[:100]}{'...' if len(message.content) > 100 else ''}\n\n**Status:** RXT ENGINE is currently operating on the **Free Plan**.\n\nImage generation requires a premium API subscription. Text-based AI chat is fully available!\n{VisualElements.CIRCUIT_LINE}",
                     color=BrandColors.PRIMARY
-                )
-                embed.add_field(
-                    name="💬 What You Can Do",
-                    value="◆ Ask questions\n◆ Get information\n◆ Have conversations\n◆ Get help with tasks",
-                    inline=False
                 )
                 embed.set_footer(text=BOT_FOOTER)
                 await message.reply(embed=embed)
-                print(f"🎨 [AI CHAT] Sent free plan message for image request")
+                print(f"🎨 [AI CHAT] Sent unavailable message for image request")
             else:
                 # Generate text response
                 print(f"💬 [AI CHAT] Generating text response for: {message.content[:50]}")
