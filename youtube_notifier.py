@@ -249,7 +249,7 @@ class YTRoleSelectView(discord.ui.View):
         self.discord_channel = discord_channel
         self.add_item(YTRoleSelect(yt_channel_id, yt_channel_name, discord_channel))
     
-    @discord.ui.button(label="Skip Role Mention", style=discord.ButtonStyle.secondary, emoji="◆", row=1)
+    @discord.ui.button(label="Skip Role Mention", style=discord.ButtonStyle.secondary, row=1)
     async def skip_role(self, interaction: discord.Interaction, button: discord.ui.Button):
         await show_confirmation(
             interaction,
