@@ -283,7 +283,7 @@ class YTConfirmView(discord.ui.View):
         self.discord_channel = discord_channel
         self.role = role
     
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success, emoji="✓")
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         await save_yt_subscription(
             interaction,
@@ -293,7 +293,7 @@ class YTConfirmView(discord.ui.View):
             self.role
         )
     
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="✗")
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
             title="✗ SETUP CANCELLED",
