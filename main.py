@@ -275,9 +275,10 @@ rotating_status_index = 0
 
 @tasks.loop(seconds=5)
 async def rotate_status():
-    """Rotate bot status between two messages every 5 seconds"""
+    """Rotate bot status between three messages every 5 seconds"""
     global rotating_status_index
     statuses = [
+        "ʀxᴛ ᴇɴɢɪɴᴇ",
         f"ᴡᴀᴛᴄʜɪɴɢ {len(bot.guilds)} sᴇʀᴠᴇʀs",
         "ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀ!ᴏ</>"
     ]
