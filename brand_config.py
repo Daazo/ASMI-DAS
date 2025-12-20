@@ -9,8 +9,14 @@ BOT_DESCRIPTION = "RXT ENGINE is an advanced AI core system operating inside a h
 BOT_FOOTER = "⚡ RXT ENGINE • Quantum Core System"
 
 # Owner Information
+BOT_OWNER_ID = "1087619527166132234"
 BOT_OWNER_NAME = "R!O</>"
-BOT_OWNER_DESCRIPTION = "Creator of RXT ENGINE • Advanced bot systems architect"
+BOT_OWNER_DESCRIPTION = "Founder and lead developer driving the creation, maintenance, and evolution of the RXT ENGINE platform."
+
+# Director Information
+BOT_DIRECTOR_ID = "1087619527166132234"
+BOT_DIRECTOR_NAME = "Director"
+BOT_DIRECTOR_DESCRIPTION = "Leads core architecture, feature innovation, and system stability behind RXT ENGINE's automation ecosystem."
 
 # Brand Colors - Quantum Purple Theme (Discord int format)
 class BrandColors:

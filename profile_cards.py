@@ -12,7 +12,7 @@ import asyncio
 import io
 
 # Import brand colors
-from brand_config import create_permission_denied_embed, create_owner_only_embed,  BrandColorsRGB, BOT_NAME, BOT_VERSION, BOT_FOOTER
+from brand_config import create_permission_denied_embed, create_owner_only_embed,  BrandColorsRGB, BOT_NAME, BOT_VERSION, BOT_FOOTER, BOT_OWNER_DESCRIPTION, BOT_DIRECTOR_NAME, BOT_DIRECTOR_DESCRIPTION
 
 # Default template colors and settings - RXT ENGINE Theme
 CARD_WIDTH = 800
@@ -192,7 +192,7 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     import time
 
     # Create base image with more height to avoid overlap
-    card = Image.new('RGB', (CARD_WIDTH, 450), BACKGROUND_COLOR)
+    card = Image.new('RGB', (CARD_WIDTH, 520), BACKGROUND_COLOR)
     draw = ImageDraw.Draw(card)
 
     # Load fonts with better sizing
@@ -233,8 +233,8 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     if line2:
         draw.text((info_x, info_y + 85), line2, fill=(200, 200, 200), font=small_font)
 
-    # Stats section - better spacing
-    stats_y = 160
+    # Stats section - better spacing (adjusted for more content)
+    stats_y = 140
 
     # Server count and status
     draw.text((50, stats_y), "🏰 SERVER STATISTICS", fill=ACCENT_COLOR, font=subtitle_font)
@@ -243,7 +243,7 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     draw.text((50, stats_y + 65), "🟢 Status: Online & Ready", fill=(46, 204, 113), font=text_font)
 
     # Owner information
-    draw.text((400, stats_y), "👨‍💻 BOT DEVELOPER", fill=KARMA_COLOR, font=subtitle_font)
+    draw.text((400, stats_y), "👨‍💻 FOUNDER & LEAD DEVELOPER", fill=KARMA_COLOR, font=subtitle_font)
     draw.text((400, stats_y + 25), BOT_OWNER_NAME, fill=TEXT_COLOR, font=text_font)
 
     # Better status display
@@ -259,10 +259,15 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
         status_color = (200, 200, 200)
 
     draw.text((400, stats_y + 45), f"{owner_status_emoji} {owner_status}", fill=status_color, font=text_font)
-    draw.text((400, stats_y + 65), "⚡ Automation & Security Expert", fill=ACCENT_COLOR, font=text_font)
+    draw.text((400, stats_y + 65), BOT_OWNER_DESCRIPTION[:50], fill=ACCENT_COLOR, font=small_font)
+    
+    # Director information
+    draw.text((50, stats_y + 110), "🎯 CORE ARCHITECTURE DIRECTOR", fill=KARMA_COLOR, font=subtitle_font)
+    draw.text((50, stats_y + 135), BOT_DIRECTOR_NAME, fill=TEXT_COLOR, font=text_font)
+    draw.text((50, stats_y + 155), BOT_DIRECTOR_DESCRIPTION[:55], fill=ACCENT_COLOR, font=small_font)
 
     # Features section - better layout with more space
-    features_y = 260
+    features_y = 310
     draw.text((50, features_y), "⚡ CORE FEATURES", fill=COIN_COLOR, font=subtitle_font)
 
     # Column 1 features
@@ -284,16 +289,17 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     draw.text((500, features_y + 70), "🔐 Whitelist System", fill=(200, 200, 200), font=small_font)
 
     # Build info section
-    build_y = 360
+    build_y = 420
     draw.text((50, build_y), "🔧 BUILD INFORMATION", fill=(155, 89, 182), font=subtitle_font)
     draw.text((50, build_y + 25), f"Version: {BOT_VERSION} Stable", fill=(200, 200, 200), font=small_font)
     draw.text((50, build_y + 40), "Framework: discord.py v2.3+", fill=(200, 200, 200), font=small_font)
     draw.text((400, build_y + 25), "Database: MongoDB Atlas", fill=(200, 200, 200), font=small_font)
     draw.text((400, build_y + 40), "Language: Python 3.11+", fill=(200, 200, 200), font=small_font)
 
-    # Footer with proper spacing
-    footer_y = 420
-    draw.text((50, footer_y), f"⚡ {BOT_NAME} {BOT_VERSION} • Powering Your Community • Built by {BOT_OWNER_NAME}", fill=(100, 100, 100), font=small_font)
+    # Footer with RXT ENGINE theme
+    footer_y = 490
+    footer_text = f"ʀxᴛ ᴇɴɢɪɴᴇ • ᴀᴄᴛɪᴠᴇ ɪɴ {server_count} sᴇʀᴠᴇʀs • ᴄᴏᴍᴍᴀɴᴅɪɴɢ ᴠɪsɪᴏɴ ᴛᴏᴋʏᴏ<3 • ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀ!ᴏ</>"
+    draw.text((50, footer_y), footer_text, fill=(100, 100, 100), font=small_font)
 
     return card
 
