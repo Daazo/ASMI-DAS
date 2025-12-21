@@ -758,10 +758,11 @@ async def print_channel(interaction: discord.Interaction, format: str = "txt"):
         
         content = header
         for msg in messages:
-            if msg.author.bot:
-                continue
             time_str = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            content += f"[{time_str}] {msg.author.name}: {msg.content}\n"
+            author_name = msg.author.name
+            if msg.author.bot:
+                author_name = f"🤖 {author_name}"
+            content += f"[{time_str}] {author_name}: {msg.content}\n"
             if msg.attachments:
                 for att in msg.attachments:
                     content += f"  📎 Attachment: {att.url}\n"
