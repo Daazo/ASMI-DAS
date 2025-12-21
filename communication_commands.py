@@ -725,6 +725,17 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
 
 # Contact command is handled in main.py to avoid duplicates
 
+def normalize_text(text: str) -> str:
+    """Convert fancy Unicode fonts to ASCII equivalents"""
+    if not text:
+        return text
+    
+    import unicodedata
+    normalized = unicodedata.normalize('NFKD', text)
+    result = normalized.encode('ascii', 'ignore').decode('ascii')
+    
+    return result if result else text
+
 @bot.tree.command(name="print-channel", description="📄 Export channel messages to file and send via DM")
 @app_commands.describe(
     format="Export format (txt or pdf)"
@@ -759,21 +770,26 @@ async def print_channel(interaction: discord.Interaction, format: str = "txt"):
         content = header
         for msg in messages:
             time_str = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            author_name = msg.author.name
+            author_name = normalize_text(msg.author.name)
             if msg.author.bot:
                 author_name = f"🤖 {author_name}"
-            content += f"[{time_str}] {author_name}: {msg.content}\n"
+            msg_content = normalize_text(msg.content)
+            content += f"[{time_str}] {author_name}: {msg_content}\n"
             
             if msg.embeds:
                 for embed in msg.embeds:
                     content += "  📋 [EMBED]\n"
                     if embed.title:
-                        content += f"    Title: {embed.title}\n"
+                        title = normalize_text(embed.title)
+                        content += f"    Title: {title}\n"
                     if embed.description:
-                        content += f"    Description: {embed.description}\n"
+                        desc = normalize_text(embed.description)
+                        content += f"    Description: {desc}\n"
                     if embed.fields:
                         for field in embed.fields:
-                            content += f"    {field.name}: {field.value}\n"
+                            field_name = normalize_text(field.name)
+                            field_value = normalize_text(field.value)
+                            content += f"    {field_name}: {field_value}\n"
             
             if msg.attachments:
                 for att in msg.attachments:
