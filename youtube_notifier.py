@@ -23,7 +23,7 @@ _setup_complete = False
 
 YOUTUBE_RSS_BASE = "https://www.youtube.com/feeds/videos.xml?channel_id="
 MAX_CHANNELS_PER_SERVER = 10
-POLL_INTERVAL_MINUTES = 5
+POLL_INTERVAL_MINUTES = 3
 
 yt_channel_cache = {}
 
@@ -270,7 +270,7 @@ async def show_confirmation(interaction: discord.Interaction, yt_channel_id: str
     
     embed = discord.Embed(
         title="⚡ CONFIRM SETUP",
-        description=f"{VisualElements.CIRCUIT_LINE}\n**◆ YouTube Channel:** {yt_channel_name}\n**◆ Channel ID:** `{yt_channel_id}`\n**◆ Notification Channel:** {discord_channel.mention}\n**◆ Role Mention:** {role_text}\n**◆ Check Interval:** Every 5 minutes\n{VisualElements.CIRCUIT_LINE}",
+        description=f"{VisualElements.CIRCUIT_LINE}\n**◆ YouTube Channel:** {yt_channel_name}\n**◆ Channel ID:** `{yt_channel_id}`\n**◆ Notification Channel:** {discord_channel.mention}\n**◆ Role Mention:** {role_text}\n**◆ Check Interval:** Every 3 minutes\n{VisualElements.CIRCUIT_LINE}",
         color=BrandColors.SUCCESS
     )
     embed.set_footer(text=BOT_FOOTER)
@@ -555,6 +555,7 @@ async def check_youtube_feeds():
     if db is None:
         return
     
+    print("🔄 [YT] Starting background feed check...")
     try:
         unique_channels = {}
         async for doc in db.youtube_channels.find():
@@ -563,17 +564,31 @@ async def check_youtube_feeds():
                 unique_channels[yt_id] = []
             unique_channels[yt_id].append(doc)
         
+        print(f"📊 [YT] Found {len(unique_channels)} unique YouTube channels to check")
+        
         for yt_channel_id, subscriptions in unique_channels.items():
             try:
                 feed = await fetch_rss_feed(yt_channel_id)
                 
                 if not feed or not feed['videos']:
+                    print(f"⚠️ [YT] Could not fetch feed for {yt_channel_id}")
                     continue
                 
                 latest_video = feed['videos'][0]
+                print(f"🔍 [YT] Checking {feed['channel_name']}: Latest video is {latest_video['title']}")
                 
                 for sub in subscriptions:
+                    # If last_video_id is None, it's a new subscription
+                    if sub.get('last_video_id') is None:
+                        await db.youtube_channels.update_one(
+                            {'_id': sub['_id']},
+                            {'$set': {'last_video_id': latest_video['video_id']}}
+                        )
+                        print(f"🆕 [YT] Initialized {feed['channel_name']} for guild {sub['guild_id']}")
+                        continue
+
                     if sub.get('last_video_id') != latest_video['video_id']:
+                        print(f"🔔 [YT] New video detected for {feed['channel_name']}: {latest_video['title']}")
                         success = await send_video_notification(
                             sub['guild_id'],
                             sub['discord_channel_id'],
@@ -588,7 +603,7 @@ async def check_youtube_feeds():
                                 {'$set': {'last_video_id': latest_video['video_id']}}
                             )
                             
-                            print(f"🔔 [YT] Sent notification for {feed['channel_name']} to guild {sub['guild_id']}")
+                            print(f"✅ [YT] Sent notification for {feed['channel_name']} to guild {sub['guild_id']}")
                             
                             try:
                                 guild = bot.get_guild(int(sub['guild_id']))
@@ -618,10 +633,12 @@ async def check_youtube_feeds():
                 continue
                 
     except Exception as e:
-        print(f"❌ [YT] Error in check_youtube_feeds: {e}")
+        print(f"❌ [YT] Fatal error in check_youtube_feeds: {e}")
+        import traceback
+        traceback.print_exc()
 
 
-@tasks.loop(minutes=POLL_INTERVAL_MINUTES)
+@tasks.loop(minutes=3)
 async def youtube_check_task():
     """Background task loop for YouTube feed checking"""
     await check_youtube_feeds()
@@ -631,7 +648,7 @@ async def youtube_check_task():
 async def before_youtube_check():
     """Wait for bot to be ready before starting task"""
     await bot.wait_until_ready()
-    print(f"✅ YouTube notifier task started (checking every {POLL_INTERVAL_MINUTES} minutes)")
+    print(f"✅ YouTube notifier task started (checking every 3 minutes)")
 
 
 def start_youtube_task():
