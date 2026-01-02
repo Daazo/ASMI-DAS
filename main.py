@@ -18,7 +18,12 @@ import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# Try several paths to ensure .env is found
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+if not os.path.exists(env_path):
+    env_path = '/home/runner/workspace/.env'
+
+load_dotenv(dotenv_path=env_path, override=True)
 
 # Bot configuration - Import from brand config
 from brand_config import (
@@ -2161,7 +2166,11 @@ except Exception as e:
 if __name__ == "__main__":
     token = os.getenv('DISCORD_BOT_TOKEN')
     if not token:
-        print("Please set DISCORD_BOT_TOKEN in your secrets!")
+        # Fallback to secrets if not in .env
+        token = os.environ.get('DISCORD_BOT_TOKEN')
+        
+    if not token:
+        print("Please set DISCORD_BOT_TOKEN in your .env file!")
         sys.exit(1)
     else:
         try:
