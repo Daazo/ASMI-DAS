@@ -545,6 +545,9 @@ async def on_ready():
         from games_module import setup_games
         await setup_games(bot)
         print("✅ Games system initialized (Tic-Tac-Toe & RPS)")
+        # Explicitly sync after adding games to ensure they appear
+        synced = await bot.tree.sync()
+        print(f"📋 Re-synced {len(synced)} commands after games initialization")
     except Exception as e:
         print(f"⚠️ Failed to initialize Games system: {e}")
     
