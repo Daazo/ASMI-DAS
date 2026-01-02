@@ -15,6 +15,7 @@ class LiveStats:
         self.bot = bot
         self.start_time = time.time()
         self.stats_message = None
+        self.channel_id = STATS_CHANNEL_ID
         self.update_loop.start()
 
     def get_uptime(self):
@@ -30,7 +31,25 @@ class LiveStats:
             return
 
         try:
-            channel = self.bot.get_channel(STATS_CHANNEL_ID)
+            # Strictly try to get the channel
+            channel = self.bot.get_channel(self.channel_id)
+            
+            if not channel:
+                try:
+                    channel = await self.bot.fetch_channel(self.channel_id)
+                except:
+                    pass
+            
+            if not channel:
+                # If still not found, search by name in all guilds as a backup
+                for guild in self.bot.guilds:
+                    for ch in guild.text_channels:
+                        if ch.name == "live-stats" or ch.id == self.channel_id:
+                            channel = ch
+                            self.channel_id = ch.id
+                            break
+                    if channel: break
+
             if not channel:
                 return
 
@@ -73,18 +92,17 @@ class LiveStats:
             embed.add_field(name="📊 **Metrics**", value=stats_info, inline=False)
             embed.set_footer(text=f"Auto-updates every {UPDATE_INTERVAL}s | {BOT_FOOTER}")
             
-            # Set bot thumbnail
             if self.bot.user.avatar:
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
 
             if self.stats_message:
                 try:
                     await self.stats_message.edit(embed=embed)
-                except discord.NotFound:
+                except:
                     self.stats_message = await channel.send(embed=embed)
             else:
-                # Try to find existing message in history to avoid spam
-                async for message in channel.history(limit=10):
+                # Look for existing message
+                async for message in channel.history(limit=5):
                     if message.author == self.bot.user and message.embeds and "Live Stats" in message.embeds[0].title:
                         self.stats_message = message
                         await self.stats_message.edit(embed=embed)
@@ -97,4 +115,17 @@ class LiveStats:
             print(f"❌ [LIVE STATS ERROR] {e}")
 
 def setup_live_stats(bot):
+    # Add a slash command to set the channel manually
+    @bot.tree.command(name="setstats", description="Set the current channel for live statistics (Owner only)")
+    async def setstats(interaction: discord.Interaction):
+        bot_owner_id = os.getenv('BOT_OWNER_ID')
+        if str(interaction.user.id) != bot_owner_id:
+            await interaction.response.send_message("❌ Only the bot owner can use this command!", ephemeral=True)
+            return
+        
+        bot.live_stats.channel_id = interaction.channel.id
+        bot.live_stats.stats_message = None # Reset to send a new message
+        await interaction.response.send_message(f"✅ Live stats will now be sent to {interaction.channel.mention}", ephemeral=True)
+        await bot.live_stats.update_loop()
+
     return LiveStats(bot)
