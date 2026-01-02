@@ -287,7 +287,7 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
 
     # Column 3 features
     draw.text((500, features_y + 25), "🤖 Gemini AI Chat Integration", fill=(200, 200, 200), font=small_font)
-    draw.text((500, features_y + 40), "📢 Announcements & Messaging", fill=(200, 200, 200), font=small_font)
+    draw.text((500, features_y + 40), "📢 Announcements & Global Updates", fill=(200, 200, 200), font=small_font)
     draw.text((500, features_y + 55), "📄 Channel Transcripts (TXT/PDF)", fill=(200, 200, 200), font=small_font)
     draw.text((500, features_y + 70), "📝 Verification & CAPTCHA", fill=(200, 200, 200), font=small_font)
 
@@ -298,6 +298,9 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
     draw.text((50, build_y + 40), "Framework: discord.py v2.3+", fill=(200, 200, 200), font=small_font)
     draw.text((400, build_y + 25), "Database: MongoDB Atlas", fill=(200, 200, 200), font=small_font)
     draw.text((400, build_y + 40), "Language: Python 3.11+", fill=(200, 200, 200), font=small_font)
+
+    # Key Commands Info
+    draw.text((50, build_y + 60), "Key Commands: /help | /invite | /set-update", font=small_font, fill=ACCENT_COLOR)
 
     # Footer with RXT ENGINE theme
     footer_y = 490

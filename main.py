@@ -256,6 +256,81 @@ async def invite(interaction: discord.Interaction):
     embed = create_invite_embed()
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
+@bot.tree.command(name="set-update", description="Set the preferred channel for bot global updates")
+@app_commands.describe(channel="The channel where global updates will be sent")
+async def set_update(interaction: discord.Interaction, channel: discord.TextChannel):
+    """Set the preferred channel for global updates"""
+    if not await has_permission(interaction, "main_moderator") and interaction.user.id != interaction.guild.owner_id:
+        await interaction.response.send_message(embed=create_error_embed("Access Denied", "Insufficient permissions. Main Moderator or Owner only."), ephemeral=True)
+        return
+
+    await update_server_data(interaction.guild.id, {"update_channel": str(channel.id)})
+    await interaction.response.send_message(embed=create_success_embed("Update Channel Set", f"Global updates will now be sent to {channel.mention}."), ephemeral=True)
+
+@bot.tree.command(name="update", description="Broadcast a global update to all servers (Owner Only)")
+@app_commands.describe(message="The update message content", image="Optional image for the update")
+async def broadcast_update(interaction: discord.Interaction, message: str, image: Optional[discord.Attachment] = None):
+    """Broadcast an update to all servers (Owner only)"""
+    if str(interaction.user.id) != BOT_OWNER_ID:
+        await interaction.response.send_message(embed=create_error_embed("Access Denied", "This command is restricted to the bot owner."), ephemeral=True)
+        return
+
+    await interaction.response.defer(ephemeral=True)
+    
+    total_guilds = len(bot.guilds)
+    success_count = 0
+    fail_count = 0
+    
+    embed = discord.Embed(
+        title="⚡ RXT ENGINE • GLOBAL UPDATE",
+        description=f"{VisualElements.CIRCUIT_LINE}\n{message}\n{VisualElements.CIRCUIT_LINE}",
+        color=BrandColors.PRIMARY,
+        timestamp=datetime.now()
+    )
+    if image:
+        embed.set_image(url=image.url)
+    embed.set_footer(text=f"{BOT_FOOTER} • Global Broadcast", icon_url=bot.user.display_avatar.url)
+
+    for guild in bot.guilds:
+        try:
+            target_channel = None
+            server_data = await get_server_data(guild.id)
+            channel_id = server_data.get("update_channel")
+            
+            if channel_id:
+                target_channel = guild.get_channel(int(channel_id))
+            
+            if not target_channel:
+                # Fallback to system channel or first available text channel
+                target_channel = guild.system_channel
+                if not target_channel:
+                    for ch in guild.text_channels:
+                        if ch.permissions_for(guild.me).send_messages:
+                            target_channel = ch
+                            break
+            
+            if target_channel:
+                await target_channel.send(embed=embed)
+                success_count += 1
+            else:
+                raise Exception("No suitable channel found")
+                
+        except Exception:
+            # Fallback to DMing owner
+            try:
+                owner = guild.owner
+                if not owner:
+                    owner = await guild.fetch_member(guild.owner_id)
+                if owner:
+                    await owner.send(content=f"**[FALLBACK] Global Update for {guild.name}**", embed=embed)
+                    success_count += 1
+                else:
+                    fail_count += 1
+            except Exception:
+                fail_count += 1
+
+    await interaction.followup.send(embed=create_success_embed("Broadcast Complete", f"Successfully sent to {success_count}/{total_guilds} servers. {fail_count} failed."), ephemeral=True)
+
 # Karma system will be handled in xp_commands.py (now karma_commands.py)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -417,6 +492,9 @@ async def on_ready():
     # Start MongoDB ping task
     if mongo_client:
         bot.loop.create_task(ping_mongodb())
+
+    # Initialize Global Update View for persistent DMs if needed
+    # bot.add_view(GlobalUpdateView()) 
 
 
     # Initialize server list monitoring
@@ -594,6 +672,16 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
         "invite": {
             "title": "✉️ **INVITE Command Help**",
             "description": "**Usage:** `/invite`\n\n**What it does:** Shows bot invite and support links\n**Permission:** 🟢 Everyone\n\n**Example:** `/invite`",
+            "color": BrandColors.PRIMARY
+        },
+        "set-update": {
+            "title": "📢 **SET-UPDATE Command Help**",
+            "description": "**Usage:** `/set-update channel:#channel`\n\n**What it does:** Sets the channel for global bot updates\n**Permission:** 🔴 Main Moderator or Owner\n\n**Example:** `/set-update channel:#updates`",
+            "color": BrandColors.PRIMARY
+        },
+        "update": {
+            "title": "⚡ **UPDATE Command Help**",
+            "description": "**Usage:** `/update message:\"text\" [image:file]`\n\n**What it does:** Broadcasts an update to all servers\n**Permission:** 👑 Bot Owner Only\n\n**Example:** `/update message:\"Version 2.0 is here!\"`",
             "color": BrandColors.PRIMARY
         },
 
