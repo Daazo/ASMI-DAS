@@ -12,3 +12,4 @@ google-genai
 reportlab
 sift-stack-py
 python-dotenv
+psutil

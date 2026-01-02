@@ -392,6 +392,14 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ Failed to initialize global logging: {e}")
     
+    # Initialize Live Stats
+    try:
+        from live_stats import setup_live_stats
+        bot.live_stats = setup_live_stats(bot)
+        print("✅ Live Stats system initialized")
+    except Exception as e:
+        print(f"⚠️ Failed to initialize Live Stats: {e}")
+    
     # Start YouTube Notifier background task
     try:
         from youtube_notifier import start_youtube_task
