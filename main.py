@@ -312,10 +312,12 @@ async def broadcast_update(interaction: discord.Interaction, message: str, image
             if target_channel:
                 await target_channel.send(embed=embed)
                 success_count += 1
+                # Log to per-server log channel
+                await log_action(guild.id, "system", f"📢 **[GLOBAL UPDATE]** Broadcast received and sent to {target_channel.mention}")
             else:
                 raise Exception("No suitable channel found")
                 
-        except Exception:
+        except Exception as e:
             # Fallback to DMing owner
             try:
                 owner = guild.owner
@@ -324,10 +326,18 @@ async def broadcast_update(interaction: discord.Interaction, message: str, image
                 if owner:
                     await owner.send(content=f"**[FALLBACK] Global Update for {guild.name}**", embed=embed)
                     success_count += 1
+                    await log_action(guild.id, "system", "📢 **[GLOBAL UPDATE]** Broadcast received via Owner DM (Fallback)")
                 else:
                     fail_count += 1
             except Exception:
                 fail_count += 1
+
+    # Log the broadcast event to global logs
+    try:
+        from advanced_logging import send_global_log
+        await send_global_log("system", f"⚡ **GLOBAL BROADCAST EXECUTED**\n**By:** {interaction.user}\n**Servers reached:** {success_count}/{total_guilds}\n**Message:** {message[:500]}", interaction.guild)
+    except Exception as e:
+        print(f"Error sending global log for broadcast: {e}")
 
     await interaction.followup.send(embed=create_success_embed("Broadcast Complete", f"Successfully sent to {success_count}/{total_guilds} servers. {fail_count} failed."), ephemeral=True)
 

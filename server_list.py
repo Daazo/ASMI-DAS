@@ -73,18 +73,24 @@ async def update_server_list():
         )
         embed.set_thumbnail(url=bot.user.display_avatar.url)
 
-        # Delete previous message if exists
-        try:
-            if last_servers_message is not None:
-                await last_servers_message.delete()
-        except discord.NotFound:
-            pass  # Message was already deleted
-        except Exception as e:
-            print(f"Error deleting previous server list message: {e}")
-
-        # Send the new embed and save the message object
-        last_servers_message = await channel.send(embed=embed)
-        print(f"✅ Server list updated successfully ({server_count} servers)")
+        # Try to find and edit existing message, or send a new one
+        if last_servers_message is None:
+            # Check if there's a recent message in the channel history we can adopt
+            async for message in channel.history(limit=10):
+                if message.author == bot.user and message.embeds and "Active Servers" in (message.embeds[0].title or ""):
+                    last_servers_message = message
+                    break
+        
+        if last_servers_message:
+            try:
+                await last_servers_message.edit(embed=embed)
+                print(f"✅ Server list REFRESHED successfully ({server_count} servers)")
+            except discord.NotFound:
+                last_servers_message = await channel.send(embed=embed)
+                print(f"✅ Server list sent NEW successfully ({server_count} servers)")
+        else:
+            last_servers_message = await channel.send(embed=embed)
+            print(f"✅ Server list sent NEW successfully ({server_count} servers)")
 
     except Exception as e:
         print(f"❌ Error updating server list: {e}")
