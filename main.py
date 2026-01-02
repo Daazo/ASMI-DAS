@@ -18,7 +18,7 @@ import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv(override=True)
+load_dotenv()
 
 # Bot configuration - Import from brand config
 from brand_config import (
@@ -225,6 +225,8 @@ async def has_permission(interaction, permission_level):
 
     return False
 
+# Karma system will be handled in xp_commands.py (now karma_commands.py)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CUSTOM VC CLEANUP TASK - DEFINED BEFORE on_ready() SO IT EXISTS WHEN NEEDED
 # ═══════════════════════════════════════════════════════════════════════════
@@ -389,7 +391,7 @@ async def on_ready():
     try:
         from youtube_notifier import start_youtube_task
         start_youtube_task()
-        print("✅ YouTube Notifier task started (3 min interval)")
+        print("✅ YouTube Notifier task started (5 min interval)")
     except Exception as e:
         print(f"⚠️ Failed to start YouTube Notifier task: {e}")
     
