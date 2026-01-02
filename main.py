@@ -230,6 +230,31 @@ async def has_permission(interaction, permission_level):
 
     return False
 
+# Invite Command Components
+class InviteView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(label="INVITE BOT", url="https://discord.com/api/oauth2/authorize?client_id=1087619527166132234&permissions=8&scope=bot%20applications.commands", style=discord.ButtonStyle.link))
+        self.add_item(discord.ui.Button(label="SUPPORT SERVER", url="https://discord.gg/QfD6qn5gXf", style=discord.ButtonStyle.link))
+        self.add_item(discord.ui.Button(label="DEVELOPER", url="https://discord.com/users/1244962723872247818", style=discord.ButtonStyle.link))
+        self.add_item(discord.ui.Button(label="DIRECTOR", url="https://discord.com/users/1087619527166132234", style=discord.ButtonStyle.link))
+
+def create_invite_embed():
+    embed = discord.Embed(
+        title="RXT ENGINE",
+        description=f"{VisualElements.CIRCUIT_LINE}\nSelect an option below to interact with the RXT Core ecosystem.\n{VisualElements.CIRCUIT_LINE}",
+        color=BrandColors.PRIMARY
+    )
+    embed.set_footer(text=BOT_FOOTER)
+    return embed
+
+@bot.tree.command(name="invite", description="Get the bot's invite links and support server")
+async def invite(interaction: discord.Interaction):
+    """Display bot invite and support links"""
+    view = InviteView()
+    embed = create_invite_embed()
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
 # Karma system will be handled in xp_commands.py (now karma_commands.py)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -366,6 +391,23 @@ async def on_ready():
     from security_system import VerificationView
     bot.add_view(VerificationView())  # No dummy role ID - will load from database
     print("✅ Persistent views added for security system")
+
+    # Send permanent invite message to support server
+    try:
+        support_channel_id = 1456611995787726911
+        channel = bot.get_channel(support_channel_id)
+        if channel:
+            # Purge previous bot messages to avoid clutter and "refresh" the invite
+            async for message in channel.history(limit=50):
+                if message.author == bot.user:
+                    await message.delete()
+            
+            view = InviteView()
+            embed = create_invite_embed()
+            await channel.send(embed=embed, view=view)
+            print("✅ Permanent invite message sent to support server")
+    except Exception as e:
+        print(f"⚠️ Failed to send invite to support server: {e}")
 
     # Start timed roles background task
     from timed_roles import start_timed_roles_task
@@ -546,6 +588,11 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
         "reactionrole": {
             "title": "🎭 **REACTION ROLE Command Help**",
             "description": "**Usage:** `/reactionrole message:\"text\" emoji:😀 role:@role channel:#channel`\n\n**What it does:** Sets up reaction roles for users\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/reactionrole message:\"React for roles!\" emoji:😀 role:@Member channel:#roles`",
+            "color": BrandColors.PRIMARY
+        },
+        "invite": {
+            "title": "✉️ **INVITE Command Help**",
+            "description": "**Usage:** `/invite`\n\n**What it does:** Shows bot invite and support links\n**Permission:** 🟢 Everyone\n\n**Example:** `/invite`",
             "color": BrandColors.PRIMARY
         },
 
