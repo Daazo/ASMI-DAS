@@ -207,7 +207,55 @@ class RPSView(discord.ui.View):
         active_matches.pop(self.p1.id, None)
         active_matches.pop(self.p2.id, None)
 
-class GamesCog(commands.GroupCog, name="game-channel"):
+class GamesCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(name="tictactoe", description="Start a Tic-Tac-Toe match")
+    async def tictactoe(self, interaction: discord.Interaction, opponent: discord.Member):
+        if opponent.bot or opponent == interaction.user:
+            return await interaction.response.send_message("Invalid opponent!", ephemeral=True)
+        
+        server_data = await get_server_data(interaction.guild.id)
+        game_channel_id = server_data.get("game_channel_tictactoe")
+        
+        if not game_channel_id or str(interaction.channel_id) != game_channel_id:
+            channel_mention = f"<#{game_channel_id}>" if game_channel_id else "a designated channel"
+            return await interaction.response.send_message(f"❌ This command can only be used in {channel_mention}.", ephemeral=True)
+
+        if interaction.user.id in active_matches or opponent.id in active_matches:
+            return await interaction.response.send_message("One of you is already in a match!", ephemeral=True)
+
+        active_matches[interaction.user.id] = "tictactoe"
+        active_matches[opponent.id] = "tictactoe"
+        
+        view = TicTacToeView(interaction.user, opponent)
+        await interaction.response.send_message(f"⚔️ **Tic-Tac-Toe:** {interaction.user.mention} vs {opponent.mention}\nIt's {interaction.user.mention}'s turn (X)", view=view)
+        await log_game_event(interaction.guild, interaction.user, "Tic-Tac-Toe", f"Started match against {opponent.name}", interaction.channel)
+
+    @app_commands.command(name="rps", description="Start a Rock Paper Scissors match")
+    async def rps(self, interaction: discord.Interaction, opponent: discord.Member):
+        if opponent.bot or opponent == interaction.user:
+            return await interaction.response.send_message("Invalid opponent!", ephemeral=True)
+
+        server_data = await get_server_data(interaction.guild.id)
+        game_channel_id = server_data.get("game_channel_rps")
+        
+        if not game_channel_id or str(interaction.channel_id) != game_channel_id:
+            channel_mention = f"<#{game_channel_id}>" if game_channel_id else "a designated channel"
+            return await interaction.response.send_message(f"❌ This command can only be used in {channel_mention}.", ephemeral=True)
+
+        if interaction.user.id in active_matches or opponent.id in active_matches:
+            return await interaction.response.send_message("One of you is already in a match!", ephemeral=True)
+
+        active_matches[interaction.user.id] = "rps"
+        active_matches[opponent.id] = "rps"
+        
+        view = RPSView(interaction.user, opponent)
+        await interaction.response.send_message(f"⚔️ **Rock Paper Scissors:** {interaction.user.mention} vs {opponent.mention}\nChoose your move below!", view=view)
+        await log_game_event(interaction.guild, interaction.user, "Rock Paper Scissors", f"Started match against {opponent.name}", interaction.channel)
+
+class GameChannelCog(commands.GroupCog, name="game-channel"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -230,49 +278,6 @@ class GamesCog(commands.GroupCog, name="game-channel"):
         await log_game_event(interaction.guild, interaction.user, game.name, f"Configured channel to {channel.name}", channel)
         await interaction.response.send_message(embed=create_success_embed("Configuration Updated", f"{game.name} channel set to {channel.mention}."), ephemeral=True)
 
-@bot.tree.command(name="tictactoe", description="Start a Tic-Tac-Toe match")
-async def tictactoe(interaction: discord.Interaction, opponent: discord.Member):
-    if opponent.bot or opponent == interaction.user:
-        return await interaction.response.send_message("Invalid opponent!", ephemeral=True)
-    
-    server_data = await get_server_data(interaction.guild.id)
-    game_channel_id = server_data.get("game_channel_tictactoe")
-    
-    if not game_channel_id or str(interaction.channel_id) != game_channel_id:
-        channel_mention = f"<#{game_channel_id}>" if game_channel_id else "a designated channel"
-        return await interaction.response.send_message(f"❌ This command can only be used in {channel_mention}.", ephemeral=True)
-
-    if interaction.user.id in active_matches or opponent.id in active_matches:
-        return await interaction.response.send_message("One of you is already in a match!", ephemeral=True)
-
-    active_matches[interaction.user.id] = "tictactoe"
-    active_matches[opponent.id] = "tictactoe"
-    
-    view = TicTacToeView(interaction.user, opponent)
-    await interaction.response.send_message(f"⚔️ **Tic-Tac-Toe:** {interaction.user.mention} vs {opponent.mention}\nIt's {interaction.user.mention}'s turn (X)", view=view)
-    await log_game_event(interaction.guild, interaction.user, "Tic-Tac-Toe", f"Started match against {opponent.name}", interaction.channel)
-
-@bot.tree.command(name="rps", description="Start a Rock Paper Scissors match")
-async def rps(interaction: discord.Interaction, opponent: discord.Member):
-    if opponent.bot or opponent == interaction.user:
-        return await interaction.response.send_message("Invalid opponent!", ephemeral=True)
-
-    server_data = await get_server_data(interaction.guild.id)
-    game_channel_id = server_data.get("game_channel_rps")
-    
-    if not game_channel_id or str(interaction.channel_id) != game_channel_id:
-        channel_mention = f"<#{game_channel_id}>" if game_channel_id else "a designated channel"
-        return await interaction.response.send_message(f"❌ This command can only be used in {channel_mention}.", ephemeral=True)
-
-    if interaction.user.id in active_matches or opponent.id in active_matches:
-        return await interaction.response.send_message("One of you is already in a match!", ephemeral=True)
-
-    active_matches[interaction.user.id] = "rps"
-    active_matches[opponent.id] = "rps"
-    
-    view = RPSView(interaction.user, opponent)
-    await interaction.response.send_message(f"⚔️ **Rock Paper Scissors:** {interaction.user.mention} vs {opponent.mention}\nChoose your move below!", view=view)
-    await log_game_event(interaction.guild, interaction.user, "Rock Paper Scissors", f"Started match against {opponent.name}", interaction.channel)
-
 async def setup_games(bot: commands.Bot):
     await bot.add_cog(GamesCog(bot))
+    await bot.add_cog(GameChannelCog(bot))
