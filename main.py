@@ -232,9 +232,10 @@ async def has_permission(interaction, permission_level):
 
 # Invite Command Components
 class InviteView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot):
         super().__init__(timeout=None)
-        self.add_item(discord.ui.Button(label="INVITE BOT", url="https://discord.com/api/oauth2/authorize?client_id=1087619527166132234&permissions=8&scope=bot%20applications.commands", style=discord.ButtonStyle.link))
+        invite_url = discord.utils.oauth_url(bot.user.id, permissions=discord.Permissions(8), scopes=("bot", "applications.commands"))
+        self.add_item(discord.ui.Button(label="INVITE BOT", url=invite_url, style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="SUPPORT SERVER", url="https://discord.gg/QfD6qn5gXf", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="DEVELOPER", url="https://discord.com/users/1244962723872247818", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="DIRECTOR", url="https://discord.com/users/1087619527166132234", style=discord.ButtonStyle.link))
@@ -251,7 +252,7 @@ def create_invite_embed():
 @bot.tree.command(name="invite", description="Get the bot's invite links and support server")
 async def invite(interaction: discord.Interaction):
     """Display bot invite and support links"""
-    view = InviteView()
+    view = InviteView(interaction.client)
     embed = create_invite_embed()
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -402,7 +403,7 @@ async def on_ready():
                 if message.author == bot.user:
                     await message.delete()
             
-            view = InviteView()
+            view = InviteView(bot)
             embed = create_invite_embed()
             await channel.send(embed=embed, view=view)
             print("✅ Permanent invite message sent to support server")
