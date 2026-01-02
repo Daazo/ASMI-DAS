@@ -499,8 +499,9 @@ async def on_ready():
 
     # Initialize server list monitoring
     try:
-        from server_list import start_server_list_monitoring
+        from server_list import start_server_list_monitoring, force_initial_update
         start_server_list_monitoring()
+        bot.loop.create_task(force_initial_update())
         print("✅ Server list monitoring initialized")
     except Exception as e:
         print(f"⚠️ Failed to initialize server list monitoring: {e}")

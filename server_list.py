@@ -108,6 +108,13 @@ def start_server_list_monitoring():
     if not update_server_list.is_running():
         update_server_list.start()
         print("✅ Server list monitoring started")
+    else:
+        print("⚠️ Server list monitoring already running")
+
+async def force_initial_update():
+    """Force an update on startup"""
+    await asyncio.sleep(10) # Wait for bot to be fully ready
+    await update_server_list()
 
 def stop_server_list_monitoring():
     """Stop the server list monitoring task"""
