@@ -532,13 +532,21 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ Failed to initialize Live Stats: {e}")
     
-    # Start YouTube Notifier background task
+    # Initialize YouTube Notifier background task
     try:
         from youtube_notifier import start_youtube_task
         start_youtube_task()
         print("✅ YouTube Notifier task started (5 min interval)")
     except Exception as e:
         print(f"⚠️ Failed to start YouTube Notifier task: {e}")
+
+    # Initialize Games System
+    try:
+        from games_module import setup_games
+        await setup_games(bot)
+        print("✅ Games system initialized (Tic-Tac-Toe & RPS)")
+    except Exception as e:
+        print(f"⚠️ Failed to initialize Games system: {e}")
     
     # Enable console output capture for live console logging
     try:
@@ -693,6 +701,21 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
         "update": {
             "title": "⚡ **UPDATE Command Help**",
             "description": "**Usage:** `/update message:\"text\" [image:file]`\n\n**What it does:** Broadcasts an update to all servers\n**Permission:** 👑 Bot Owner Only\n\n**Example:** `/update message:\"Version 2.0 is here!\"`",
+            "color": BrandColors.PRIMARY
+        },
+        "game-channel": {
+            "title": "🎮 **GAME-CHANNEL Command Help**",
+            "description": "**Usage:** `/game-channel set game:tictactoe channel:#channel`\n\n**What it does:** Configures designated channels for games\n**Permission:** 🔴 Main Moderator or Owner\n\n**Example:** `/game-channel set game:tictactoe channel:#tic-tac-toe`",
+            "color": BrandColors.PRIMARY
+        },
+        "tictactoe": {
+            "title": "❌ **TIC-TAC-TOE Command Help**",
+            "description": "**Usage:** `/tictactoe opponent:@user`\n\n**What it does:** Starts a multiplayer Tic-Tac-Toe game\n**Permission:** 🟢 Everyone (in designated channel)\n\n**Example:** `/tictactoe opponent:@Friend`",
+            "color": BrandColors.PRIMARY
+        },
+        "rps": {
+            "title": "✂️ **RPS Command Help**",
+            "description": "**Usage:** `/rps opponent:@user`\n\n**What it does:** Starts a multiplayer Rock Paper Scissors game\n**Permission:** 🟢 Everyone (in designated channel)\n\n**Example:** `/rps opponent:@Friend`",
             "color": BrandColors.PRIMARY
         },
 
