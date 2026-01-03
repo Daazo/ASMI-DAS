@@ -1868,41 +1868,25 @@ class HelpSelect(discord.ui.Select):
             description=f"*Recent quantum core deployments and system optimizations for RXT ENGINE.*\n\n{VisualElements.CIRCUIT_LINE}",
             color=BrandColors.SUCCESS
         )
+        
+        embed.add_field(
+            name="🤖 **Games & AI Core** - NEW",
+            value="**🎮 Multiplayer Games:** Tic-Tac-Toe and Rock Paper Scissors with interactive buttons\n**🤖 Neural Chat:** Gemini-powered AI conversations with context awareness\n**⚙️ Game Channels:** Configurable restricted zones for gaming sessions\n\u200b",
+            inline=False
+        )
+
         embed.add_field(
             name="📄 **Channel Transcript Export** - LATEST",
-            value="**✨ New:** `/print-channel` command exports all channel messages to TXT/PDF\n**📋 Features:** Username, timestamp, message content, embedded message data, attachment links\n**🔤 Unicode Support:** Fancy fonts automatically converted to readable ASCII\n**📤 Delivery:** Files sent via DM with fallback notice if DMs closed\n**📊 Logging:** All exports logged globally and per-server",
+            value="**✨ New:** `/print-channel` command exports all channel messages to TXT/PDF\n**📋 Features:** Username, timestamp, content, and attachment tracking\n**📤 Delivery:** Professional file generation sent directly via secure DM\n\u200b",
             inline=False
         )
+
         embed.add_field(
             name="🛡️ **Advanced Security System**",
-            value="**🔴 9-Module Protection Suite:** Anti-raid, anti-nuke, anti-spam, anti-link, webhook guard, anti-role, mass mention blocker\n**🚫 Quarantine System:** Automatic suspicious user containment with violation history\n**⏱️ Timeout Management:** Discord-native timeouts + manual staff controls\n**🟩 Whitelist System:** Bypass protections for trusted users, roles, and bots\n**Commands:** `/security`, `/antiraid`, `/antinuke`, `/antilink`, `/massmention`, `/whitelist`",
+            value="**🔴 9-Module Suite:** Anti-raid, anti-nuke, anti-spam, and webhook protection\n**🚫 Quarantine:** Automatic suspicious user containment with violation history\n**🟩 Whitelist:** Bypass protocols for trusted users and verified roles\n\u200b",
             inline=False
         )
-        embed.add_field(
-            name="⭐ **Community Karma System**",
-            value="**🟢 `/givekarma @user [reason]`** - Award karma points for contributions\n**💫 Reaction Karma:** Positive reactions (👍 ⭐ ❤️ 🔥 💯 ✨) = +1 karma automatically\n**📊 `/karmaboard`** - Community leaderboard with top 10 earners and medals\n**🎉 Milestones:** Level-up announcements at every 5 karma with celebration GIFs\n**🔧 Admin:** `/resetkarma` to manage karma data per-user or server-wide",
-            inline=False
-        )
-        embed.add_field(
-            name="🔔 **YouTube Notifier System**",
-            value="**📺 RSS Feed Monitoring:** No YouTube API required - self-hosted solution\n**⏱️ 5-Minute Polling:** Automatic checks for new uploads from tracked channels\n**🔄 Restart-Safe:** Survives bot restarts and resumes automatically\n**📢 Role Mentions:** Optional @role ping when videos are detected\n**Commands:** `/yt add`, `/yt remove`, `/yt list` (10 channels max per server)",
-            inline=False
-        )
-        embed.add_field(
-            name="🎨 **Profile & Server Cards**",
-            value="**🟢 `/profile [user]`** - Beautiful profile cards with avatar, karma, join date\n**🟢 `/servercard`** - Server overview cards with statistics and member count\n**🟢 `/botprofile`** - Bot information card with features, status, and capabilities\n**💎 Design:** RXT ENGINE quantum purple theme with circular avatars and progress bars",
-            inline=False
-        )
-        embed.add_field(
-            name="🎤 **Voice Tracker & Analytics**",
-            value="**📊 `/voicetracker`** - Track voice channel activity and statistics\n**⏱️ `/voicetime`** - View individual member voice time logs and duration\n**📈 Features:** Per-member tracking, session history, duration calculations\n**🔄 Auto-Logging:** All voice activity automatically logged to server logs",
-            inline=False
-        )
-        embed.add_field(
-            name="🎫 **Professional Ticket System**",
-            value="**📋 Multi-Category:** Support, Billing, Bug Reports, Suggestions, Appeals + 2 custom categories\n**📝 Custom Forms:** Up to 5 configurable fields per category with text validation\n**🔐 Privacy:** Private channels per ticket, visible only to user and staff\n**⏰ Management:** Close, reopen, delete tickets with automatic numbering and naming\n**Commands:** `/ticketpanel`, `/ticketcategory`, `/ticketfields`, `/tnamechange`",
-            inline=False
-        )
+
         embed.set_footer(text=BOT_FOOTER, icon_url=bot.user.display_avatar.url)
         embed.set_thumbnail(url=bot.user.display_avatar.url)
         await interaction.response.edit_message(embed=embed, view=HelpView())
