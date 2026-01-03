@@ -734,16 +734,15 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
             "color": BrandColors.PRIMARY
         },
         "tictactoe": {
-            "title": "❌ **TIC-TAC-TOE Command Help**",
-            "description": "**Usage:** `/tictactoe opponent:@user`\n\n**What it does:** Starts a multiplayer Tic-Tac-Toe game\n**Permission:** 🟢 Everyone (in designated channel)\n\n**Example:** `/tictactoe opponent:@Friend`",
+            "title": "🕹️ **TICTACTOE Command Help**",
+            "description": "**Usage:** `/tictactoe opponent:@user`\n\n**What it does:** Starts a multiplayer Tic-Tac-Toe game\n**Permission:** Everyone\n\n**Example:** `/tictactoe opponent:@friend`",
             "color": BrandColors.PRIMARY
         },
         "rps": {
-            "title": "✂️ **RPS Command Help**",
-            "description": "**Usage:** `/rps opponent:@user`\n\n**What it does:** Starts a multiplayer Rock Paper Scissors game\n**Permission:** 🟢 Everyone (in designated channel)\n\n**Example:** `/rps opponent:@Friend`",
+            "title": "✊ **RPS Command Help**",
+            "description": "**Usage:** `/rps opponent:@user`\n\n**What it does:** Starts a multiplayer Rock Paper Scissors game\n**Permission:** Everyone\n\n**Example:** `/rps opponent:@friend`",
             "color": BrandColors.PRIMARY
         },
-
         "ticketsetup": {
             "title": "🎫 **TICKET SETUP Command Help**",
             "description": "**Usage:** `/ticketsetup action:open category:#tickets channel:#support description:\"Need help?\"`\n\n**What it does:** Sets up support ticket system\n**Actions:** open, close\n**Permission:** 🔴 Main Moderator only\n\n**Example:** `/ticketsetup action:open category:#tickets channel:#support`",
