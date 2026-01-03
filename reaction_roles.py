@@ -6,7 +6,48 @@ from main import bot
 from brand_config import create_permission_denied_embed, create_owner_only_embed,  BOT_FOOTER, BrandColors, create_success_embed, create_error_embed, create_info_embed, create_command_embed, create_warning_embed
 from main import has_permission, get_server_data, update_server_data, log_action
 
-@bot.tree.command(name="reactionrole", description="🎭 Setup reaction roles with multiple emoji/role pairs")
+
+class ButtonRole(discord.ui.Button):
+    def __init__(self, label, role_id, emoji=None, auto_remove_role_id=None):
+        super().__init__(style=discord.ButtonStyle.secondary, label=label, emoji=emoji, custom_id=f"btn_role_{role_id}")
+        self.role_id = int(role_id)
+        self.auto_remove_role_id = int(auto_remove_role_id) if auto_remove_role_id else None
+
+    async def callback(self, interaction: discord.Interaction):
+        guild = interaction.guild
+        role = guild.get_role(self.role_id)
+        if not role:
+            return await interaction.response.send_message("❌ This role no longer exists.", ephemeral=True)
+
+        member = interaction.user
+        try:
+            if role in member.roles:
+                await member.remove_roles(role, reason="Button role removal")
+                await interaction.response.send_message(f"✅ Removed role: **{role.name}**", ephemeral=True)
+                await log_action(guild.id, "reaction_role", f"🎭 [BUTTON ROLE] {role.name} removed from {member}")
+            else:
+                # Handle auto-remove role functionality
+                if self.auto_remove_role_id:
+                    auto_remove_role = guild.get_role(self.auto_remove_role_id)
+                    if auto_remove_role and auto_remove_role in member.roles:
+                        await member.remove_roles(auto_remove_role, reason="Auto-remove role on button role assignment")
+                        await log_action(guild.id, "reaction_role", f"🔄 [AUTO-REMOVE] {auto_remove_role.name} removed from {member}")
+
+                await member.add_roles(role, reason="Button role assignment")
+                await interaction.response.send_message(f"✅ Added role: **{role.name}**", ephemeral=True)
+                await log_action(guild.id, "reaction_role", f"🎭 [BUTTON ROLE] {role.name} added to {member}")
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ I don't have permission to manage this role.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
+class ButtonRoleView(discord.ui.View):
+    def __init__(self, pairs, auto_remove_role_id=None):
+        super().__init__(timeout=None)
+        for emoji, role_id, role_name in pairs:
+            self.add_item(ButtonRole(label=role_name, role_id=role_id, emoji=emoji, auto_remove_role_id=auto_remove_role_id))
+
+@bot.tree.command(name="reactionrole", description="🎭 Setup button-based roles with multiple role pairs")
 @app_commands.describe(
     channel="Channel to send the reaction role message",
     title="Title for the reaction role embed",
@@ -24,10 +65,9 @@ async def reaction_role_setup(
         await interaction.response.send_message(embed=create_permission_denied_embed("Main Moderator"), ephemeral=True)
         return
 
-    # Create the setup modal
-    class ReactionRoleModal(discord.ui.Modal):
+    class ButtonRoleModal(discord.ui.Modal):
         def __init__(self, channel, title, description, auto_remove_role):
-            super().__init__(title="🎭 Reaction Role Setup")
+            super().__init__(title="🎭 Button Role Setup")
             self.channel = channel
             self.embed_title = title
             self.embed_description = description
@@ -43,190 +83,67 @@ async def reaction_role_setup(
 
         async def on_submit(self, modal_interaction: discord.Interaction):
             await modal_interaction.response.defer()
-
             try:
-                # Parse emoji:role pairs
                 pairs = []
                 lines = self.emoji_role_pairs.value.strip().split('\n')
-                
                 for line in lines:
-                    if ':' not in line:
-                        continue
-                    
-                    emoji_part, role_part = line.split(':', 1)
-                    emoji = emoji_part.strip()
-                    role_mention = role_part.strip()
-                    
-                    # Extract role ID from mention
+                    if ':' not in line: continue
+                    emoji, role_part = [x.strip() for x in line.split(':', 1)]
                     role_id = None
-                    if role_mention.startswith('<@&') and role_mention.endswith('>'):
-                        role_id = role_mention[3:-1]
-                    elif role_mention.startswith('@'):
-                        # Try to find role by name
-                        role_name = role_mention[1:]
-                        for guild_role in modal_interaction.guild.roles:
-                            if guild_role.name.lower() == role_name.lower():
-                                role_id = str(guild_role.id)
+                    if role_part.startswith('<@&') and role_part.endswith('>'):
+                        role_id = role_part[3:-1]
+                    elif role_part.startswith('@'):
+                        rn = role_part[1:]
+                        for r in modal_interaction.guild.roles:
+                            if r.name.lower() == rn.lower():
+                                role_id = str(r.id)
                                 break
-                    
                     if role_id:
                         role = modal_interaction.guild.get_role(int(role_id))
-                        if role:
-                            pairs.append((emoji, role))
+                        if role: pairs.append((emoji, str(role.id), role.name))
 
                 if not pairs:
-                    await modal_interaction.followup.send("❌ No valid emoji:role pairs found! Format: 🎯:@Role1", ephemeral=True)
-                    return
+                    return await modal_interaction.followup.send("❌ No valid pairs found!", ephemeral=True)
 
-                if len(pairs) > 10:
-                    await modal_interaction.followup.send("❌ Maximum 10 emoji:role pairs allowed!", ephemeral=True)
-                    return
+                embed = discord.Embed(title=f"🎭 {self.embed_title}", description=self.embed_description, color=BrandColors.PRIMARY)
+                embed.set_footer(text=f"Click buttons below to get your roles! • {BOT_FOOTER}")
+                
+                view = ButtonRoleView(pairs, str(self.auto_remove_role.id) if self.auto_remove_role else None)
+                sent_message = await self.channel.send(embed=embed, view=view)
 
-                # Create the embed
-                embed = discord.Embed(
-                    title=f"🎭 {self.embed_title}",
-                    description=self.embed_description,
-                    color=BrandColors.PRIMARY
-                )
-
-                # Add field showing available roles
-                role_list = []
-                for emoji, role in pairs:
-                    role_list.append(f"{emoji} - {role.mention}")
-
-                embed.add_field(
-                    name="📋 Available Roles",
-                    value="\n".join(role_list),
-                    inline=False
-                )
-
-                if self.auto_remove_role:
-                    embed.add_field(
-                        name="🔄 Auto-Remove Role",
-                        value=f"Getting any role will remove: {self.auto_remove_role.mention}",
-                        inline=False
-                    )
-
-                embed.set_footer(text=f"React below to get your roles! • {BOT_FOOTER}")
-
-                # Send the message
-                sent_message = await self.channel.send(embed=embed)
-
-                # Add all reactions
-                for emoji, role in pairs:
-                    try:
-                        await sent_message.add_reaction(emoji)
-                    except discord.HTTPException:
-                        await modal_interaction.followup.send(f"⚠️ Failed to add reaction {emoji} - invalid emoji", ephemeral=True)
-
-                # Store reaction role data
                 server_data = await get_server_data(modal_interaction.guild.id)
-                reaction_roles = server_data.get('reaction_roles', {})
-
-                reaction_roles[str(sent_message.id)] = {
-                    'channel_id': str(self.channel.id),
-                    'pairs': [(emoji, str(role.id)) for emoji, role in pairs],
-                    'auto_remove_role_id': str(self.auto_remove_role.id) if self.auto_remove_role else None,
-                    'title': self.embed_title,
-                    'description': self.embed_description
+                button_roles = server_data.get('button_roles', {})
+                button_roles[str(sent_message.id)] = {
+                    'pairs': pairs,
+                    'auto_remove_role_id': str(self.auto_remove_role.id) if self.auto_remove_role else None
                 }
+                await update_server_data(modal_interaction.guild.id, {'button_roles': button_roles})
 
-                await update_server_data(modal_interaction.guild.id, {'reaction_roles': reaction_roles})
-
-                # Success response
-                success_embed = discord.Embed(
-                    title="✅ Reaction Role Setup Complete",
-                    description=f"**Message:** {self.channel.mention}\n**Emoji/Role Pairs:** {len(pairs)}\n**Auto-Remove Role:** {self.auto_remove_role.mention if self.auto_remove_role else 'None'}",
-                    color=BrandColors.SUCCESS
-                )
-
-                success_embed.add_field(
-                    name="🎭 Configured Pairs",
-                    value="\n".join([f"{emoji} → {role.mention}" for emoji, role in pairs]),
-                    inline=False
-                )
-
-                success_embed.set_footer(text=BOT_FOOTER)
-                await modal_interaction.followup.send(embed=success_embed)
-
-                await log_action(modal_interaction.guild.id, "reaction_role", f"🎭 [REACTION ROLE] Multi-setup by {modal_interaction.user} - {len(pairs)} pairs in {self.channel.name}")
-
+                await modal_interaction.followup.send(embed=create_success_embed("Setup Complete", f"Button roles sent to {self.channel.mention}"))
+                await log_action(modal_interaction.guild.id, "reaction_role", f"🎭 [BUTTON ROLE] Setup by {modal_interaction.user}")
             except Exception as e:
-                await modal_interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
+                await modal_interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
 
-    # Show the modal properly
-    modal = ReactionRoleModal(channel, title, description, auto_remove_role)
-    await interaction.response.send_modal(modal)
+    await interaction.response.send_modal(ButtonRoleModal(channel, title, description, auto_remove_role))
 
-# Alternative command for quick single reaction role setup
-@bot.tree.command(name="quickreactionrole", description="🎭 Quick setup for single reaction role")
-@app_commands.describe(
-    message="Message for the embed",
-    emoji="Emoji for reaction",
-    role="Role to give when user reacts",
-    channel="Channel to send message",
-    auto_remove_role="Role to remove when user gets this role"
-)
-async def quick_reaction_role_setup(
-    interaction: discord.Interaction,
-    message: str,
-    emoji: str,
-    role: discord.Role,
-    channel: discord.TextChannel,
-    auto_remove_role: discord.Role = None
-):
+@bot.tree.command(name="quickreactionrole", description="🎭 Quick setup for single button role")
+async def quick_reaction_role_setup(interaction: discord.Interaction, message: str, emoji: str, role: discord.Role, channel: discord.TextChannel, auto_remove_role: discord.Role = None):
     if not await has_permission(interaction, "main_moderator"):
-        await interaction.response.send_message(embed=create_permission_denied_embed("Main Moderator"), ephemeral=True)
-        return
+        return await interaction.response.send_message(embed=create_permission_denied_embed("Main Moderator"), ephemeral=True)
 
-    try:
-        # Send the message
-        embed = discord.Embed(
-            title="🎭 Reaction Roles",
-            description=message,
-            color=BrandColors.PRIMARY
-        )
+    embed = discord.Embed(title="🎭 Get Your Role", description=message, color=BrandColors.PRIMARY)
+    embed.set_footer(text=BOT_FOOTER)
+    pairs = [(emoji, str(role.id), role.name)]
+    view = ButtonRoleView(pairs, str(auto_remove_role.id) if auto_remove_role else None)
+    sent_message = await channel.send(embed=embed, view=view)
 
-        if auto_remove_role:
-            embed.add_field(
-                name="🔄 Auto-Remove",
-                value=f"Getting {role.mention} will remove: {auto_remove_role.mention}",
-                inline=False
-            )
+    server_data = await get_server_data(interaction.guild.id)
+    button_roles = server_data.get('button_roles', {})
+    button_roles[str(sent_message.id)] = {'pairs': pairs, 'auto_remove_role_id': str(auto_remove_role.id) if auto_remove_role else None}
+    await update_server_data(interaction.guild.id, {'button_roles': button_roles})
 
-        embed.set_footer(text=BOT_FOOTER)
-
-        sent_message = await channel.send(embed=embed)
-
-        # Add reaction
-        await sent_message.add_reaction(emoji)
-
-        # Store reaction role data
-        server_data = await get_server_data(interaction.guild.id)
-        reaction_roles = server_data.get('reaction_roles', {})
-
-        reaction_roles[str(sent_message.id)] = {
-            'channel_id': str(channel.id),
-            'pairs': [(emoji, str(role.id))],
-            'auto_remove_role_id': str(auto_remove_role.id) if auto_remove_role else None,
-            'title': "Reaction Roles",
-            'description': message
-        }
-
-        await update_server_data(interaction.guild.id, {'reaction_roles': reaction_roles})
-
-        response_embed = discord.Embed(
-            title="✅ Quick Reaction Role Setup Complete",
-            description=f"**Message:** {channel.mention}\n**Emoji:** {emoji}\n**Role:** {role.mention}\n**Auto-Remove Role:** {auto_remove_role.mention if auto_remove_role else 'None'}",
-            color=BrandColors.SUCCESS
-        )
-        response_embed.set_footer(text=BOT_FOOTER)
-        await interaction.response.send_message(embed=response_embed)
-
-        await log_action(interaction.guild.id, "reaction_role", f"🎭 [QUICK REACTION ROLE] Setup by {interaction.user} - {emoji} → {role.name}")
-
-    except Exception as e:
-        await interaction.response.send_message(embed=create_error_embed(f"An error occurred: {str(e)}"), ephemeral=True)
+    await interaction.response.send_message(embed=create_success_embed("Quick Setup Complete", f"Button role sent to {channel.mention}"))
+    await log_action(interaction.guild.id, "reaction_role", f"🎭 [QUICK BUTTON ROLE] {role.name} in {channel.name}")
 
 @bot.event
 async def on_raw_reaction_add(payload):
