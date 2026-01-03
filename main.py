@@ -1393,6 +1393,30 @@ class HelpSelect(discord.ui.Select):
         elif selection == "updates":
             await self.show_recent_updates_help(interaction)
 
+    async def show_games_ai_help(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="🎮 **Games & AI Chat**",
+            description=f"*Quantum entertainment and artificial intelligence protocols.*\n\n{VisualElements.CIRCUIT_LINE}",
+            color=BrandColors.ACCENT
+        )
+        embed.add_field(
+            name="🤖 **AI Chat (Gemini)**",
+            value="**🟢 `/chat query`** - Interact with RXT's neural core powered by Gemini\n**🟢 `/clear-chat`** - Reset your personal AI conversation history\n**Features:** Intelligent responses, context awareness, multi-turn dialogue\n\u200b",
+            inline=False
+        )
+        embed.add_field(
+            name="🎮 **Multiplayer Games**",
+            value="**🟢 `/tictactoe @opponent`** - Challenge someone to a classic match\n**🟢 `/rps @opponent`** - Start a Rock Paper Scissors duel\n**Features:** Interactive buttons, win/draw tracking, game logging\n\u200b",
+            inline=False
+        )
+        embed.add_field(
+            name="⚙️ **Game Configuration**",
+            value="**🔴 `/game-channel set game:rps channel:#channel`**\n**🔴 `/game-channel set game:tictactoe channel:#channel`**\n**Description:** Restrict games to specific channels for better server organization",
+            inline=False
+        )
+        embed.set_footer(text="🟣 = Everyone • 🔴 = Main Moderator")
+        await interaction.response.edit_message(embed=embed, view=HelpView())
+
     async def show_general_help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="💠 **General Commands**",
