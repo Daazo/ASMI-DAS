@@ -1898,10 +1898,6 @@ async def help_command(interaction: discord.Interaction):
 
 @bot.tree.command(name="ping", description="🏓 Check bot latency and connection status")
 async def ping(interaction: discord.Interaction):
-    if not await has_permission(interaction, "junior_moderator"):
-        await interaction.response.send_message("Junior Moderator", ephemeral=True)
-        return
-
     latency = round(bot.latency * 1000)
 
     if latency < 100:
@@ -1929,10 +1925,6 @@ async def ping(interaction: discord.Interaction):
 
 @bot.tree.command(name="uptime", description="⏰ Show how long the bot has been running")
 async def uptime(interaction: discord.Interaction):
-    if not await has_permission(interaction, "junior_moderator"):
-        await interaction.response.send_message("Junior Moderator", ephemeral=True)
-        return
-
     uptime_seconds = time.time() - bot.start_time
     uptime_str = str(timedelta(seconds=int(uptime_seconds)))
 
