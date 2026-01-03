@@ -671,6 +671,15 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
             "description": "**Usage:** `/say message:\"text\" [channel:#channel]`\n\n**What it does:** Makes the bot say something\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/say message:\"Hello everyone!\" channel:#general`",
             "color": BrandColors.PRIMARY
         },
+        "games": {
+            "title": "🎮 **GAMES Command Help**",
+            "description": f"{VisualElements.CIRCUIT_LINE}\nPlay multiplayer games with other members.",
+            "fields": [
+                {"name": "⚔️ Tic-Tac-Toe", "value": "`/tictactoe opponent:@user`", "inline": True},
+                {"name": "⚔️ Rock Paper Scissors", "value": "`/rps opponent:@user`", "inline": True},
+                {"name": "⚙️ Configuration", "value": "`/game-channel set game:type channel:#channel`", "inline": False}
+            ]
+        },
         "embed": {
             "title": "📋 **EMBED Command Help**",
             "description": "**Usage:** `/embed title:\"Title\" description:\"Text\" [color:blue]`\n\n**What it does:** Sends a rich embedded message\n**Permission:** 🔵 Junior Moderator+\n\n**Example:** `/embed title:\"Rules\" description:\"Be nice to everyone!\" color:green`",

@@ -21,7 +21,7 @@ LOG_CHANNEL_TYPES = [
     "automod", "join-leave", "role-update", "channel-update", "message-delete",
     "message-edit", "member-ban", "member-kick", "voice-log", "ticket-log",
     "error-log", "karma", "system", "communication", "setup",
-    "reaction", "timed", "music-log", "economy-log"
+    "reaction", "timed", "music-log", "economy-log", "games-logs"
 ]
 
 GLOBAL_LOG_TYPES = ["live-console", "dm-sent", "command-errors", "system-log"]
