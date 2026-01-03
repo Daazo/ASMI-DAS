@@ -1411,7 +1411,7 @@ class HelpSelect(discord.ui.Select):
         )
         embed.add_field(
             name="⚙️ **Game Configuration**",
-            value="**🔴 `/game-channel set game:rps channel:#channel`**\n**🔴 `/game-channel set game:tictactoe channel:#channel`**\n**Description:** Restrict games to specific channels for better server organization",
+            value="**🔴 `/game-channel set game:rps channel:#channel`**\n**🔴 `/game-channel set game:tictactoe channel:#channel`**\n**Description:** Restrict games to specific channels for better server organization\n\u200b",
             inline=False
         )
         embed.set_footer(text="🟣 = Everyone • 🔴 = Main Moderator")
@@ -1849,7 +1849,7 @@ class HelpSelect(discord.ui.Select):
         )
         embed.add_field(
             name="💠 **Quantum Capabilities**",
-            value="◆ **Holographic UI** — Advanced quantum purple interface\n◆ **AI Chat (Gemini)** — Intelligent conversation & assistance\n◆ **Karma Matrix** — Community recognition system\n◆ **Support Grid** — Multi-channel ticket resolution\n◆ **YouTube Notifier** — RSS-based video upload alerts\n◆ **Neural Storage** — Persistent data architecture\n◆ **Security Core** — 9-module multi-layer protection systems\n◆ **Voice Analytics** — Member activity tracking & statistics\n◆ **Event Manager** — Automated event creation & winner selection\n◆ **Advanced Logging** — Global & per-server activity logs",
+            value="◆ **Holographic UI** — Advanced quantum purple interface\n◆ **AI Chat (Gemini)** — Intelligent conversation & assistance\n◆ **Multiplayer Games** — Interactive Tic-Tac-Toe & RPS\n◆ **Karma Matrix** — Community recognition system\n◆ **Support Grid** — Multi-channel ticket resolution\n◆ **YouTube Notifier** — RSS-based video upload alerts\n◆ **Neural Storage** — Persistent data architecture\n◆ **Security Core** — 9-module multi-layer protection systems\n◆ **Voice Analytics** — Member activity tracking & statistics\n◆ **Event Manager** — Automated event creation & winner selection\n◆ **Advanced Logging** — Global & per-server activity logs",
             inline=False
         )
         embed.add_field(
