@@ -1356,6 +1356,7 @@ class HelpSelect(discord.ui.Select):
             discord.SelectOption(label="Karma", value="karma", emoji="⭐", description="Community recognition system"),
             discord.SelectOption(label="Tickets", value="tickets", emoji="🎫", description="Support and issue tracking"),
             discord.SelectOption(label="Verification", value="verification", emoji="✅", description="CAPTCHA verification system"),
+            discord.SelectOption(label="Games & AI", value="games_ai", emoji="🎮", description="Multiplayer games and AI chat"),
             discord.SelectOption(label="Advanced", value="advanced", emoji="🎭", description="Reaction roles and automation"),
             discord.SelectOption(label="About", value="about", emoji="ℹ️", description="Bot info and specifications"),
             discord.SelectOption(label="Updates", value="updates", emoji="🆕", description="Recent changes and updates"),
@@ -1383,6 +1384,8 @@ class HelpSelect(discord.ui.Select):
             await self.show_ticket_help(interaction)
         elif selection == "verification":
             await self.show_verification_help(interaction)
+        elif selection == "games_ai":
+            await self.show_games_ai_help(interaction)
         elif selection == "advanced":
             await self.show_advanced_help(interaction)
         elif selection == "about":
