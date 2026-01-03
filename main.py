@@ -473,10 +473,19 @@ async def on_ready():
         import traceback
         traceback.print_exc()
 
-    # Add persistent views for security system
-    from security_system import VerificationView
-    bot.add_view(VerificationView())  # No dummy role ID - will load from database
-    print("✅ Persistent views added for security system")
+    # Add persistent views for button roles
+    try:
+        from reaction_roles import ButtonRoleView
+        # We need to load all active button role setups from database
+        if db is not None:
+            all_servers = await db.servers.find({'button_roles': {'$exists': True}}).to_list(length=None)
+            for server in all_servers:
+                button_roles = server.get('button_roles', {})
+                for msg_id, data in button_roles.items():
+                    bot.add_view(ButtonRoleView(data['pairs'], data.get('auto_remove_role_id')))
+        print("✅ Persistent views added for button roles")
+    except Exception as e:
+        print(f"⚠️ Failed to load persistent button roles: {e}")
 
     # Send permanent invite message to support server
     try:
@@ -710,10 +719,14 @@ async def send_command_help(interaction: discord.Interaction, command_name: str)
             "description": "**Usage:** `/set-update channel:#channel`\n\n**What it does:** Sets the channel for global bot updates\n**Permission:** 🔴 Main Moderator or Owner\n\n**Example:** `/set-update channel:#updates`",
             "color": BrandColors.PRIMARY
         },
-        "update": {
-            "title": "⚡ **UPDATE Command Help**",
-            "description": "**Usage:** `/update message:\"text\" [image:file]`\n\n**What it does:** Broadcasts an update to all servers\n**Permission:** 👑 Bot Owner Only\n\n**Example:** `/update message:\"Version 2.0 is here!\"`",
-            "color": BrandColors.PRIMARY
+        "updates": {
+            "title": "⚡ **GLOBAL UPDATES PROTOCOL**",
+            "description": f"{VisualElements.CIRCUIT_LINE}\nAccess the latest system broadcast and update logs.\n{VisualElements.CIRCUIT_LINE}",
+            "fields": [
+                {"name": "📡 Broadcast", "value": "`/update message:\"text\"`", "inline": True},
+                {"name": "⚙️ Receiver", "value": "`/set-update channel:#ch`", "inline": True},
+                {"name": "📋 Protocol", "value": "Updates are logged to both global system and per-server system logs for full transparency.", "inline": False}
+            ]
         },
         "game-channel": {
             "title": "🎮 **GAME-CHANNEL Command Help**",

@@ -115,7 +115,8 @@ async def reaction_role_setup(
                 button_roles = server_data.get('button_roles', {})
                 button_roles[str(sent_message.id)] = {
                     'pairs': pairs,
-                    'auto_remove_role_id': str(self.auto_remove_role.id) if self.auto_remove_role else None
+                    'auto_remove_role_id': str(self.auto_remove_role.id) if self.auto_remove_role else None,
+                    'channel_id': str(self.channel.id)
                 }
                 await update_server_data(modal_interaction.guild.id, {'button_roles': button_roles})
 

@@ -287,8 +287,8 @@ async def create_bot_profile_card(bot, owner_status, owner_status_emoji, uptime_
 
     # Column 3 features
     draw.text((500, features_y + 25), "🤖 Gemini AI Chat Integration", fill=(200, 200, 200), font=small_font)
-    draw.text((500, features_y + 40), "📢 Announcements & Global Updates", fill=(200, 200, 200), font=small_font)
-    draw.text((500, features_y + 55), "🎮 Tic-Tac-Toe & RPS Games", fill=(200, 200, 200), font=small_font)
+    draw.text((500, features_y + 40), "📢 Announcements & Updates", fill=(200, 200, 200), font=small_font)
+    draw.text((500, features_y + 55), "🎮 Multiplayer Games (TTT/RPS)", fill=(200, 200, 200), font=small_font)
     draw.text((500, features_y + 70), "📝 Verification & CAPTCHA", fill=(200, 200, 200), font=small_font)
 
     # Build info section
