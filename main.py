@@ -1484,7 +1484,7 @@ class HelpSelect(discord.ui.Select):
         )
         embed.add_field(
             name="🔊 **Custom Voice Channels**",
-            value="**🔴 `/custom-vc <category>`** - Create auto VC hub (up to 5 per server)\n**🔴 `/custom-vc-remove`** - Remove a custom VC hub\n**Auto-Create:** Users join hub, get personal VC\n**Auto-Delete:** Empty VCs deleted after 1 min",
+            value="**🔴 `/custom-vc <category> [user_limit]`** - Create auto VC hub (up to 50 per server)\n**🔴 `/custom-vc-remove`** - Remove a custom VC hub\n**Auto-Create:** Users join hub, get personal VC with set limit\n**Auto-Delete:** Empty VCs deleted after 1 min",
             inline=False
         )
         embed.add_field(

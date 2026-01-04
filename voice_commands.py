@@ -253,13 +253,17 @@ async def vclimit(interaction: discord.Interaction, limit: int):
 # CUSTOM VOICE CHANNEL SYSTEM - FULLY AUTOMATIC WITH ROBUST CLEANUP
 # ═══════════════════════════════════════════════════════════════════════════
 
-MAX_CUSTOM_VC_HUBS = 5
+MAX_CUSTOM_VC_HUBS = 50
 
 @bot.tree.command(name="custom-vc", description="🔊 Setup dynamic custom voice channel system")
-@app_commands.describe(category="Category to create custom VCs in")
-async def custom_vc_setup(interaction: discord.Interaction, category: discord.CategoryChannel):
+@app_commands.describe(category="Category to create custom VCs in", user_limit="Limit members per VC (0-99, 0 = unlimited)")
+async def custom_vc_setup(interaction: discord.Interaction, category: discord.CategoryChannel, user_limit: int = 0):
     if not await has_permission(interaction, "main_moderator"):
         await interaction.response.send_message(embed=create_permission_denied_embed("Main Moderator"), ephemeral=True)
+        return
+    
+    if user_limit < 0 or user_limit > 99:
+        await interaction.response.send_message("❌ User limit must be between 0 and 99!", ephemeral=True)
         return
     
     try:
@@ -286,20 +290,22 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
                 'guild_id': str(interaction.guild.id),
                 'hub_channel_id': str(hub_channel.id),
                 'category_id': str(category.id),
+                'user_limit': user_limit,
                 'created_by': str(interaction.user.id),
                 'created_at': datetime.utcnow()
             })
         
         hub_count = await db.custom_vc_hubs.count_documents({'guild_id': str(interaction.guild.id)}) if db is not None else 1
         
+        limit_text = "Unlimited" if user_limit == 0 else str(user_limit)
         embed = discord.Embed(
             title="⚡ **Custom VC System Setup Complete**",
-            description=f"**🔊 Hub Channel:** {hub_channel.mention}\n**📁 Category:** {category.mention}\n**📊 Total Hubs:** {hub_count}/{MAX_CUSTOM_VC_HUBS}\n**Status:** Active & Ready",
+            description=f"**🔊 Hub Channel:** {hub_channel.mention}\n**📁 Category:** {category.mention}\n**👥 User Limit:** {limit_text}\n**📊 Total Hubs:** {hub_count}/{MAX_CUSTOM_VC_HUBS}",
             color=BrandColors.PRIMARY
         )
         embed.add_field(
             name="🎯 How It Works",
-            value="✓ Users join 🔊 CUSTOM VC\n✓ Bot automatically creates personal channel\n✓ User auto-moved to their VC\n✓ Auto-deletes after 1 min inactivity",
+            value=f"✓ Users join 🔊 CUSTOM VC\n✓ Bot creates personal VC with **{limit_text}** capacity\n✓ User auto-moved to their VC\n✓ Auto-deletes after 1 min inactivity",
             inline=False
         )
         embed.set_footer(text=BOT_FOOTER)
@@ -431,12 +437,14 @@ async def on_voice_state_update(member, before, after):
                 # User just joined the hub - auto-create personal VC
                 category = after.channel.category
                 guild = after.channel.guild
+                user_limit = hub_data.get('user_limit', 0)
                 
                 try:
                     # Create personal VC with user's name
                     vc_name = f"🔊 {member.display_name}"
                     new_vc = await category.create_voice_channel(
                         name=vc_name,
+                        user_limit=user_limit,
                         reason=f"Auto-created VC for {member}"
                     )
                     
