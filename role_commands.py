@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import asyncio
+import random
 from main import bot, has_permission, log_action
 from brand_config import BOT_FOOTER, BrandColors, VisualElements, create_success_embed, create_error_embed, create_info_embed, create_command_embed, create_warning_embed
 from datetime import datetime

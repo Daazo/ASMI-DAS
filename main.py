@@ -1,21 +1,21 @@
-import discord
-from discord.ext import commands, tasks
-from discord import app_commands
-import asyncio
-import aiohttp
-import time
-import os
-import re
 import random
 import sys
-from datetime import datetime, timedelta
-import motor.motor_asyncio
-from typing import Optional, Union
+import os
+import asyncio
+import time
+import re
 import json
-from PIL import Image, ImageDraw, ImageFont
 import io
 import requests
+import aiohttp
+import motor.motor_asyncio
+from datetime import datetime, timedelta
+from typing import Optional, Union
+from PIL import Image, ImageDraw, ImageFont
 from dotenv import load_dotenv
+from discord.ext import commands, tasks
+from discord import app_commands
+import discord
 
 # Load environment variables from .env file
 # Try several paths to ensure .env is found
@@ -439,21 +439,12 @@ async def on_ready():
     except Exception as e:
         print(f"⚠️ Failed to add invite tracker cog: {e}")
 
+    # Initial sync and command logging
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
-
-        # Debug: List all registered commands
         all_commands = [cmd.name for cmd in bot.tree.get_commands()]
         print(f"📋 Registered commands: {', '.join(all_commands)}")
-
-        # Check specifically for timed role commands
-        timed_role_commands = [cmd for cmd in ['giverole', 'removerole', 'timedroles'] if cmd in all_commands]
-        if timed_role_commands:
-            print(f"✅ Timed role commands registered: {', '.join(timed_role_commands)}")
-        else:
-            print("⚠️ Timed role commands not found in registered commands")
-
     except Exception as e:
         print(f"Failed to sync commands: {e}")
 
