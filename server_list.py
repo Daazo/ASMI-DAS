@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Server list channel ID
-SUPPORT_SERVER_CHANNEL_ID = 1406243267632300052
+SUPPORT_SERVER_CHANNEL_ID = 1457265579466686598
 
 # Store the last sent message so it can be deleted
 last_servers_message = None
