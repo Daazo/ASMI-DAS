@@ -396,7 +396,7 @@ status_task_started = False
 
 @tasks.loop(seconds=3)
 async def rotate_status():
-    """Rotate bot status between messages every 3 seconds"""
+    """Rotate bot status with jitter to avoid robotic patterns"""
     global rotating_status_index
     statuses = [
         "ʀxᴛ ᴇɴɢɪɴᴇ",
@@ -406,6 +406,9 @@ async def rotate_status():
     ]
     
     try:
+        # Add slight random jitter (0.1s to 0.5s)
+        await asyncio.sleep(random.uniform(0.1, 0.5))
+        
         await bot.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching,

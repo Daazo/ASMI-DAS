@@ -94,20 +94,22 @@ async def initialize_global_logging():
         print(f"❌ Error initializing global logging: {e}")
 
 async def console_output_logger():
-    """Background task to process and log console outputs"""
+    """Background task to process and log console outputs with jitter and optimization"""
     buffer = []
-    last_send_time = datetime.now()
     
     while True:
         try:
-            await asyncio.sleep(2)  # Check every 2 seconds
+            # Optimized interval: 5 seconds (from 2s) to reduce polling overhead
+            # Added jitter to prevent predictable request bursts
+            base_interval = 5 
+            jitter = random.uniform(0.5, 2.0)
+            await asyncio.sleep(base_interval + jitter)
             
             if buffer:
-                # Batch send buffered outputs every 2 seconds or when buffer is full
+                # Batch send buffered outputs
                 combined = "\n".join(buffer[:5])
                 await log_console_output(combined)
                 buffer = buffer[5:] if len(buffer) > 5 else []
-                last_send_time = datetime.now()
                 
         except Exception as e:
             print(f"Console logger error: {e}")

@@ -123,15 +123,35 @@ async def dm_role(interaction: discord.Interaction, role: discord.Role, message:
             inline=True
         )
         
-        # Send DMs
+        # Send DMs with jitter and queuing to prevent Discord anti-spam triggers
         sent_count = 0
         failed_count = 0
         
         for member in members:
             try:
+                # Base delay to stay under rate limits
+                await asyncio.sleep(1.5) 
+                
+                # Add random jitter (0.5s to 1.5s) to avoid robotic patterns
+                jitter = random.uniform(0.5, 1.5)
+                await asyncio.sleep(jitter)
+                
                 await member.send(embed=dm_embed)
                 sent_count += 1
-            except:
+                
+                # Log progress every 10 DMs to keep track
+                if sent_count % 10 == 0:
+                    print(f"📧 [DM-ROLE PROGRESS] Sent {sent_count}/{len(members)} DMs...")
+                    
+            except discord.Forbidden:
+                failed_count += 1
+            except discord.HTTPException as e:
+                if e.status == 429: # Rate limited
+                    retry_after = e.retry_after if hasattr(e, 'retry_after') else 60
+                    print(f"⚠️ [DM-ROLE RATE LIMIT] Backing off for {retry_after}s")
+                    await asyncio.sleep(retry_after)
+                failed_count += 1
+            except Exception:
                 failed_count += 1
         
         # Send confirmation
