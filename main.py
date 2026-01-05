@@ -235,6 +235,7 @@ class InviteView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=None)
         invite_url = discord.utils.oauth_url(bot.user.id, permissions=discord.Permissions(8), scopes=("bot", "applications.commands"))
+        self.add_item(discord.ui.Button(label="WEBSITE", url="https://rxt-engine.lovable.app/", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="INVITE BOT", url=invite_url, style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="SUPPORT SERVER", url="https://discord.gg/QfD6qn5gXf", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="DEVELOPER", url="https://discord.com/users/1244962723872247818", style=discord.ButtonStyle.link))
@@ -1832,7 +1833,7 @@ class HelpSelect(discord.ui.Select):
         )
         embed.add_field(
             name="◆ **Quantum Core Specifications**",
-            value=f"**AI Core:** {BOT_NAME}\n**Version:** {BOT_VERSION}\n**Status:** {VisualElements.STATUS_ONLINE}\n**Active Servers:** {len(bot.guilds)}\n**Architecture:** Python-based quantum engine\n**Neural Storage:** MongoDB distributed database",
+            value=f"**AI Core:** {BOT_NAME}\n**Version:** {BOT_VERSION}\n**Official Website:** [rxt-engine.lovable.app](https://rxt-engine.lovable.app/)\n**Status:** {VisualElements.STATUS_ONLINE}\n**Active Servers:** {len(bot.guilds)}\n**Architecture:** Python-based quantum engine\n**Neural Storage:** MongoDB distributed database",
             inline=False
         )
         embed.add_field(
@@ -1857,7 +1858,7 @@ class HelpSelect(discord.ui.Select):
         )
         embed.add_field(
             name="🔗 **Quick Links**",
-            value=f"**💠 Bot Invite:** [Add to Your Server](https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot%20applications.commands)\n**💬 DM Developer:** [Click Here](https://discord.com/users/{bot_owner_id if bot_owner_id else '0'})\n**💬 DM Director:** [Click Here](https://discord.com/users/{BOT_DIRECTOR_ID if BOT_DIRECTOR_ID else '0'})\n{f'**🏠 Support Server:** [Join Here]({support_server})' if support_server else ''}\n\n**⚡ Engineered by R!O</> • Directed by {BOT_DIRECTOR_NAME}**",
+            value=f"**🌐 Official Website:** [Visit Dashboard](https://rxt-engine.lovable.app/)\n**💠 Bot Invite:** [Add to Your Server](https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot%20applications.commands)\n**💬 DM Developer:** [Click Here](https://discord.com/users/{bot_owner_id if bot_owner_id else '0'})\n**💬 DM Director:** [Click Here](https://discord.com/users/{BOT_DIRECTOR_ID if BOT_DIRECTOR_ID else '0'})\n{f'**🏠 Support Server:** [Join Here]({support_server})' if support_server else ''}\n\n**⚡ Engineered by R!O</> • Directed by {BOT_DIRECTOR_NAME}**",
             inline=False
         )
         embed.set_footer(text=BOT_FOOTER)
