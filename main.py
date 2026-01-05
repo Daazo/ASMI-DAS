@@ -237,13 +237,14 @@ class InviteView(discord.ui.View):
         invite_url = discord.utils.oauth_url(bot.user.id, permissions=discord.Permissions(8), scopes=("bot", "applications.commands"))
         self.add_item(discord.ui.Button(label="INVITE BOT", url=invite_url, style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="SUPPORT SERVER", url="https://discord.gg/QfD6qn5gXf", style=discord.ButtonStyle.link))
+        self.add_item(discord.ui.Button(label="WEBSITE", url="https://rxt-engine.lovable.app/", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="DEVELOPER", url="https://discord.com/users/1244962723872247818", style=discord.ButtonStyle.link))
         self.add_item(discord.ui.Button(label="DIRECTOR", url="https://discord.com/users/1087619527166132234", style=discord.ButtonStyle.link))
 
 def create_invite_embed():
     embed = discord.Embed(
         title="RXT ENGINE",
-        description=f"{VisualElements.CIRCUIT_LINE}\nSelect an option below to interact with the RXT Core ecosystem.\n{VisualElements.CIRCUIT_LINE}",
+        description=f"{VisualElements.CIRCUIT_LINE}\nSelect an option below to interact with the RXT Core ecosystem.\n\n🌐 **Website:** [rxt-engine.lovable.app](https://rxt-engine.lovable.app/)\n{VisualElements.CIRCUIT_LINE}",
         color=BrandColors.PRIMARY
     )
     embed.set_footer(text=BOT_FOOTER)
