@@ -530,16 +530,38 @@ async def on_reaction_add(reaction, user):
         return
 
     # Process both positive and negative karma emojis
-    positive_emojis = ['👍', '⭐', '❤️', '🔥', '💯', '✨', '🌟', '💖', '👏', '🙌', '🎉', '🥳', '😍', '🥰', '🏆', '🚀', '🌈', '💎', '👑']
-    negative_emojis = ['👎', '💀', '😴', '🤮', '🗿', '😤', '😠', '😡', '🤬', '💔', '🖕', '😵', '🤢', '❌', '⛔', '🚫', '💩', '🤡']
+    positive_emojis_map = {
+        # +1 KARMA
+        '👍': 1, '👌': 1, '🤝': 1, '😊': 1, '😄': 1, '⭐': 1, '✨': 1, '🎉': 1, '🤍': 1, '📈': 1,
+        # +2 KARMA
+        '👏': 2, '🙌': 2, '🔥': 2, '💯': 2, '⚡': 2, '🌟': 2, '😍': 2, '🥰': 2, '🎯': 2, '💖': 2,
+        # +3 KARMA
+        '🚀': 3, '🏅': 3, '🥇': 3, '🧠': 3, '🌈': 3, '🎶': 3, '🛡️': 3, '💎': 3,
+        # +4 KARMA
+        '🫶': 4, '👑': 4, '🏆': 4, '🗝️': 4, '🕊️': 4, '🧿': 4,
+        # +5 KARMA
+        '🎖️': 5, '🏵️': 5, '🥂': 5, '🌞': 5, '🦄': 5, '🐉': 5, '🌠': 5, '🔱': 5
+    }
+    negative_emojis_map = {
+        # -1 KARMA
+        '👎': -1, '😒': -1, '😑': -1, '🙄': -1, '😴': -1, '😬': -1, '📉': -1,
+        # -2 KARMA
+        '😤': -2, '😠': -2, '🤢': -2, '🤕': -2, '❌': -2, '⚠️': -2,
+        # -3 KARMA
+        '😡': -3, '🤬': -3, '💔': -3, '🤮': -3, '🚫': -3, '⛔': -3,
+        # -4 KARMA
+        '💀': -4, '☠️': -4, '🤡': -4, '🗿': -4, '🛑': -4, '🧱': -4,
+        # -5 KARMA
+        '🖕': -5, '💩': -5, '👿': -5, '👹': -5, '🪦': -5
+    }
 
     emoji_str = str(reaction.emoji)
     karma_change = 0
 
-    if emoji_str in positive_emojis:
-        karma_change = 1
-    elif emoji_str in negative_emojis:
-        karma_change = -1
+    if emoji_str in positive_emojis_map:
+        karma_change = positive_emojis_map[emoji_str]
+    elif emoji_str in negative_emojis_map:
+        karma_change = negative_emojis_map[emoji_str]
     else:
         return  # Not a karma emoji
 

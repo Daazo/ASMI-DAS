@@ -1679,8 +1679,8 @@ class HelpSelect(discord.ui.Select):
             inline=False
         )
         embed.add_field(
-            name="⭐ **Reaction Karma** (Auto-Karma)",
-            value="**Positive:** 👍 ⭐ ❤️ 🔥 💯 ✨ = +1 karma\n**Negative:** 👎 💀 😴 🤮 🗿 = -1 karma\n**How it works:** Reacting to messages gives/removes karma automatically\n**Cooldown:** 3 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma\n\u200b",
+            name="⭐ **Reaction Karma** (Weighted)",
+            value="**Positive:** ✨ +1 to +5 karma (👍 ⭐ 🚀 👑 🎖️)\n**Negative:** 💀 -1 to -5 karma (👎 😤 😡 💀 🖕)\n**How it works:** Reaction weight depends on emoji rarity/value\n**Cooldown:** 3 minutes between reactions to same user\n**Anti-abuse:** Can't react to your own messages for karma\n\u200b",
             inline=False
         )
         embed.add_field(
