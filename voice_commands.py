@@ -256,8 +256,12 @@ async def vclimit(interaction: discord.Interaction, limit: int):
 MAX_CUSTOM_VC_HUBS = 50
 
 @bot.tree.command(name="custom-vc", description="🔊 Setup dynamic custom voice channel system")
-@app_commands.describe(category="Category to create custom VCs in", user_limit="Limit members per VC (0-99, 0 = unlimited)")
-async def custom_vc_setup(interaction: discord.Interaction, category: discord.CategoryChannel, user_limit: int = 0):
+@app_commands.describe(
+    category="Category to create custom VCs in", 
+    user_limit="Limit members per VC (0-99, 0 = unlimited)",
+    vc_name="Default name for created VCs (e.g. 'Private VC')"
+)
+async def custom_vc_setup(interaction: discord.Interaction, category: discord.CategoryChannel, user_limit: int = 0, vc_name: str = "🔊 ᴄᴜsᴛᴏᴍ ᴠᴄ"):
     if not await has_permission(interaction, "main_moderator"):
         await interaction.response.send_message(embed=create_permission_denied_embed("Main Moderator"), ephemeral=True)
         return
@@ -277,11 +281,10 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
                 )
                 embed.set_footer(text=BOT_FOOTER)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-                print(f"⚠️ [CUSTOM VC] Hub limit reached for guild {interaction.guild.id} ({existing_count}/{MAX_CUSTOM_VC_HUBS})")
                 return
         
         hub_channel = await category.create_voice_channel(
-            name="🔊 ᴄᴜsᴛᴏᴍ ᴠᴄ",
+            name=vc_name[:100],
             reason=f"Custom VC hub created by {interaction.user}"
         )
         
@@ -291,6 +294,7 @@ async def custom_vc_setup(interaction: discord.Interaction, category: discord.Ca
                 'hub_channel_id': str(hub_channel.id),
                 'category_id': str(category.id),
                 'user_limit': user_limit,
+                'vc_name_template': vc_name,
                 'created_by': str(interaction.user.id),
                 'created_at': datetime.utcnow()
             })
@@ -438,10 +442,12 @@ async def on_voice_state_update(member, before, after):
                 category = after.channel.category
                 guild = after.channel.guild
                 user_limit = hub_data.get('user_limit', 0)
+                template_name = hub_data.get('vc_name_template', "🔊 ᴄᴜsᴛᴏᴍ ᴠᴄ")
                 
                 try:
-                    # Create personal VC with user's name
-                    vc_name = f"🔊 {member.display_name}"
+                    # Create personal VC with custom name and user's name format: {name} {user}
+                    # We ensure it doesn't exceed Discord's 100 char limit
+                    vc_name = f"{template_name} {member.display_name}"[:100]
                     new_vc = await category.create_voice_channel(
                         name=vc_name,
                         user_limit=user_limit,
