@@ -401,8 +401,8 @@ async def ticketpanel(interaction: discord.Interaction):
 
     view = TicketSelectionView(enabled_cats)
     
-    await interaction.channel.send(embed=embed, view=view)
     await interaction.response.send_message("✅ Ticket panel created!", ephemeral=True)
+    await interaction.channel.send(embed=embed, view=view)
 
 @bot.tree.command(name="ticketcategory", description="Configure a ticket category (1-7)")
 @app_commands.describe(
