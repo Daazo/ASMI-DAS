@@ -471,8 +471,14 @@ async def on_ready():
         import traceback
         traceback.print_exc()
 
-    # Add persistent views for button roles
+    # Add persistent views for verification system
     try:
+        from security_system import VerificationView, CaptchaInputView
+        bot.add_view(VerificationView())
+        bot.add_view(CaptchaInputView(None)) # Initial registration for persistent ID
+        print("✅ Persistent views added for verification system")
+    except Exception as e:
+        print(f"⚠️ Failed to add persistent verification views: {e}")
         from reaction_roles import ButtonRoleView
         # We need to load all active button role setups from database
         if db is not None:

@@ -262,10 +262,32 @@ class VerificationView(discord.ui.View):
 
 class CaptchaInputView(discord.ui.View):
     """View with button to open CAPTCHA input modal"""
-    def __init__(self, modal):
-        super().__init__(timeout=300)  # 5 minute timeout
+    def __init__(self, modal=None):
+        super().__init__(timeout=None)  # Make it persistent
         self.modal = modal
     
-    @discord.ui.button(label='Enter CAPTCHA Code', style=discord.ButtonStyle.success, emoji='✍️')
+    @discord.ui.button(label='Enter CAPTCHA Code', style=discord.ButtonStyle.success, emoji='✍️', custom_id='captcha_open_modal')
     async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(self.modal)
+        if self.modal:
+            await interaction.response.send_modal(self.modal)
+        else:
+            # Reconstruct modal if it's a persistent view from a restart
+            server_data = await get_server_data(interaction.guild.id)
+            security_settings = server_data.get('security_settings', {})
+            verification_config = security_settings.get('verification_system', {})
+            
+            verified_role_id = verification_config.get('verified_role')
+            remove_role_id = verification_config.get('remove_role')
+            
+            user_id = str(interaction.user.id)
+            correct_captcha = security_data['captcha_data'].get(user_id)
+            
+            if not correct_captcha:
+                await interaction.response.send_message("❌ Your CAPTCHA session has expired. Please click 'Verify Me' again.", ephemeral=True)
+                return
+                
+            verified_role = interaction.guild.get_role(int(verified_role_id))
+            remove_role = interaction.guild.get_role(int(remove_role_id)) if remove_role_id else None
+            
+            modal = CaptchaModal(correct_captcha, verified_role, remove_role)
+            await interaction.response.send_modal(modal)
