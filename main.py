@@ -479,6 +479,9 @@ async def on_ready():
         print("✅ Persistent views added for verification system")
     except Exception as e:
         print(f"⚠️ Failed to add persistent verification views: {e}")
+
+    # Add persistent views for reaction roles
+    try:
         from reaction_roles import ButtonRoleView
         # We need to load all active button role setups from database
         if db is not None:
@@ -486,10 +489,21 @@ async def on_ready():
             for server in all_servers:
                 button_roles = server.get('button_roles', {})
                 for msg_id, data in button_roles.items():
-                    bot.add_view(ButtonRoleView(data['pairs'], data.get('auto_remove_role_id')))
-        print("✅ Persistent views added for button roles")
+                    try:
+                        bot.add_view(ButtonRoleView(data['pairs'], data.get('auto_remove_role_id')))
+                    except Exception as ve:
+                        print(f"⚠️ Failed to load view for message {msg_id}: {ve}")
+            print("✅ Persistent views added for button roles")
     except Exception as e:
         print(f"⚠️ Failed to load persistent button roles: {e}")
+
+    # Add persistent views for communication commands
+    try:
+        from communication_commands import PollView
+        # Since PollView is ephemeral/dynamic, we don't necessarily load it from DB unless designed to be persistent.
+        # However, checking if other systems need persistence.
+    except Exception as e:
+        pass
 
     # Send permanent invite message to support server
     try:
