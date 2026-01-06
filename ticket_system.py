@@ -31,17 +31,15 @@ class TicketCategorySelect(discord.ui.Select):
         )
     
     async def callback(self, interaction: discord.Interaction):
-        if self.values[0] == "none":
-            await interaction.response.send_message("❌ No ticket categories are configured!", ephemeral=True)
-            return
-        
+        # We need to send the modal immediately. Deferring first will prevent sending a modal.
+        # Modals MUST be the first response to an interaction.
         category_num = int(self.values[0])
         server_data = await get_server_data(interaction.guild.id)
         ticket_categories = server_data.get('ticket_categories', {})
         category_data = ticket_categories.get(str(category_num), {})
         
         if not category_data:
-            await interaction.response.send_message("❌ This ticket category no longer exists! Please contact an administrator.", ephemeral=True)
+            await interaction.response.send_message("❌ This ticket category no longer exists!", ephemeral=True)
             return
         
         modal = TicketModal(category_num, category_data, server_data)

@@ -449,11 +449,14 @@ async def on_ready():
         print(f"Failed to sync commands: {e}")
 
     # Add persistent views for ticket system
-    from ticket_system import TicketSelectionView, TicketControlView, ReopenDeleteTicketView
-    bot.add_view(TicketSelectionView())
-    bot.add_view(TicketControlView())
-    bot.add_view(ReopenDeleteTicketView())
-    print("✅ Persistent views added for ticket system")
+    try:
+        from ticket_system import TicketSelectionView, TicketControlView, ReopenDeleteTicketView
+        bot.add_view(TicketSelectionView())
+        bot.add_view(TicketControlView())
+        bot.add_view(ReopenDeleteTicketView())
+        print("✅ Persistent views added for ticket system")
+    except Exception as e:
+        print(f"⚠️ Failed to add persistent ticket views: {e}")
     
     # Start custom VC cleanup task - startup verification
     try:
