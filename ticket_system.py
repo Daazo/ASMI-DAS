@@ -13,10 +13,13 @@ class TicketCategorySelect(discord.ui.Select):
         for cat_num, cat_data in sorted(categories.items()):
             if cat_data.get('enabled', False):
                 emoji = cat_data.get('emoji', '🎫')
+                # Discord Select Option description limit is 100 characters
+                raw_desc = cat_data.get('description', 'Click to open a ticket')
+                clean_desc = raw_desc[:97] + "..." if len(raw_desc) > 100 else raw_desc
                 options.append(
                     discord.SelectOption(
-                        label=cat_data.get('name', f'Category {cat_num}'),
-                        description=cat_data.get('description', 'Click to open a ticket'),
+                        label=cat_data.get('name', f'Category {cat_num}')[:100],
+                        description=clean_desc,
                         value=str(cat_num),
                         emoji=emoji
                     )
@@ -42,7 +45,10 @@ class TicketCategorySelect(discord.ui.Select):
             await interaction.response.send_message("❌ This ticket category no longer exists!", ephemeral=True)
             return
         
+        # Ensure category name fits within Modal title limits
+        modal_title = category_data.get('name', 'Support Ticket')[:40]
         modal = TicketModal(category_num, category_data, server_data)
+        modal.title = f"🎫 {modal_title}"
         await interaction.response.send_modal(modal)
 
 class TicketSelectionView(discord.ui.View):
@@ -390,7 +396,10 @@ async def ticketpanel(interaction: discord.Interaction):
     for cat_num, cat_data in sorted(enabled_cats.items()):
         emoji = cat_data.get('emoji', '🎫')
         name = cat_data.get('name', f'Category {cat_num}')
+        # Limit description to 100 chars for Discord Select Option limits
         desc = cat_data.get('description', 'No description')
+        if len(desc) > 97:
+            desc = desc[:97] + "..."
         embed.add_field(
             name=f"{emoji} {name}",
             value=desc,
