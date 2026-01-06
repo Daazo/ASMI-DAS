@@ -139,10 +139,15 @@ async def get_ai_response(prompt: str) -> str:
             print(f"❌ [AI TEXT ERROR] Gemini client is None")
             return "**✗ AI CORE OFFLINE**\nThe quantum AI core is currently unavailable. Please contact a server admin."
         
-        print(f"💬 [AI TEXT] Calling Gemini API for text generation...")
+        # Add current context (date/time/year) to the prompt
+        now = datetime.now()
+        current_time_context = f"[System Context: Today is {now.strftime('%A, %B %d, %Y')}. The current time is {now.strftime('%I:%M %p')}. You are RXT ENGINE, a futuristic AI core.]\n\n"
+        full_prompt = current_time_context + prompt
+        
+        print(f"💬 [AI TEXT] Calling Gemini API for text generation with current context...")
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=prompt
+            contents=full_prompt
         )
         
         result = response.text or "I couldn't generate a response. Please try again."
