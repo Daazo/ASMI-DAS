@@ -445,9 +445,9 @@ async def on_voice_state_update(member, before, after):
                 template_name = hub_data.get('vc_name_template', "🔊 ᴄᴜsᴛᴏᴍ ᴠᴄ")
                 
                 try:
-                    # Create personal VC with custom name and user's name format: {name} {user}
+                    # Create personal VC with user's name format: {user}
                     # We ensure it doesn't exceed Discord's 100 char limit
-                    vc_name = f"{template_name} {member.display_name}"[:100]
+                    vc_name = member.display_name[:100]
                     new_vc = await category.create_voice_channel(
                         name=vc_name,
                         user_limit=user_limit,
